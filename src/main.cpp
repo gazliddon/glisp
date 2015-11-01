@@ -4,8 +4,8 @@
 #include <cstdint>
 #include <string>
 #include <exception>
-
-#include "spirit/include/boost/spirit.hpp"
+#include <boost/config/warning_disable.hpp>
+#include "spirit/include/boost/spirit/home/x3.hpp"
 
 using namespace std;
 
