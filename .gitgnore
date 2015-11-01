@@ -1,0 +1,7 @@
+bazel-bin
+bazel-genfiles
+bazel-glisp
+bazel-out
+bazel-testlogs
+.ycm_extra_conf.pyc
+
