@@ -16,8 +16,7 @@ namespace ast {
 
     struct nil {};
 
-    struct program;
-    struct special_form;
+    struct list;
 
     struct symbol {
         char mFirst;
@@ -32,22 +31,21 @@ namespace ast {
                               symbol,
                               std::string,
                               unsigned int,
-                              x3::forward_ast<special_form>,
-                              x3::forward_ast<program>> {
+                              x3::forward_ast<list>> {
         using base_type::base_type;
         using base_type::operator=;
     };
 
     typedef std::list<form> form_list;
 
+    struct list {
+        form_list mForms;
+    };
+
     struct program {
         form_list mForms;
     };
 
-    struct special_form {
-        std::string mSpeshName;
-        form_list mForms;
-    };
 
     // print function for debugging
     inline std::ostream &operator<<( std::ostream &out, nil ) {

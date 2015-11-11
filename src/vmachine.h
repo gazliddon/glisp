@@ -16,13 +16,10 @@ namespace vmachine {
 
     class vmachine {
       public:
-        vmachine( unsigned stackSize = 4096 )
-            : stack( stackSize ), stack_ptr( stack.begin() ) {
-        }
+        vmachine( unsigned stackSize = 4096 );
 
-        int top() const {
-            return stack_ptr[ -1 ];
-        };
+        int top() const ;
+
         void execute( std::vector<int> const &code );
 
       private:
@@ -30,42 +27,6 @@ namespace vmachine {
         std::vector<int>::iterator stack_ptr;
     };
 
-    void vmachine::execute( std::vector<int> const &code ) {
-        std::vector<int>::const_iterator pc = code.begin();
-        stack_ptr                           = stack.begin();
-
-        while ( pc != code.end() ) {
-            switch ( *pc++ ) {
-                case op_neg:
-                    stack_ptr[ -1 ] = -stack_ptr[ -1 ];
-                    break;
-
-                case op_add:
-                    --stack_ptr;
-                    stack_ptr[ -1 ] += stack_ptr[ 0 ];
-                    break;
-
-                case op_sub:
-                    --stack_ptr;
-                    stack_ptr[ -1 ] -= stack_ptr[ 0 ];
-                    break;
-
-                case op_mul:
-                    --stack_ptr;
-                    stack_ptr[ -1 ] *= stack_ptr[ 0 ];
-                    break;
-
-                case op_div:
-                    --stack_ptr;
-                    stack_ptr[ -1 ] /= stack_ptr[ 0 ];
-                    break;
-
-                case op_int:
-                    *stack_ptr++ = *pc++;
-                    break;
-            }
-        }
-    }
 }
 
 #endif /* end of include guard: VMACHINE_H_07OQEZTL */

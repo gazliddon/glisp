@@ -9,48 +9,68 @@
 #include "grammar.h"
 #include "printer.h"
 
-int main() {
-    namespace x3 = boost::spirit::x3;
-    namespace ascii = x3::ascii;
+namespace glisp {
 
-    using ascii::space_type;
-    using ast::program;
-    using ast::printer;
-    using std::string;
 
-    std::cout << "Glisp lisp parser\n";
-    std::cout << "Type an expression...or [q or Q] to quit\n\n";
+    using std::cout;
 
-    string str;
-    space_type space;
-    printer printIt; 
+    std::string read( std::istream &_in = std::cin ) {
+        std::string ret;
+        std::getline( _in, ret );
+        return ret;
+    }
 
-    while ( std::getline( std::cin, str ) ) {
+    ast::program eval( std::string const &_str ) {
+         using boost::spirit::x3::ascii::space_type;
 
-        if ( str.empty() || str[ 0 ] == 'q' || str[ 0 ] == 'Q' )
-            break;
+        ast::program ast;
 
-        program outputAst; 
+        space_type space;
 
-        auto iter = str.begin(), end = str.end();
-
-        bool r = phrase_parse( iter, end, grammar::program, space, outputAst );
+        auto iter = _str.begin(), end = _str.end();
+        bool r = phrase_parse( iter, end, grammar::program, space, ast );
 
         if ( r && iter == end ) {
-
-            // Woo - worked
-            // print out the AST
-            std::cout << "Parsing succeeded\n";
-            printIt( outputAst );
-
-            /* mach.execute( code ); */
-            /* std::cout << "\nResult: " << mach.top() << std::endl; */
         } else {
-            std::string rest( iter, end );
-            std::cout << "-------------------------\n";
-            std::cout << "Parsing failed\n";
-            std::cout << "-------------------------\n";
+            cout << "-------------------------\n";
+            cout << "Parsing failed\n";
+            cout << "-------------------------\n";
+        }
+
+        return ast;
+    }
+
+    void print( ast::program const &_ast, std::ostream &_out = std::cout ) {
+        ast::printer printIt( _out );
+        printIt( _ast );
+    }
+
+    void repl() {
+
+        std::istream &_in  = std::cin;
+
+        std::ostream &_out = std::cout;
+
+        _out << "Glisp lisp parser\n";
+        _out << "Type an expression...or [q or Q] to quit\n\n";
+
+        while ( true ) {
+
+            auto str = glisp::read( _in );
+
+            if ( str.empty() || str[ 0 ] == 'q' || str[ 0 ] == 'Q' ) {
+                break;
+            } else {
+                auto ast = glisp::eval( str );
+                glisp::print( ast, _out );
+            }
         }
     }
+};
+
+int main() {
+
+    glisp::repl();
+
     return 0;
 }
