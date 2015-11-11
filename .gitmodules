@@ -1,3 +1,0 @@
-[submodule "spirit"]
-	path = src/spirit
-	url = git@github.com:boostorg/spirit.git

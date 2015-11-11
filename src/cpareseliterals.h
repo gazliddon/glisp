@@ -1,6 +1,0 @@
-#ifndef CPARESELITERALS_H_VD5FHUJT
-#define CPARESELITERALS_H_VD5FHUJT
-
-
-
-#endif /* end of include guard: CPARESELITERALS_H_VD5FHUJT */
