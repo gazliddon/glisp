@@ -7,6 +7,8 @@ cc_binary(
 
     includes = ["."],
 
+    linkopts = ["-lm"],
+
     copts    = ["-Werror", "-Wno-unused-variable", "-std=c++14"],
 )
 

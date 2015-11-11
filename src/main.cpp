@@ -1,51 +1,56 @@
+///////////////////////////////////////////////////////////////////////////////
+//#define BOOST_SPIRIT_X3_DEBUG
+
 #include <iostream>
-#include <fstream>
-#include <vector>
-#include <cstdint>
 #include <string>
-#include <exception>
-#include <boost/config/warning_disable.hpp>
-#include "spirit/include/boost/spirit/home/x3.hpp"
+#include <list>
+#include <numeric>
 
-using namespace std;
+#include "grammar.h"
+#include "printer.h"
 
-class cFileException : public exception {
-  public:
-    cFileException( string const &_fileName, string const & _reason ) {
-        mFileName = _fileName;
+int main() {
+    namespace x3 = boost::spirit::x3;
+    namespace ascii = x3::ascii;
+
+    using ascii::space_type;
+    using ast::program;
+    using ast::printer;
+    using std::string;
+
+    std::cout << "Glisp lisp parser\n";
+    std::cout << "Type an expression...or [q or Q] to quit\n\n";
+
+    string str;
+    space_type space;
+    printer printIt; 
+
+    while ( std::getline( std::cin, str ) ) {
+
+        if ( str.empty() || str[ 0 ] == 'q' || str[ 0 ] == 'Q' )
+            break;
+
+        program outputAst; 
+
+        auto iter = str.begin(), end = str.end();
+
+        bool r = phrase_parse( iter, end, grammar::program, space, outputAst );
+
+        if ( r && iter == end ) {
+
+            // Woo - worked
+            // print out the AST
+            std::cout << "Parsing succeeded\n";
+            printIt( outputAst );
+
+            /* mach.execute( code ); */
+            /* std::cout << "\nResult: " << mach.top() << std::endl; */
+        } else {
+            std::string rest( iter, end );
+            std::cout << "-------------------------\n";
+            std::cout << "Parsing failed\n";
+            std::cout << "-------------------------\n";
+        }
     }
-
-    virtual const char *what() const throw() {
-        return "file open exception";
-    };
-
-  protected:
-    string mFileName, mReason;
-};
-
-string readFile( string const &_fname ) {
-
-    string ret;
-    fstream fs;
-
-    fs.open( _fname, ifstream::in | ifstream::binary );
-
-    if ( fs ) {
-        fs.seekg( 0, fs.end );
-        size_t length = fs.tellg();
-        fs.seekg( 0, fs.beg );
-        ret.resize( length );
-        fs.read( &ret[ 0 ], length );
-    } else {
-        throw(cFileException(_fname, "opening"));
-    }
-
-    return ret;
-}
-
-int main( int argc, char *argv[] ) {
-
-    auto text = readFile( "glisp.clj" );
-
     return 0;
 }
