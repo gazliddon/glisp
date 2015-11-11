@@ -17,6 +17,9 @@ namespace ast {
     struct nil {};
 
     struct list;
+    struct vector;
+    struct map;
+    struct set;
 
     struct symbol {
         char mFirst;
@@ -27,18 +30,53 @@ namespace ast {
         }
     };
 
-    struct form : x3::variant<nil,
-                              symbol,
+    struct keyword {
+        symbol mSym;
+    };
+
+    struct atom : x3::variant<symbol,
+                              keyword,
                               std::string,
+                              nil,
                               unsigned int,
-                              x3::forward_ast<list>> {
+                              double,
+                              bool,
+                              char> {
+        using base_type::base_type;
+        using base_type::operator=;
+    };
+
+    struct form : x3::variant<atom,
+                              x3::forward_ast<set>,
+                              x3::forward_ast<list>,
+                              x3::forward_ast<vector>,
+                              x3::forward_ast<map>> {
         using base_type::base_type;
         using base_type::operator=;
     };
 
     typedef std::list<form> form_list;
 
+    struct map_entry {
+        form mKey;
+        form mValue;
+    };
+
+    typedef std::list<map_entry> map_list;
+
     struct list {
+        form_list mForms;
+    };
+
+    struct vector {
+        form_list mForms;
+    };
+
+    struct map {
+        map_list mHashMap;
+    };
+
+    struct set {
         form_list mForms;
     };
 
@@ -46,13 +84,11 @@ namespace ast {
         form_list mForms;
     };
 
-
     // print function for debugging
     inline std::ostream &operator<<( std::ostream &out, nil ) {
         out << "nil";
         return out;
     }
 }
-
 
 #endif /* end of include guard: AST_H_4GSXUIIF */
