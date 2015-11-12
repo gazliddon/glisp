@@ -10,7 +10,7 @@ namespace ast {
     }
 
     void printer::operator()( ast::keyword const &_keyword ) const {
-        mOut << ":" << _keyword.mSym.get();
+        mOut << ":" << _keyword.mSym.mName;
     }
 
     void printer::operator()( bool _v ) const {
@@ -42,7 +42,7 @@ namespace ast {
     }
 
     void printer::operator()( ast::symbol const &_v ) const {
-        mOut << _v.get();
+        mOut << _v.mName;
     }
 
     void printer::operator()( ast::list const &_list ) const {

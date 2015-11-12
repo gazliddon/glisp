@@ -24,12 +24,7 @@ namespace ast {
     struct fn;
 
     struct symbol {
-        char mFirst;
-        std::string mRest;
-
-        std::string get() const {
-            return mFirst + mRest;
-        }
+        std::string mName;
     };
 
     struct keyword {
@@ -39,7 +34,7 @@ namespace ast {
     struct atom : x3::variant<symbol,
                               keyword,
                               std::string,
-                              x3::forward_ast<fn>,
+                              forward_ast<fn>,
                               nil,
                               unsigned int,
                               double,
@@ -50,11 +45,11 @@ namespace ast {
     };
 
     struct form : x3::variant<atom,
-                              x3::forward_ast<special_form>,
-                              x3::forward_ast<set>,
-                              x3::forward_ast<list>,
-                              x3::forward_ast<vector>,
-                              x3::forward_ast<map>> {
+                              forward_ast<special_form>,
+                              forward_ast<set>,
+                              forward_ast<list>,
+                              forward_ast<vector>,
+                              forward_ast<map>> {
         using base_type::base_type;
         using base_type::operator=;
     };

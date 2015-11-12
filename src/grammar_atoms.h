@@ -26,7 +26,7 @@ namespace grammar {
     rule<symbol_class, ast::symbol> const symbol( "symbol" );
     auto const start_char = ( alpha | char_( "+-*/_!?" ) );
     auto const rest_char  = ( start_char | alnum );
-    auto const symbol_def = lexeme[ start_char >> *rest_char ];
+    auto const symbol_def = lexeme[ &start_char >> +rest_char ];
     BOOST_SPIRIT_DEFINE( symbol );
 
     // Character
