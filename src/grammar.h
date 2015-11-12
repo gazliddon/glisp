@@ -63,10 +63,10 @@ namespace grammar {
     BOOST_SPIRIT_DEFINE( map );
 
     // a special form
-    auto const spesh_form_name =
-        lexeme[ ( string( "def" ) | string( "let" ) ) >> &space ];
+    auto const spesh_form_name = string( "def" ) | string( "let" ) | string("fn");
 
-    auto const special_form_def = '(' >> spesh_form_name >> +form >> ')';
+    auto const special_form_def =
+        '(' >> lexeme[ spesh_form_name >> &space ] >> +form >> ')';
 
     BOOST_SPIRIT_DEFINE( special_form )
 

@@ -1,6 +1,10 @@
 #ifndef ENV_H_UCLWRIVL
 #define ENV_H_UCLWRIVL
 
+#include "ast.h"
+
+
+
 // Environment that glip executes in
 // sym table and management of scope
 
@@ -18,6 +22,22 @@
 // Clojure syntax muddied by namespaceing?
 
 namespace env {
+
+    using std::map;
+    using ast::form;
+    using std::string;
+
+    typedef map< string, form> env_t;
+
+    class cEnv {
+        public:
+            cEnv(cEnv const * _parent = nullptr);
+
+        protected:
+            env_t mEnv;
+            cEnv const * mpParent;
+    };
+
 }
 
 #endif /* end of include guard: ENV_H_UCLWRIVL */

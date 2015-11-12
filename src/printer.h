@@ -54,6 +54,10 @@ namespace ast {
 
         void operator()( ast::special_form const &_sf ) const;
 
+        void operator()(ast::fn const & _fn) const {
+            assert(false);
+        }
+
         template <typename T>
         void renderList( T const &_col ) const {
             auto it = _col.begin(), end = _col.end();

@@ -21,6 +21,7 @@ namespace ast {
     struct map;
     struct set;
     struct special_form;
+    struct fn;
 
     struct symbol {
         char mFirst;
@@ -38,6 +39,7 @@ namespace ast {
     struct atom : x3::variant<symbol,
                               keyword,
                               std::string,
+                              x3::forward_ast<fn>,
                               nil,
                               unsigned int,
                               double,
@@ -85,6 +87,11 @@ namespace ast {
 
     struct set {
         form_list mForms;
+    };
+
+    struct fn {
+        std::function< void(form_list const & _args) > mFn;
+        size_t mNumberOfArgs;
     };
 
     struct program {
