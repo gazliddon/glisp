@@ -20,7 +20,7 @@ namespace ast {
 
         void operator()( ast::symbol const &_v ) const;
 
-        void operator()( ast::keyword const &_keyword ) const ;
+        void operator()( ast::keyword const &_keyword ) const;
 
         void operator()( std::string const &_v ) const;
 
@@ -28,9 +28,9 @@ namespace ast {
 
         void operator()( double _v ) const;
 
-        void operator()( bool _v ) const ;
+        void operator()( bool _v ) const;
 
-        void operator()( char _v ) const ;
+        void operator()( char _v ) const;
 
         void operator()( ast::nil const & ) const;
 
@@ -48,9 +48,11 @@ namespace ast {
 
         void operator()( ast::form_list const &_v ) const;
 
-        void operator()( ast::atom const &_atom ) const ;
+        void operator()( ast::atom const &_atom ) const;
 
-        void operator() ( ast::set const & _set) const;
+        void operator()( ast::set const &_set ) const;
+
+        void operator()( ast::special_form const &_sf ) const;
 
         template <typename T>
         void renderList( T const &_col ) const {
@@ -69,7 +71,7 @@ namespace ast {
                                std::string const &_pre,
                                std::string const &_post ) const {
             mOut << _pre;
-            renderList(_col);
+            renderList( _col );
             mOut << _post;
         }
     };
@@ -90,7 +92,8 @@ namespace ast {
 
         template <typename T>
         void operator()( T const &_v ) {
-            assert( !"NOT HANDLED" ); }
+            assert( !"NOT HANDLED" );
+        }
     };
 }
 

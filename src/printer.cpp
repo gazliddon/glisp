@@ -81,6 +81,10 @@ namespace ast {
         mOut << std::endl;
     }
 
+    void printer::operator()(ast::special_form const & _sf) const {
+        assert(!"Not done");
+    }
+
     void printer::operator()( ast::atom const &_atom ) const {
         boost::apply_visitor( *this, _atom );
     }

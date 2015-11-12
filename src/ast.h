@@ -20,6 +20,7 @@ namespace ast {
     struct vector;
     struct map;
     struct set;
+    struct special_form;
 
     struct symbol {
         char mFirst;
@@ -47,6 +48,7 @@ namespace ast {
     };
 
     struct form : x3::variant<atom,
+                              x3::forward_ast<special_form>,
                               x3::forward_ast<set>,
                               x3::forward_ast<list>,
                               x3::forward_ast<vector>,
@@ -56,6 +58,11 @@ namespace ast {
     };
 
     typedef std::list<form> form_list;
+
+    struct special_form {
+        std::string mName;
+        form_list mForms;
+    };
 
     struct map_entry {
         form mKey;
