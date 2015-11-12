@@ -14,6 +14,8 @@ namespace grammar {
     using x3::rule;
     using x3::alpha;
     using x3::alnum;
+    using x3::space;
+    using x3::string;
     using x3::bool_;
 
     // composite types
@@ -33,12 +35,13 @@ namespace grammar {
     rule<map_entry_class, ast::map_entry> const map_entry( "map_entry" );
     rule<set_class, ast::set> const set( "set" );
     rule<program_class, ast::program> const program( "program" );
-    rule<special_form_class, ast::special_form> const special_form( "special_form" );
+    rule<special_form_class, ast::special_form> const
+        special_form( "special_form" );
 
     // Form
-    auto const form_def = atom | list | vector | map | set;
+    auto const form_def =
+        special_form | list | vector | map | set | list | atom;
     BOOST_SPIRIT_DEFINE( form );
-
     // A list
     auto const list_def = '(' >> *form >> ')';
     BOOST_SPIRIT_DEFINE( list );
@@ -60,7 +63,11 @@ namespace grammar {
     BOOST_SPIRIT_DEFINE( map );
 
     // a special form
-    auto const special_form_def = '(' >> lit("def") >> +form >> ')';
+    auto const spesh_form_name =
+        lexeme[ ( string( "def" ) | string( "let" ) ) >> &space ];
+
+    auto const special_form_def = '(' >> spesh_form_name >> +form >> ')';
+
     BOOST_SPIRIT_DEFINE( special_form )
 
     // a program, just a load of forms

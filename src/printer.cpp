@@ -82,7 +82,9 @@ namespace ast {
     }
 
     void printer::operator()(ast::special_form const & _sf) const {
-        assert(!"Not done");
+        mOut << "!(" << _sf.mName << " ";
+        ( *this )( _sf.mForms );
+        mOut << ")";
     }
 
     void printer::operator()( ast::atom const &_atom ) const {
