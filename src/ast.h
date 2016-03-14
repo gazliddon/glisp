@@ -22,6 +22,7 @@ namespace ast {
     struct set;
     struct special_form;
     struct fn;
+    struct call;
 
     struct symbol {
         std::string mName;
@@ -45,6 +46,7 @@ namespace ast {
     };
 
     struct form : x3::variant<atom,
+                              forward_ast<call>,
                               forward_ast<special_form>,
                               forward_ast<set>,
                               forward_ast<list>,
@@ -85,8 +87,13 @@ namespace ast {
     };
 
     struct fn {
-        std::function< void(form_list const & _args) > mFn;
         size_t mNumberOfArgs;
+        std::function< void(size_t _nargs, form_list const & _args) > mFn;
+    };
+
+    struct call {
+        form mFunc;
+        form_list mArgs;
     };
 
     struct program {

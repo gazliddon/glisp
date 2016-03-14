@@ -15,14 +15,14 @@ namespace ast {
 
     void printer::operator()( bool _v ) const {
         if ( _v ) {
-            mOut << "true";
+            mOut << "true:bool";
         } else {
-            mOut << "false";
+            mOut << "false:bool";
         }
     }
 
     void printer::operator()( char _v ) const {
-        mOut << _v;
+        mOut << _v << ":char";
     }
 
     void printer::operator()( ast::nil const & ) const {
@@ -30,36 +30,36 @@ namespace ast {
     }
 
     void printer::operator()( unsigned int _v ) const {
-        mOut << _v;
+        mOut << _v << ":int";
     }
 
     void printer::operator()( double _v ) const {
-        mOut << _v;
+        mOut << _v << ":double";
     }
 
     void printer::operator()( std::string const &_v ) const {
-        mOut << _v;
+        mOut << _v << ":string";
     }
 
     void printer::operator()( ast::symbol const &_v ) const {
-        mOut << _v.mName;
+        mOut << _v.mName << ":symbol";
     }
 
     void printer::operator()( ast::list const &_list ) const {
-        renderCollection( _list.mForms, "(", ")" );
+        renderCollection( _list.mForms, "(", ")", "list" );
     }
 
     void printer::operator()( ast::vector const &_vector ) const {
-        renderCollection( _vector.mForms, "[", "]" );
+        renderCollection( _vector.mForms, "[", "]", "vector" );
     }
 
     void printer::operator()( ast::map const &_map ) const {
-        renderCollection( _map.mHashMap, "{", "}" );
+        renderCollection( _map.mHashMap, "{", "}", "map" );
     }
 
 
     void printer::operator() ( ast::set const & _set) const {
-        renderCollection( _set.mForms, "#{", "}" );
+        renderCollection( _set.mForms, "#{", "}", "set" );
     }
 
     void printer::operator()( ast::map_entry const &_map_entry ) const {

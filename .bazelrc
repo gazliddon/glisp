@@ -1,0 +1,12 @@
+build --package_path %workspace%:.
+build --compiler clang
+build --crosstool_top //tools/cpp:toolchain
+build  --ignore_unsupported_sandboxing 
+build --cxxopt "-Werror"
+build --cxxopt "-Wno-unused-variable" 
+build --cxxopt "-std=c++14" 
+build --show_progress_rate_limit -1
+build --jobs 10
+build --cxxopt "-U_FORTIFY_SOURCE"
+build --symlink_prefix=.bazel/
+build --ram_utilization_factor=45

@@ -58,6 +58,10 @@ namespace ast {
             assert(false);
         }
 
+        void operator()(ast::call const & _call) const {
+            assert(false);
+        }
+
         template <typename T>
         void renderList( T const &_col ) const {
             auto it = _col.begin(), end = _col.end();
@@ -73,10 +77,12 @@ namespace ast {
         template <typename T>
         void renderCollection( T const &_col,
                                std::string const &_pre,
-                               std::string const &_post ) const {
+                               std::string const &_post,
+                               std::string const & _type
+                               ) const {
             mOut << _pre;
             renderList( _col );
-            mOut << _post;
+            mOut << _post << ":" << _type;
         }
     };
 

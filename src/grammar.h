@@ -7,7 +7,6 @@
 #pragma GCC diagnostic ignored "-Wparentheses"
 
 namespace grammar {
-
     namespace x3 = boost::spirit::x3;
 
     using x3::lexeme;
@@ -26,23 +25,22 @@ namespace grammar {
     struct map_class;
     struct set_class;
     struct program_class;
-    struct special_form_class;
 
-    rule<form_class, ast::form> const form( "form" );
     rule<list_class, ast::list> const list( "list" );
+    rule<form_class, ast::form> const form( "form" );
     rule<vector_class, ast::vector> const vector( "vector" );
     rule<map_class, ast::map> const map( "map" );
     rule<map_entry_class, ast::map_entry> const map_entry( "map_entry" );
     rule<set_class, ast::set> const set( "set" );
     rule<program_class, ast::program> const program( "program" );
-    rule<special_form_class, ast::special_form> const
-        special_form( "special_form" );
+
 
     // Form
     auto const form_def =
-        special_form | list | vector | map | set | list | atom;
+        list | vector | map | set | list | atom;
     BOOST_SPIRIT_DEFINE( form );
-    // A list
+
+    // List
     auto const list_def = '(' >> *form >> ')';
     BOOST_SPIRIT_DEFINE( list );
 
@@ -61,14 +59,6 @@ namespace grammar {
     // a map
     auto const map_def = '{' >> *map_entry >> '}';
     BOOST_SPIRIT_DEFINE( map );
-
-    // a special form
-    auto const spesh_form_name = string( "def" ) | string( "let" ) | string("fn");
-
-    auto const special_form_def =
-        '(' >> lexeme[ spesh_form_name >> &space ] >> +form >> ')';
-
-    BOOST_SPIRIT_DEFINE( special_form )
 
     // a program, just a load of forms
     auto const program_def = *form;

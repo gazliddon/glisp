@@ -11,8 +11,8 @@
 
 namespace glisp {
 
-
     using std::cout;
+    using std::endl;
 
     std::string read( std::istream &_in = std::cin ) {
         std::string ret;
@@ -21,7 +21,7 @@ namespace glisp {
     }
 
     ast::program eval( std::string const &_str ) {
-         using boost::spirit::x3::ascii::space_type;
+        using boost::spirit::x3::ascii::space_type;
 
         ast::program ast;
 
@@ -35,9 +35,15 @@ namespace glisp {
             cout << "-------------------------\n";
             cout << "Parsing failed\n";
             cout << "-------------------------\n";
+            cout << *iter << "\n";
         }
 
         return ast;
+    }
+
+    ast::program eval_ast( ast::program const &_prog ) {
+
+        return _prog;
     }
 
     void print( ast::program const &_ast, std::ostream &_out = std::cout ) {
@@ -47,7 +53,7 @@ namespace glisp {
 
     void repl() {
 
-        std::istream &_in  = std::cin;
+        std::istream &_in = std::cin;
 
         std::ostream &_out = std::cout;
 

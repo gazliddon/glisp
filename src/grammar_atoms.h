@@ -44,7 +44,7 @@ namespace grammar {
     // atom
     struct atom_class;
     rule<atom_class, ast::atom> const atom( "atom" );
-    auto const atom_def = symbol | keyword | uint_ | double_ | hex | character | bool_;
+    auto const atom_def = symbol | keyword | hex | double_ | character | bool_ | uint_;
     BOOST_SPIRIT_DEFINE( atom );
 }
 

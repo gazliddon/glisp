@@ -1,3 +1,4 @@
 bazel-*
 .ycm_extra_conf.pyc
+.bazel
 
