@@ -7,13 +7,15 @@
 
 BOOST_FUSION_ADAPT_STRUCT( ast::symbol, mName )
 BOOST_FUSION_ADAPT_STRUCT( ast::keyword, mSym )
+BOOST_FUSION_ADAPT_STRUCT( ast::hint, mSym )
 BOOST_FUSION_ADAPT_STRUCT( ast::program, mForms )
 BOOST_FUSION_ADAPT_STRUCT( ast::list, mForms )
 BOOST_FUSION_ADAPT_STRUCT( ast::vector, mForms )
 BOOST_FUSION_ADAPT_STRUCT( ast::map_entry, mKey, mValue )
 BOOST_FUSION_ADAPT_STRUCT( ast::map, mHashMap )
 BOOST_FUSION_ADAPT_STRUCT( ast::set, mForms )
-BOOST_FUSION_ADAPT_STRUCT( ast::special_form, mName, mForms)
-BOOST_FUSION_ADAPT_STRUCT( ast::call, mFunc, mArgs)
+BOOST_FUSION_ADAPT_STRUCT( ast::boolean, mVal )
+BOOST_FUSION_ADAPT_STRUCT( ast::special, mName )
+BOOST_FUSION_ADAPT_STRUCT( ast::meta, mHashMap )
 
 #endif /* end of include guard: AST_ADAPTED_H_KW9BM5GS */

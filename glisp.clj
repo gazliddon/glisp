@@ -1,5 +1,4 @@
 
-(defn test-fn [a]
-  (println a))
+(defn test-fn [a] (println a))
 
 
