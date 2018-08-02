@@ -49,17 +49,18 @@ namespace grammar {
   // Symbol
   struct symbol_class;
   rule<symbol_class, ast::symbol> const symbol( "symbol" );
-  auto const extra_chars = char_( "_+-=!*?><'" );
+  auto const extra_chars = char_( "_><?!+-*" );
   auto const start_char = ( alpha | extra_chars );
   auto const rest_char = ( alnum | extra_chars );
-  auto const symbol_def = lexeme[ +( rest_char ) ];
+  auto const all_sym = start_char >> *( rest_char );
+  auto const symbol_def = lexeme[ ( start_char >> *rest_char )];
 
   BOOST_SPIRIT_DEFINE( symbol );
 
   // Character
   struct character_class;
   rule<character_class, char> const character( "character" );
-  auto const character_def = lit( '\\' ) >> char_;
+  auto const character_def = lexeme[lit( '\\' ) >> char_];
   BOOST_SPIRIT_DEFINE( character );
 
   // keyord
@@ -78,7 +79,7 @@ namespace grammar {
   struct atom_class;
   rule<atom_class, ast::atom> const atom( "atom" );
   auto const atom_def = uint_ | double_ | hint | str | special | boolean |
-                        keyword | symbol | hex | double_ | character;
+                        keyword | symbol | hex | character;
   BOOST_SPIRIT_DEFINE( atom );
 }
 

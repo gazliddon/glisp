@@ -10,85 +10,85 @@ namespace ast {
   }
 
   void printer::operator()( ast::keyword const &_keyword ) const {
-    mOut << ":" << _keyword.mSym.mName << ":keyword";
+      mOut << ":" << _keyword.mSym.get() << ":keyword";
   }
 
   void printer::operator()( ast::hint const &_keyword ) const {
-    mOut << "^" << _keyword.mSym.mName << ":typehint";
+      mOut << "^" << _keyword.mSym.get() << ":typehint";
   }
 
   void printer::operator()( ast::boolean const &_val ) const {
-    mOut << _val.mVal << ":bool";
+      mOut << _val.mVal << ":bool";
   }
 
   void printer::operator()( char _v ) const {
-    mOut << _v << ":char";
+      mOut << _v << ":char";
   }
 
   void printer::operator()( ast::nil const & ) const {
-    BOOST_ASSERT( 0 );
+      BOOST_ASSERT( 0 );
   }
 
   void printer::operator()( unsigned int _v ) const {
-    mOut << _v << ":int";
+      mOut << _v << ":int";
   }
 
   void printer::operator()( double _v ) const {
-    mOut << _v << ":double";
+      mOut << _v << ":double";
   }
 
   void printer::operator()( std::string const &_v ) const {
-    mOut << _v << ":string";
+      mOut << _v << ":string";
   }
 
   void printer::operator()( ast::symbol const &_v ) const {
-    mOut << _v.mName << ":symbol";
+      mOut << _v.get() << ":symbol";
   }
 
   void printer::operator()( ast::special const &_v ) const {
-    mOut << _v.mName << ":special-form";
+      mOut << _v.mName << ":special-form";
   }
 
   void printer::operator()( ast::list const &_list ) const {
-    renderCollection( _list.mForms, "(", ")", "list" );
+      renderCollection( _list.mForms, "(", ")", "list" );
   }
 
   void printer::operator()( ast::vector const &_vector ) const {
-    renderCollection( _vector.mForms, "[", "]", "vector" );
+      renderCollection( _vector.mForms, "[", "]", "vector" );
   }
 
   void printer::operator()( ast::map const &_map ) const {
-    renderCollection( _map.mHashMap, "{", "}", "map" );
+      renderCollection( _map.mHashMap, "{", "}", "map" );
   }
 
   void printer::operator()( ast::meta const &_val ) const {
-    renderCollection( _val.mHashMap, "^{", "}", "meta" );
+      renderCollection( _val.mHashMap, "^{", "}", "meta" );
   }
 
   void printer::operator()( ast::set const &_set ) const {
-    renderCollection( _set.mForms, "#{", "}", "set" );
+      renderCollection( _set.mForms, "#{", "}", "set" );
   }
 
   void printer::operator()( ast::map_entry const &_map_entry ) const {
-    apply_visitor( *this, _map_entry.mKey );
-    mOut << " ";
-    apply_visitor( *this, _map_entry.mValue );
+      apply_visitor( *this, _map_entry.mKey );
+      mOut << " ";
+      apply_visitor( *this, _map_entry.mValue );
   }
 
   void printer::operator()( ast::form const &_v ) const {
-    apply_visitor( *this, _v );
+      apply_visitor( *this, _v );
   }
 
   void printer::operator()( ast::form_list const &_v ) const {
-    renderList( _v );
+      renderList( _v );
   }
 
   void printer::operator()( ast::program const &_p ) const {
-    ( *this )( _p.mForms );
-    mOut << std::endl;
+      ( *this )( _p.mForms );
+      mOut << std::endl;
   }
 
   void printer::operator()( ast::atom const &_atom ) const {
-    boost::apply_visitor( *this, _atom );
+      boost::apply_visitor( *this, _atom );
   }
 }

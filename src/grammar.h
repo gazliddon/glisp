@@ -14,8 +14,8 @@ namespace grammar {
   using x3::rule;
   using x3::alpha;
   using x3::alnum;
-  using x3::space;
-  using x3::string;
+  /* using x3::space; */
+  /* using x3::string; */
 
   // composite types
   struct form_class;
@@ -47,16 +47,18 @@ namespace grammar {
   auto const form_def = list | vector | map | set | list | atom | meta;
   BOOST_SPIRIT_DEFINE( form );
 
+  auto const form_list =  (lexeme[( form % +char_(' ') ) | ""]);
+
   // List
-  auto const list_def = '(' >> *form >> ')';
+  auto const list_def = '(' >> form_list >> ')';
   BOOST_SPIRIT_DEFINE( list );
 
   // A vector
-  auto const vector_def = '[' >> *form >> ']';
+  auto const vector_def = '[' >> form_list >> ']';
   BOOST_SPIRIT_DEFINE( vector );
 
   // A set
-  auto const set_def = "#{" >> *form >> '}';
+  auto const set_def = "#{" >> form_list >> '}';
   BOOST_SPIRIT_DEFINE( set );
 
   // a map entry

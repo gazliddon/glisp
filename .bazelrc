@@ -1,9 +1,12 @@
-build  --ignore_unsupported_sandboxing 
+build --ignore_unsupported_sandboxing 
 build --cxxopt "-Werror"
 build --cxxopt "-Wno-unused-variable" 
-build --cxxopt "-std=c++14" 
+build --cxxopt "-std=c++17" 
 build --show_progress_rate_limit -1
 build --jobs 10
 build --cxxopt "-U_FORTIFY_SOURCE"
 build --symlink_prefix=.bazel/
 build --ram_utilization_factor=45
+build --cxxopt "-I/usr/local/include"
+build --verbose_failures
+build --apple_generate_dsym
