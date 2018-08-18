@@ -11,99 +11,102 @@
 #include <boost/spirit/home/x3/support/ast/variant.hpp>
 
 namespace ast {
-namespace x3 = boost::spirit::x3;
-using x3::forward_ast;
+    namespace x3 = boost::spirit::x3;
+    using x3::forward_ast;
 
-struct nil {};
+    struct nil {};
 
-struct list;
-struct vector;
-struct map;
-struct meta;
-struct set;
-/* struct fn; */
+    struct application;
+    struct vector;
+    struct map;
+    struct meta;
+    struct set;
+    /* struct fn; */
 
-struct symbol {
-    char mStart;
-    std::string mName;
-    std::string get() const {
-        return mStart + mName;
+    struct define;
+
+    struct symbol {
+        char mStart;
+        std::string mName;
+        std::string get() const {
+            return mStart + mName;
+        }
+    };
+
+    struct boolean {
+        std::string mVal;
+    };
+
+    struct keyword {
+        symbol mSym;
+    };
+
+    struct hint {
+        symbol mSym;
+    };
+
+    struct special {
+        std::string mName;
+    };
+
+    // clang-format off
+
+    struct val : x3::variant<
+                 special
+                 , boolean
+                 , symbol
+                 , std::string
+                 , double
+                 , char
+                 , forward_ast<application>
+                 , forward_ast<define>
+                  > {
+
+        using base_type::base_type;
+        using base_type::operator=;
+    };
+
+    // clang-format on
+    //
+    struct define {
+        val mVal;
+    };
+
+    struct application {
+        val mFunc;
+        std::vector<val> mForms;
+    };
+
+    struct vector {
+        std::vector<val> mForms;
+    };
+
+    struct map_entry {
+        val mKey;
+        val mValue;
+    };
+
+    struct map {
+        std::list<map_entry> mHashMap;
+    };
+
+    struct meta {
+        std::list<map_entry> mHashMap;
+    };
+
+    struct set {
+        std::vector<val> mForms;
+    };
+
+    struct program {
+        std::vector<val> mForms;
+    };
+
+    // print function for debugging
+    inline std::ostream& operator<<(std::ostream& out, nil) {
+        out << "nil";
+        return out;
     }
-};
-
-struct boolean {
-    std::string mVal;
-};
-
-struct keyword {
-    symbol mSym;
-};
-
-struct hint {
-    symbol mSym;
-};
-
-struct special {
-    std::string mName;
-};
-
-struct atom
-    : x3::variant<special, boolean, symbol, keyword, std::string,
-                   hint, nil, unsigned int, double, char> {
-    using base_type::base_type;
-    using base_type::operator=;
-};
-
-struct form
-    : x3::variant<atom, forward_ast<set>, forward_ast<list>,
-                  forward_ast<vector>, forward_ast<map>, forward_ast<meta>> {
-    using base_type::base_type;
-    using base_type::operator=;
-};
-
-typedef std::list<form> form_list;
-
-struct map_entry {
-    form mKey;
-    form mValue;
-};
-
-typedef std::list<map_entry> map_list;
-
-struct list {
-    form_list mForms;
-};
-
-struct vector {
-    form_list mForms;
-};
-
-struct map {
-    map_list mHashMap;
-};
-
-struct meta {
-    map_list mHashMap;
-};
-
-struct set {
-    form_list mForms;
-};
-
-/* struct fn { */
-/*     size_t mNumberOfArgs; */
-/*     std::function<void(size_t _nargs, form_list const &_args)> mFn; */
-/* }; */
-
-struct program {
-    form_list mForms;
-};
-
-// print function for debugging
-inline std::ostream &operator<<(std::ostream &out, nil) {
-    out << "nil";
-    return out;
-}
-}  // namespace ast
+} // namespace ast
 
 #endif /* end of include guard: AST_H_4GSXUIIF */

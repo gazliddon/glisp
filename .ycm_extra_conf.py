@@ -69,6 +69,7 @@ flags = [
     # My additions
 
     "-I", "src",
+    "-I", ".bazel/glisp/external/immer",
 ]
 
 
