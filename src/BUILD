@@ -10,6 +10,5 @@ cc_binary(
     linkopts = ["-lm"],
     copts    = ["-Werror", "-Wno-unused-variable"],
 
-    deps = ["@immer//:immer"]
 )
 

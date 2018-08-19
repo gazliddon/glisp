@@ -10,8 +10,6 @@
 #include "grammar.h"
 #include "printer.h"
 
-#include <immer/vector.hpp>
-
 #include "eval.h"
 #include "run.h"
 
@@ -54,23 +52,21 @@ namespace glisp {
         return _prog;
     }
 
-    template<typename T>
+    template <typename T>
     void print(T const& _ast, std::ostream& _out = std::cout) {
         ast::printer printIt(_out);
         boost::apply_visitor(printIt, _ast);
     }
 
     void repl() {
-        std::istream& _in = std::cin;
-
-        std::ostream& _out = std::cout;
+        auto & _in = std::cin;
+        auto & _out = std::cout;
 
         _out << "Glisp lisp parser\n";
         _out << "Type an expression...or [q or Q] to quit\n\n";
 
         while (true) {
             _out << "> ";
-
             auto str = glisp::read(_in);
 
             if (str.empty() || str[0] == 'q' || str[0] == 'Q') {
@@ -78,18 +74,11 @@ namespace glisp {
             } else {
                 auto ast = glisp::eval(str);
                 glisp::print(ast, _out);
+                _out << endl;
             }
         }
     }
 }; // namespace glisp
-
-struct check_t {
-    check_t(std::vector<char> _val) {
-    }
-    check_t() {
-    }
-
-};
 
 
 int main(int argc, char* argv[]) {
@@ -98,6 +87,7 @@ int main(int argc, char* argv[]) {
     using namespace ast2;
 
     if (false) {
+
     } else {
 
         if (argc > 1) {
