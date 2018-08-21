@@ -40,7 +40,7 @@ namespace ast {
 
         void operator()(ast::sp_lambda const& _val) const {
             mOut << "(lambda ";
-            renderList(_val.mArgs, "args ");
+            renderVector(_val.mArgs.mForms, "args ");
             renderCollection(_val.mForms);
             mOut << "):special";
         }
@@ -92,6 +92,15 @@ namespace ast {
             renderCollection(_col);
             mOut << ")" << ":" << _type;
         }
+
+        template <typename T>
+        void renderVector(T const& _col,
+            std::string const& _type) const {
+            mOut << "[";
+            renderCollection(_col);
+            mOut << "]" << ":" << _type;
+        }
+
 
         template <typename T>
         void renderCollection(T const& _col,

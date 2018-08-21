@@ -68,6 +68,7 @@ namespace ast {
                  , forward_ast<sp_lambda>
                  , forward_ast<sp_quote>
                  , forward_ast<sp_list>
+                 , forward_ast<vector>
                   > {
 
         using base_type::base_type;
@@ -77,6 +78,10 @@ namespace ast {
     // clang-format on
     //
     
+    struct vector {
+        std::vector<val> mForms;
+    };
+
     struct sp_list {
         std::vector<val> mVals;
     };
@@ -86,7 +91,7 @@ namespace ast {
     };
 
     struct sp_lambda {
-        std::vector<symbol> mArgs;
+        vector mArgs;
         std::vector<val> mForms;
     };
 
@@ -112,9 +117,6 @@ namespace ast {
         std::vector<val> mForms;
     };
 
-    struct vector {
-        std::vector<val> mForms;
-    };
 
     struct map_entry {
         val mKey;

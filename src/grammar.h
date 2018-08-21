@@ -12,9 +12,9 @@ namespace grammar {
 
     using x3::alnum;
     using x3::alpha;
-    using x3::space;
     using x3::lexeme;
     using x3::rule;
+    using x3::space;
     /* using x3::space; */
     /* using x3::string; */
 
@@ -41,9 +41,6 @@ namespace grammar {
     rule<boolean_class, ast::boolean> const boolean("boolean");
     auto const boolean_def = string("true") | string("false");
     BOOST_SPIRIT_DEFINE(boolean);
-
-
-
 
     // Strings
     struct str_class;
@@ -101,6 +98,7 @@ namespace grammar {
         | sp_define
         | sp_if
         | sp_list
+        | vector
         | symbol
         | str
         | double_
@@ -111,26 +109,31 @@ namespace grammar {
     BOOST_SPIRIT_DEFINE(val);
 
     // clang-format on
-    
+
     // Special forms
     // need special evaluation
+    //
+    auto const bo = lit('(');
+    auto const qu = lit('\'');
+    auto const bc = lit(')');
 
     // list - horrid quote bodge
-    // TODO fix this shit
-    // parses as an application
-    auto const sp_list_def = lit("'('") | (lit("(") >> lit("list"))  > *( val ) > ')';
+    auto const sp_list_def =  bo >> lit("list") > *(val) > bc;
     BOOST_SPIRIT_DEFINE(sp_list);
 
     // Quote!
-    auto const sp_quote_def = lit("'") > val;
+    // TODO fix this, parses a list as an application
+     
+    auto const sp_quote_def = qu > val;
     BOOST_SPIRIT_DEFINE(sp_quote);
 
     // Define!
-    auto const sp_lambda_def = '(' >> (lit("lambda ") | lit("fn ") )> '[' > *symbol > ']' > *val > ')';
+    auto const sp_lambda_def = bo >> (lit("lambda ") | lit("fn ")) > 
+        vector > *val > bc;
     BOOST_SPIRIT_DEFINE(sp_lambda);
 
     // Define!
-    auto const sp_if_def = '(' >> lit("if") > val > val > val > ')';
+    auto const sp_if_def = bo >> lit("if") > val > val > val > bc;
     BOOST_SPIRIT_DEFINE(sp_if);
 
     // Or
@@ -150,7 +153,7 @@ namespace grammar {
     BOOST_SPIRIT_DEFINE(application);
 
     // A vector
-    auto const vector_def = '[' >> lexeme[val % " "] > ']';
+    auto const vector_def = '[' > *val  > ']';
     BOOST_SPIRIT_DEFINE(vector);
 
     // A set
