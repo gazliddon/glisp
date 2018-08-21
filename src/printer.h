@@ -63,8 +63,9 @@ namespace ast {
         }
 
         void operator()(ast::sp_quote const& _val) const {
-            mOut << "''";
+            mOut << "'";
             (*this)(_val.mVal);
+            mOut << ":quote";
         }
         template <typename T>
         void renderCollection(
