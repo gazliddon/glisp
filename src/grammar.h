@@ -28,9 +28,11 @@ namespace grammar {
     struct set_class;
     struct program_class;
     struct val_class;
-    struct define_class;
-
+    struct sp_define_class;
+    struct sp_if_class;
+    struct special_class;
     // bool
+    //
     struct boolean_class;
     rule<boolean_class, ast::boolean> const boolean("boolean");
     auto const boolean_def = string("true") | string("false");
@@ -38,14 +40,6 @@ namespace grammar {
 
 
 
-    // Special forms
-    // need special evaluation
-    struct special_class;
-    rule<special_class, ast::special> const special("special");
-    auto const special_def = string("def") | string("let") | string("fn")
-        | string("quote") | string("if") | string("and")
-        | string("or");
-    BOOST_SPIRIT_DEFINE(special);
 
     // Strings
     struct str_class;
@@ -54,8 +48,6 @@ namespace grammar {
     BOOST_SPIRIT_DEFINE(str);
 
     // Symbol
-    //
-
     struct symbol_class;
     rule<symbol_class, ast::symbol> const symbol("symbol");
     auto const symbol_def = lexeme[alpha >> *alnum];
@@ -79,11 +71,13 @@ namespace grammar {
     auto const hint_def = lexeme['^' > symbol];
     BOOST_SPIRIT_DEFINE(hint);
 
+    rule<special_class, ast::special> const special("special");
     rule<vector_class, ast::vector> const vector("vector");
     rule<map_class, ast::map> const map("map");
     rule<map_class, ast::meta> const meta("meta");
     rule<set_class, ast::set> const set("set");
-    rule<define_class, ast::define> const define("define");
+    rule<sp_define_class, ast::sp_define> const sp_define("sp_define");
+    rule<sp_if_class, ast::sp_if> const sp_if("sp_if");
     rule<application_class, ast::application> const application("application");
 
     // clang-format off
@@ -91,35 +85,41 @@ namespace grammar {
     // A Val
     rule<val_class, ast::val> const val("val");
     auto const val_def =
-          special
-        | boolean
+        boolean
+        | sp_define
+        | sp_if
         | symbol
         | str
         | double_
         | character
         | application
         ;
+
     BOOST_SPIRIT_DEFINE(val);
 
     // clang-format on
     
+    // Special forms
+    // need special evaluation
 
     // Define!
-    auto const define_def = '(' >> string("define") >> val >> ')';
-    BOOST_SPIRIT_DEFINE(define);
+    auto const sp_if_def = '(' >> string("if") > val > val > val > ')';
+    BOOST_SPIRIT_DEFINE(sp_if);
 
-    auto const val_list = val % space;
+    // Define!
+    auto const sp_define_def = '(' >> string("sp_define") > symbol > val > ')';
+    BOOST_SPIRIT_DEFINE(sp_define);
 
     // List
-    auto const application_def = '(' >> (application | symbol) >> *val >> ')';
+    auto const application_def = '(' >> (application | symbol) >> *val > ')';
     BOOST_SPIRIT_DEFINE(application);
 
     // A vector
-    auto const vector_def = '[' >> lexeme[val % " "] >> ']';
+    auto const vector_def = '[' >> lexeme[val % " "] > ']';
     BOOST_SPIRIT_DEFINE(vector);
 
     // A set
-    auto const set_def = "#{" >> lexeme[val % " "] >> '}';
+    auto const set_def = "#{" >> lexeme[val % " "] > '}';
     BOOST_SPIRIT_DEFINE(set);
 
     // a map entry

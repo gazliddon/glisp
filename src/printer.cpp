@@ -82,8 +82,12 @@ namespace ast {
         renderCollection(_set.mForms, "#{", "}", "set");
     }
 
-    void printer::operator()(ast::define const& _define) const {
-        assert(false);
+    void printer::operator()(ast::sp_define const& _define) const {
+        mOut<< "(define ";
+        (*this)(_define.mSym);
+        mOut << " ";
+        boost::apply_visitor(*this, _define.mVal);
+        mOut << "):special";
     }
 
     void printer::operator()(ast::map_entry const& _map_entry) const {

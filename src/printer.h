@@ -18,7 +18,7 @@ namespace ast {
         }
     };
 
-    struct printer : public  printer_base {
+    struct printer : public printer_base {
         printer(std::ostream& _out = std::cout);
 
         /* void operator()(ast::val const& _v) const; */
@@ -37,19 +37,30 @@ namespace ast {
         void operator()(ast::map const& _map) const;
         void operator()(ast::meta const& _value) const;
         void operator()(ast::map_entry const& _map_entry) const;
-        void operator()(ast::define const& _define) const;
+        void operator()(ast::sp_define const& _define) const;
 
-        template<typename T>
-            void renderCollection(T const & _col, std::string _intersperse = " ")  const {
-                auto b = _col.begin();
-                auto e = _col.end();
-                while (b!=e) {
-                    boost::apply_visitor(*this, *b++);
-                    if (b != e) {
-                        mOut << _intersperse;
-                    }
+        void operator()(ast::sp_if const& _sp_if) const {
+            mOut << "(if ";
+            boost::apply_visitor(*this, _sp_if.mPred);
+            mOut << " ";
+            boost::apply_visitor(*this, _sp_if.mTrue);
+            mOut << " ";
+            boost::apply_visitor(*this, _sp_if.mFalse);
+            mOut << "):special";
+        }
+
+        template <typename T>
+        void renderCollection(
+            T const& _col, std::string _intersperse = " ") const {
+            auto b = _col.begin();
+            auto e = _col.end();
+            while (b != e) {
+                boost::apply_visitor(*this, *b++);
+                if (b != e) {
+                    mOut << _intersperse;
                 }
             }
+        }
 
         template <typename T>
         void renderCollection(T const& _col,

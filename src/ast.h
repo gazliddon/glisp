@@ -14,6 +14,14 @@ namespace ast {
     namespace x3 = boost::spirit::x3;
     using x3::forward_ast;
 
+    enum eSpecialForm {
+        Define,
+        Quote,
+        If,
+        And,
+        Or,
+    };
+
     struct nil {};
 
     struct application;
@@ -23,7 +31,8 @@ namespace ast {
     struct set;
     /* struct fn; */
 
-    struct define;
+    struct sp_define;
+    struct sp_if;
 
     struct symbol {
         char mStart;
@@ -46,6 +55,7 @@ namespace ast {
     };
 
     struct special {
+        eSpecialForm mForm;
         std::string mName;
     };
 
@@ -59,7 +69,8 @@ namespace ast {
                  , double
                  , char
                  , forward_ast<application>
-                 , forward_ast<define>
+                 , forward_ast<sp_define>
+                 , forward_ast<sp_if>
                   > {
 
         using base_type::base_type;
@@ -68,8 +79,15 @@ namespace ast {
 
     // clang-format on
     //
-    struct define {
+    struct sp_define {
+        std::string mString;
+        symbol mSym;
         val mVal;
+    };
+
+    struct sp_if {
+        std::string mString;
+        val mPred, mTrue, mFalse;
     };
 
     struct application {

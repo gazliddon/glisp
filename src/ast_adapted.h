@@ -17,6 +17,7 @@ BOOST_FUSION_ADAPT_STRUCT( ast::set, mForms )
 BOOST_FUSION_ADAPT_STRUCT( ast::boolean, mVal )
 BOOST_FUSION_ADAPT_STRUCT( ast::special, mName )
 BOOST_FUSION_ADAPT_STRUCT( ast::meta, mHashMap )
-BOOST_FUSION_ADAPT_STRUCT( ast::define, mVal )
+BOOST_FUSION_ADAPT_STRUCT( ast::sp_define, mString, mSym, mVal )
+BOOST_FUSION_ADAPT_STRUCT( ast::sp_if, mString, mPred,mTrue, mFalse )
 
 #endif /* end of include guard: AST_ADAPTED_H_KW9BM5GS */
