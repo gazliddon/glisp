@@ -62,6 +62,10 @@ namespace ast {
             boost::apply_visitor(*this, _val);
         }
 
+        void operator()(ast::sp_quote const& _val) const {
+            mOut << "''";
+            (*this)(_val.mVal);
+        }
         template <typename T>
         void renderCollection(
             T const& _col, std::string _intersperse = " ") const {

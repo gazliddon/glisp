@@ -28,6 +28,7 @@ namespace ast {
     struct sp_or;
     struct sp_and;
     struct sp_lambda;
+    struct sp_quote;
 
     struct symbol {
         char mStart;
@@ -64,6 +65,7 @@ namespace ast {
                  , forward_ast<sp_or>
                  , forward_ast<sp_and>
                  , forward_ast<sp_lambda>
+                 , forward_ast<sp_quote>
                   > {
 
         using base_type::base_type;
@@ -72,7 +74,10 @@ namespace ast {
 
     // clang-format on
     //
-
+    
+    struct sp_quote {
+        val mVal;
+    };
 
     struct sp_lambda {
         std::vector<symbol> mArgs;
