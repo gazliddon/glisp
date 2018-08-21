@@ -92,6 +92,7 @@ namespace grammar {
     rule<val_class, ast::val> const val("val");
     auto const val_def =
         boolean
+        | application
         | sp_lambda
         | sp_or
         | sp_and
@@ -101,7 +102,6 @@ namespace grammar {
         | str
         | double_
         | character
-        | application
         | sp_quote
         ;
 
@@ -117,7 +117,7 @@ namespace grammar {
     BOOST_SPIRIT_DEFINE(sp_quote);
 
     // Define!
-    auto const sp_lambda_def = '(' >> (lit("lambda") | lit("fn") )> '[' > *symbol > ']' > *val > ')';
+    auto const sp_lambda_def = '(' >> (lit("lambda ") | lit("fn ") )> '[' > *symbol > ']' > *val > ')';
     BOOST_SPIRIT_DEFINE(sp_lambda);
 
     // Define!

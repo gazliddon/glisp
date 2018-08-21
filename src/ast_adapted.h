@@ -22,5 +22,6 @@ BOOST_FUSION_ADAPT_STRUCT( ast::sp_or, mVals)
 BOOST_FUSION_ADAPT_STRUCT( ast::sp_and, mVals)
 BOOST_FUSION_ADAPT_STRUCT( ast::sp_lambda, mArgs, mForms)
 BOOST_FUSION_ADAPT_STRUCT( ast::sp_quote, mVal)
+BOOST_FUSION_ADAPT_STRUCT( ast::sp_list, mVals)
 
 #endif /* end of include guard: AST_ADAPTED_H_KW9BM5GS */

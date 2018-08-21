@@ -67,6 +67,11 @@ namespace ast {
             (*this)(_val.mVal);
             mOut << ":quote";
         }
+
+        void operator()(ast::sp_list const& _val) const {
+            renderList(_val.mVals, "list");
+        }
+
         template <typename T>
         void renderCollection(
             T const& _col, std::string _intersperse = " ") const {
@@ -79,6 +84,7 @@ namespace ast {
                 }
             }
         }
+
         template <typename T>
         void renderList(T const& _col,
             std::string const& _type) const {
