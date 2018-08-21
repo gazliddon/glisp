@@ -34,6 +34,7 @@ namespace grammar {
     struct sp_and_class;
     struct sp_lambda_class;
     struct sp_quote_class;
+    struct sp_list_class;
     // bool
     //
     struct boolean_class;
@@ -84,6 +85,7 @@ namespace grammar {
     rule<sp_if_class, ast::sp_if> const sp_if("sp_if");
     rule<sp_lambda_class, ast::sp_lambda> const sp_lambda("sp_lambda");
     rule<sp_quote_class, ast::sp_quote> const sp_quote("sp_quote");
+    rule<sp_list_class, ast::sp_list> const sp_list("sp_list");
     rule<application_class, ast::application> const application("application");
 
     // clang-format off
@@ -98,6 +100,7 @@ namespace grammar {
         | sp_and
         | sp_define
         | sp_if
+        | sp_list
         | symbol
         | str
         | double_
@@ -111,6 +114,12 @@ namespace grammar {
     
     // Special forms
     // need special evaluation
+
+    // list - horrid quote bodge
+    // TODO fix this shit
+    // parses as an application
+    auto const sp_list_def = lit("'('") | (lit("(") >> lit("list"))  > *( val ) > ')';
+    BOOST_SPIRIT_DEFINE(sp_list);
 
     // Quote!
     auto const sp_quote_def = lit("'") > val;
