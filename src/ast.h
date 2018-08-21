@@ -14,14 +14,6 @@ namespace ast {
     namespace x3 = boost::spirit::x3;
     using x3::forward_ast;
 
-    enum eSpecialForm {
-        Define,
-        Quote,
-        If,
-        And,
-        Or,
-    };
-
     struct nil {};
 
     struct application;
@@ -57,16 +49,11 @@ namespace ast {
         symbol mSym;
     };
 
-    struct special {
-        eSpecialForm mForm;
-        std::string mName;
-    };
 
     // clang-format off
 
     struct val : x3::variant<
-                 special
-                 , boolean
+                 boolean
                  , symbol
                  , std::string
                  , double

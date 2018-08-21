@@ -48,15 +48,10 @@ namespace ast {
         mOut << _v.get() << ":symbol";
     }
 
-    void printer::operator()(ast::special const& _v) const {
-        mOut << _v.mName << ":special-form";
-    }
 
     void printer::operator()(ast::application const& _list) const {
         mOut << "(";
-        boost::apply_visitor(*this, _list.mFunc);
-
-        mOut << ":func";
+        (*this)(_list.mFunc);
 
         if (!_list.mForms.empty()) {
             mOut << " ";
@@ -71,11 +66,11 @@ namespace ast {
     }
 
     void printer::operator()(ast::map const& _map) const {
-        /* renderCollection(_map.mHashMap, "{", "}", "map"); */
+        renderCollection(_map.mHashMap, "{", "}", "map");
     }
 
     void printer::operator()(ast::meta const& _val) const {
-        /* renderCollection(_val.mHashMap, "^{", "}", "meta"); */
+        renderCollection(_val.mHashMap, "^{", "}", "meta");
     }
 
     void printer::operator()(ast::set const& _set) const {
@@ -88,9 +83,8 @@ namespace ast {
     }
 
     void printer::operator()(ast::map_entry const& _map_entry) const {
-        assert(false);
-        /* apply_visitor(*this, _map_entry.mKey); */
-        /* mOut << " "; */
-        /* apply_visitor(*this, _map_entry.mValue); */
+        (*this)(_map_entry.mKey);
+        mOut << " ";
+        (*this)(_map_entry.mValue);
     }
 }

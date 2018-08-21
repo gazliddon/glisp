@@ -22,7 +22,6 @@ namespace ast {
         printer(std::ostream& _out = std::cout);
 
         /* void operator()(ast::val const& _v) const; */
-        void operator()(ast::special const& _v) const;
         void operator()(ast::boolean const&) const;
         void operator()(ast::symbol const& _v) const;
         void operator()(ast::keyword const& _keyword) const;
