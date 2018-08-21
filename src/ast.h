@@ -33,6 +33,8 @@ namespace ast {
 
     struct sp_define;
     struct sp_if;
+    struct sp_or;
+    struct sp_and;
 
     struct symbol {
         char mStart;
@@ -71,6 +73,8 @@ namespace ast {
                  , forward_ast<application>
                  , forward_ast<sp_define>
                  , forward_ast<sp_if>
+                 , forward_ast<sp_or>
+                 , forward_ast<sp_and>
                   > {
 
         using base_type::base_type;
@@ -83,6 +87,16 @@ namespace ast {
         std::string mString;
         symbol mSym;
         val mVal;
+    };
+
+    struct sp_or {
+        std::string mString;
+        std::vector<val> mVals;
+    };
+
+    struct sp_and {
+        std::string mString;
+        std::vector<val> mVals;
     };
 
     struct sp_if {

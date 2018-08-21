@@ -29,8 +29,9 @@ namespace grammar {
     struct program_class;
     struct val_class;
     struct sp_define_class;
+    struct sp_or_class;
     struct sp_if_class;
-    struct special_class;
+    struct sp_and_class;
     // bool
     //
     struct boolean_class;
@@ -71,12 +72,13 @@ namespace grammar {
     auto const hint_def = lexeme['^' > symbol];
     BOOST_SPIRIT_DEFINE(hint);
 
-    rule<special_class, ast::special> const special("special");
     rule<vector_class, ast::vector> const vector("vector");
     rule<map_class, ast::map> const map("map");
     rule<map_class, ast::meta> const meta("meta");
     rule<set_class, ast::set> const set("set");
+    rule<sp_or_class, ast::sp_or> const sp_or("sp_or");
     rule<sp_define_class, ast::sp_define> const sp_define("sp_define");
+    rule<sp_and_class, ast::sp_and> const sp_and("sp_and");
     rule<sp_if_class, ast::sp_if> const sp_if("sp_if");
     rule<application_class, ast::application> const application("application");
 
@@ -86,6 +88,8 @@ namespace grammar {
     rule<val_class, ast::val> const val("val");
     auto const val_def =
         boolean
+        | sp_or
+        | sp_and
         | sp_define
         | sp_if
         | symbol
@@ -106,8 +110,16 @@ namespace grammar {
     auto const sp_if_def = '(' >> string("if") > val > val > val > ')';
     BOOST_SPIRIT_DEFINE(sp_if);
 
+    // Or
+    auto const sp_or_def = '(' >> string("or") > +val > ')';
+    BOOST_SPIRIT_DEFINE(sp_or);
+
+    // and
+    auto const sp_and_def = '(' >> string("and") > +val > ')';
+    BOOST_SPIRIT_DEFINE(sp_and);
+
     // Define!
-    auto const sp_define_def = '(' >> string("sp_define") > symbol > val > ')';
+    auto const sp_define_def = '(' >> string("define") > symbol > val > ')';
     BOOST_SPIRIT_DEFINE(sp_define);
 
     // List

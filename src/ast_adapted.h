@@ -19,5 +19,7 @@ BOOST_FUSION_ADAPT_STRUCT( ast::special, mName )
 BOOST_FUSION_ADAPT_STRUCT( ast::meta, mHashMap )
 BOOST_FUSION_ADAPT_STRUCT( ast::sp_define, mString, mSym, mVal )
 BOOST_FUSION_ADAPT_STRUCT( ast::sp_if, mString, mPred,mTrue, mFalse )
+BOOST_FUSION_ADAPT_STRUCT( ast::sp_or, mString, mVals)
+BOOST_FUSION_ADAPT_STRUCT( ast::sp_and, mString, mVals)
 
 #endif /* end of include guard: AST_ADAPTED_H_KW9BM5GS */

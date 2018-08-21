@@ -49,6 +49,14 @@ namespace ast {
             mOut << "):special";
         }
 
+        void operator()(ast::sp_or const& _sp_or) const {
+            renderCollection(_sp_or.mVals, "(or ", ")", "special");
+        }
+
+        void operator()(ast::sp_and const& _sp_and) const {
+            renderCollection(_sp_and.mVals, "(and ", ")", "special");
+        }
+
         template <typename T>
         void renderCollection(
             T const& _col, std::string _intersperse = " ") const {
