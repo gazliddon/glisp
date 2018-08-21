@@ -20,5 +20,6 @@ BOOST_FUSION_ADAPT_STRUCT( ast::sp_define, mSym, mVal )
 BOOST_FUSION_ADAPT_STRUCT( ast::sp_if, mPred,mTrue, mFalse )
 BOOST_FUSION_ADAPT_STRUCT( ast::sp_or, mVals)
 BOOST_FUSION_ADAPT_STRUCT( ast::sp_and, mVals)
+BOOST_FUSION_ADAPT_STRUCT( ast::sp_lambda, mArgs, mForms)
 
 #endif /* end of include guard: AST_ADAPTED_H_KW9BM5GS */

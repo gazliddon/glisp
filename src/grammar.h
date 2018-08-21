@@ -32,6 +32,7 @@ namespace grammar {
     struct sp_or_class;
     struct sp_if_class;
     struct sp_and_class;
+    struct sp_lambda_class;
     // bool
     //
     struct boolean_class;
@@ -80,6 +81,7 @@ namespace grammar {
     rule<sp_define_class, ast::sp_define> const sp_define("sp_define");
     rule<sp_and_class, ast::sp_and> const sp_and("sp_and");
     rule<sp_if_class, ast::sp_if> const sp_if("sp_if");
+    rule<sp_lambda_class, ast::sp_lambda> const sp_lambda("sp_lambda");
     rule<application_class, ast::application> const application("application");
 
     // clang-format off
@@ -88,6 +90,7 @@ namespace grammar {
     rule<val_class, ast::val> const val("val");
     auto const val_def =
         boolean
+        | sp_lambda
         | sp_or
         | sp_and
         | sp_define
@@ -105,6 +108,10 @@ namespace grammar {
     
     // Special forms
     // need special evaluation
+
+    // Define!
+    auto const sp_lambda_def = '(' >> (lit("lambda") | lit("fn") )> '[' > *symbol > ']' > *val > ')';
+    BOOST_SPIRIT_DEFINE(sp_lambda);
 
     // Define!
     auto const sp_if_def = '(' >> lit("if") > val > val > val > ')';
