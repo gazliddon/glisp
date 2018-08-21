@@ -39,6 +39,13 @@ namespace ast {
         void operator()(ast::map_entry const& _map_entry) const;
         void operator()(ast::sp_define const& _define) const;
 
+        void operator()(ast::sp_lambda const& _val) const {
+            mOut << "(lambda ";
+            renderList(_val.mArgs, "args ");
+            renderCollection(_val.mForms);
+            mOut << "):special";
+        }
+
         void operator()(ast::sp_if const& _sp_if) const {
             std::vector<val> vals = {val{ "if" }, _sp_if.mPred, _sp_if.mTrue, _sp_if.mFalse};
             renderList(vals, "special");
@@ -52,13 +59,17 @@ namespace ast {
             renderCollection(_sp_and.mVals, "(and ", ")", "special");
         }
 
+        void operator()(ast::val const& _val) const {
+            boost::apply_visitor(*this, _val);
+        }
+
         template <typename T>
         void renderCollection(
             T const& _col, std::string _intersperse = " ") const {
             auto b = _col.begin();
             auto e = _col.end();
             while (b != e) {
-                boost::apply_visitor(*this, *b++);
+                (*this)(*b++);
                 if (b != e) {
                     mOut << _intersperse;
                 }

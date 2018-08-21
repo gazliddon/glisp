@@ -35,6 +35,7 @@ namespace ast {
     struct sp_if;
     struct sp_or;
     struct sp_and;
+    struct sp_lambda;
 
     struct symbol {
         char mStart;
@@ -75,6 +76,7 @@ namespace ast {
                  , forward_ast<sp_if>
                  , forward_ast<sp_or>
                  , forward_ast<sp_and>
+                 , forward_ast<sp_lambda>
                   > {
 
         using base_type::base_type;
@@ -83,6 +85,13 @@ namespace ast {
 
     // clang-format on
     //
+
+
+    struct sp_lambda {
+        std::vector<symbol> mArgs;
+        std::vector<val> mForms;
+    };
+
     struct sp_define {
         symbol mSym;
         val mVal;
