@@ -40,13 +40,8 @@ namespace ast {
         void operator()(ast::sp_define const& _define) const;
 
         void operator()(ast::sp_if const& _sp_if) const {
-            mOut << "(if ";
-            boost::apply_visitor(*this, _sp_if.mPred);
-            mOut << " ";
-            boost::apply_visitor(*this, _sp_if.mTrue);
-            mOut << " ";
-            boost::apply_visitor(*this, _sp_if.mFalse);
-            mOut << "):special";
+            std::vector<val> vals = {val{ "if" }, _sp_if.mPred, _sp_if.mTrue, _sp_if.mFalse};
+            renderList(vals, "special");
         }
 
         void operator()(ast::sp_or const& _sp_or) const {
@@ -68,6 +63,13 @@ namespace ast {
                     mOut << _intersperse;
                 }
             }
+        }
+        template <typename T>
+        void renderList(T const& _col,
+            std::string const& _type) const {
+            mOut << "(";
+            renderCollection(_col);
+            mOut << ")" << ":" << _type;
         }
 
         template <typename T>

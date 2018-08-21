@@ -83,11 +83,8 @@ namespace ast {
     }
 
     void printer::operator()(ast::sp_define const& _define) const {
-        mOut<< "(define ";
-        (*this)(_define.mSym);
-        mOut << " ";
-        boost::apply_visitor(*this, _define.mVal);
-        mOut << "):special";
+        std::vector<val> vals = {val{ "define" }, val{ _define.mSym }, _define.mVal};
+        renderList(vals, "special");
     }
 
     void printer::operator()(ast::map_entry const& _map_entry) const {

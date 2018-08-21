@@ -107,19 +107,19 @@ namespace grammar {
     // need special evaluation
 
     // Define!
-    auto const sp_if_def = '(' >> string("if") > val > val > val > ')';
+    auto const sp_if_def = '(' >> lit("if") > val > val > val > ')';
     BOOST_SPIRIT_DEFINE(sp_if);
 
     // Or
-    auto const sp_or_def = '(' >> string("or") > +val > ')';
+    auto const sp_or_def = '(' >> lit("or") > +val > ')';
     BOOST_SPIRIT_DEFINE(sp_or);
 
     // and
-    auto const sp_and_def = '(' >> string("and") > +val > ')';
+    auto const sp_and_def = '(' >> lit("and") > +val > ')';
     BOOST_SPIRIT_DEFINE(sp_and);
 
     // Define!
-    auto const sp_define_def = '(' >> string("define") > symbol > val > ')';
+    auto const sp_define_def = '(' >> lit("define") > symbol > val > ')';
     BOOST_SPIRIT_DEFINE(sp_define);
 
     // List

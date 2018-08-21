@@ -17,9 +17,9 @@ BOOST_FUSION_ADAPT_STRUCT( ast::set, mForms )
 BOOST_FUSION_ADAPT_STRUCT( ast::boolean, mVal )
 BOOST_FUSION_ADAPT_STRUCT( ast::special, mName )
 BOOST_FUSION_ADAPT_STRUCT( ast::meta, mHashMap )
-BOOST_FUSION_ADAPT_STRUCT( ast::sp_define, mString, mSym, mVal )
-BOOST_FUSION_ADAPT_STRUCT( ast::sp_if, mString, mPred,mTrue, mFalse )
-BOOST_FUSION_ADAPT_STRUCT( ast::sp_or, mString, mVals)
-BOOST_FUSION_ADAPT_STRUCT( ast::sp_and, mString, mVals)
+BOOST_FUSION_ADAPT_STRUCT( ast::sp_define, mSym, mVal )
+BOOST_FUSION_ADAPT_STRUCT( ast::sp_if, mPred,mTrue, mFalse )
+BOOST_FUSION_ADAPT_STRUCT( ast::sp_or, mVals)
+BOOST_FUSION_ADAPT_STRUCT( ast::sp_and, mVals)
 
 #endif /* end of include guard: AST_ADAPTED_H_KW9BM5GS */

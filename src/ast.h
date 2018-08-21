@@ -84,23 +84,19 @@ namespace ast {
     // clang-format on
     //
     struct sp_define {
-        std::string mString;
         symbol mSym;
         val mVal;
     };
 
     struct sp_or {
-        std::string mString;
         std::vector<val> mVals;
     };
 
     struct sp_and {
-        std::string mString;
         std::vector<val> mVals;
     };
 
     struct sp_if {
-        std::string mString;
         val mPred, mTrue, mFalse;
     };
 
