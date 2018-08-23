@@ -72,12 +72,15 @@ namespace glisp {
             _out << "> ";
             auto str = glisp::read(_in);
 
-            if (str.empty() || str[0] == 'q' || str[0] == 'Q') {
+            if (str[0] == 'q' || str[0] == 'Q') {
                 break;
             } else {
-                auto ast = glisp::read(str);
-                glisp::print(ast, _out);
-                _out << endl;
+                if (!str.empty()) {
+                    auto ast = glisp::read(str);
+                    glisp::print(ast, _out);
+                    _out << endl;
+                }
+
             }
         }
     }
