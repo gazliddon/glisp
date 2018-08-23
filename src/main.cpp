@@ -27,7 +27,7 @@ namespace glisp {
         return ret;
     }
 
-    ast::program eval(std::string const& _str) {
+    ast::program read(std::string const& _str) {
         using boost::spirit::x3::ascii::space_type;
 
         ast::program ast;
@@ -75,7 +75,7 @@ namespace glisp {
             if (str.empty() || str[0] == 'q' || str[0] == 'Q') {
                 break;
             } else {
-                auto ast = glisp::eval(str);
+                auto ast = glisp::read(str);
                 glisp::print(ast, _out);
                 _out << endl;
             }
@@ -98,7 +98,7 @@ int main(int argc, char* argv[]) {
             string str(
                 (istreambuf_iterator<char>(t)), istreambuf_iterator<char>());
 
-            auto ast = glisp::eval(str);
+            auto ast = glisp::read(str);
             glisp::print(ast, cout);
 
         } else {
