@@ -51,7 +51,8 @@ namespace grammar {
     // Symbol
     struct symbol_class;
     rule<symbol_class, ast::symbol> const symbol("symbol");
-    auto const symbol_def = lexeme[alpha >> *alnum];
+    auto const echars     = char_("=_.?!*+-/");
+    auto const symbol_def = lexeme[(alpha | echars) >> *(alnum | echars)];
     BOOST_SPIRIT_DEFINE(symbol);
 
     // Character
@@ -84,6 +85,7 @@ namespace grammar {
     rule<sp_quote_class, ast::sp_quote> const sp_quote("sp_quote");
     rule<sp_list_class, ast::sp_list> const sp_list("sp_list");
     rule<application_class, ast::application> const application("application");
+    rule<program_class, ast::program> const program("program");
 
     // clang-format off
 
@@ -91,14 +93,16 @@ namespace grammar {
     rule<val_class, ast::val> const val("val");
     auto const val_def =
         boolean
-        | application
         | sp_lambda
         | sp_or
         | sp_and
         | sp_define
         | sp_if
         | sp_list
+        | application
+        | map
         | vector
+        | keyword
         | symbol
         | str
         | double_
@@ -109,6 +113,8 @@ namespace grammar {
     BOOST_SPIRIT_DEFINE(val);
 
     // clang-format on
+    auto const program_def = *val;
+    BOOST_SPIRIT_DEFINE(program);
 
     // Special forms
     // need special evaluation
@@ -118,18 +124,18 @@ namespace grammar {
     auto const bc = lit(')');
 
     // list - horrid quote bodge
-    auto const sp_list_def =  bo >> lit("list") > *(val) > bc;
+    auto const sp_list_def = bo >> lit("list") > *(val) > bc;
     BOOST_SPIRIT_DEFINE(sp_list);
 
     // Quote!
     // TODO fix this, parses a list as an application
-     
+
     auto const sp_quote_def = qu > val;
     BOOST_SPIRIT_DEFINE(sp_quote);
 
     // Define!
-    auto const sp_lambda_def = bo >> (lit("lambda ") | lit("fn ")) > 
-        vector > *val > bc;
+    auto const sp_lambda_def
+        = bo >> (lit("lambda") | lit("fn")) >> vector >> *val >> bc;
     BOOST_SPIRIT_DEFINE(sp_lambda);
 
     // Define!
@@ -145,7 +151,8 @@ namespace grammar {
     BOOST_SPIRIT_DEFINE(sp_and);
 
     // Define!
-    auto const sp_define_def = '(' >> lit("define") > symbol > val > ')';
+    auto const sp_define_def
+        = '(' >> (lit("def") | lit("define")) > symbol > val > ')';
     BOOST_SPIRIT_DEFINE(sp_define);
 
     // List
@@ -153,7 +160,7 @@ namespace grammar {
     BOOST_SPIRIT_DEFINE(application);
 
     // A vector
-    auto const vector_def = '[' > *val  > ']';
+    auto const vector_def = '[' > *val > ']';
     BOOST_SPIRIT_DEFINE(vector);
 
     // A set

@@ -1,1 +1,1 @@
-rlwrap .bazel/bin/src/glisp
+rlwrap .bazel/bin/src/glisp $@

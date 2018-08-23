@@ -27,15 +27,15 @@ namespace glisp {
         return ret;
     }
 
-    ast::val eval(std::string const& _str) {
+    ast::program eval(std::string const& _str) {
         using boost::spirit::x3::ascii::space_type;
 
-        ast::val ast;
+        ast::program ast;
 
         space_type space;
 
         auto iter = _str.begin(), end = _str.end();
-        bool r = phrase_parse(iter, end, grammar::val, space, ast);
+        bool r = phrase_parse(iter, end, grammar::program, space, ast);
 
         if (r && iter == end) {
         } else {
@@ -48,19 +48,22 @@ namespace glisp {
         return ast;
     }
 
-    ast::program eval_ast(ast::program const& _prog) {
-        return _prog;
-    }
-
     template <typename T>
     void print(T const& _ast, std::ostream& _out = std::cout) {
         ast::printer printIt(_out);
         boost::apply_visitor(printIt, _ast);
     }
 
+    void print(ast::program const& _p, std::ostream& _out = std::cout) {
+        ast::printer printIt(_out);
+        for (auto const& i : _p.mForms) {
+            boost::apply_visitor(printIt, i);
+        }
+    }
+
     void repl() {
-        auto & _in = std::cin;
-        auto & _out = std::cout;
+        auto& _in  = std::cin;
+        auto& _out = std::cout;
 
         _out << "Glisp lisp parser\n";
         _out << "Type an expression...or [q or Q] to quit\n\n";
@@ -80,7 +83,6 @@ namespace glisp {
     }
 }; // namespace glisp
 
-
 int main(int argc, char* argv[]) {
     using namespace std;
 
@@ -92,8 +94,10 @@ int main(int argc, char* argv[]) {
 
         if (argc > 1) {
             ifstream t(argv[1]);
+
             string str(
                 (istreambuf_iterator<char>(t)), istreambuf_iterator<char>());
+
             auto ast = glisp::eval(str);
             glisp::print(ast, cout);
 

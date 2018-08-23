@@ -60,6 +60,7 @@ namespace ast {
                  , std::string
                  , double
                  , char
+                 , keyword
                  , forward_ast<application>
                  , forward_ast<sp_define>
                  , forward_ast<sp_if>
@@ -69,6 +70,7 @@ namespace ast {
                  , forward_ast<sp_quote>
                  , forward_ast<sp_list>
                  , forward_ast<vector>
+                 , forward_ast<map>
                   > {
 
         using base_type::base_type;

@@ -62,7 +62,8 @@ namespace ast {
     }
 
     void printer::operator()(ast::vector const& _vector) const {
-        renderCollection(_vector.mForms, "[", "]", "vector");
+        renderCollection(_vector.mForms, "[", "]");
+        mOut << ":vector";
     }
 
     void printer::operator()(ast::map const& _map) const {
@@ -78,8 +79,11 @@ namespace ast {
     }
 
     void printer::operator()(ast::sp_define const& _define) const {
-        std::vector<val> vals = {val{ "define" }, val{ _define.mSym }, _define.mVal};
-        renderList(vals, "special");
+        auto def = "(define " + _define.mSym.get() + " ";
+
+        mOut << def;
+        (*this)(_define.mVal);
+        mOut << "):special";
     }
 
     void printer::operator()(ast::map_entry const& _map_entry) const {

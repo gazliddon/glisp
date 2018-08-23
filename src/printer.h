@@ -74,42 +74,41 @@ namespace ast {
 
         template <typename T>
         void renderCollection(
-            T const& _col, std::string _intersperse = " ") const {
+            T const& _col, char const * _pre = "", char const * _post = "", char const * _intersperse = " ") const {
             auto b = _col.begin();
             auto e = _col.end();
+            mOut << _pre;
             while (b != e) {
                 (*this)(*b++);
                 if (b != e) {
                     mOut << _intersperse;
                 }
             }
+
+            mOut << _post;
         }
 
         template <typename T>
         void renderList(T const& _col,
             std::string const& _type) const {
-            mOut << "(";
-            renderCollection(_col);
-            mOut << ")" << ":" << _type;
+            renderCollection(_col, "(", ")");
+            mOut <<  ":" << _type;
         }
 
         template <typename T>
         void renderVector(T const& _col,
             std::string const& _type) const {
-            mOut << "[";
-            renderCollection(_col);
-            mOut << "]" << ":" << _type;
+            renderCollection(_col, "[", "]");
+            mOut <<  ":" << _type;
         }
-
 
         template <typename T>
         void renderCollection(T const& _col,
-            std::string const& _pre,
-            std::string const& _post,
+            char const * _pre,
+            char const * _post,
             std::string const& _type) const {
-            mOut << _pre;
-            renderCollection(_col);
-            mOut << _post << ":" << _type;
+            renderCollection(_col, _pre, _post);
+            mOut <<  ":" << _type;
         }
     };
 
