@@ -23,6 +23,7 @@ namespace grammar {
     struct application_class;
     struct vector_class;
     struct map_entry_class;
+    struct binding_class;
     struct map_class;
     struct meta_class;
     struct set_class;
@@ -95,6 +96,7 @@ namespace grammar {
     rule<val_class, ast::val> const val("val");
     auto const val_def =
         boolean
+        | sp_let
         | sp_lambda
         | sp_or
         | sp_and
@@ -122,13 +124,17 @@ namespace grammar {
     auto const qu = lit('\'');
     auto const bc = lit(')');
 
-
     // Special forms
     // need special evaluation
 
+    
+    // a binding
+    rule<binding_class, ast::binding> const binding("binding");
+    auto const binding_def = symbol > val;
+    BOOST_SPIRIT_DEFINE(binding);
+
     // Let
-    auto const binding = symbol > val;
-    auto const sp_let_def = bo >> lit("let") > '[' > (*binding) > ']' > val > bc;
+    auto const sp_let_def = bo >> lit("let") >> '[' >> *binding >> ']' >> val >> bc;
     BOOST_SPIRIT_DEFINE(sp_let);
 
     // list - horrid quote bodge

@@ -86,8 +86,13 @@ namespace ast {
         std::vector<val> mForms;
     };
 
+    struct binding {
+        symbol mSym;
+        val mVal;
+    };
+
     struct sp_let {
-        std::vector<std::pair<symbol, val>> mBindings;
+        std::vector<binding> mBindings;
         val mBody;
     };
 
