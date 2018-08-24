@@ -38,6 +38,10 @@ namespace ast {
         void operator()(ast::map_entry const& _map_entry) const;
         void operator()(ast::sp_define const& _define) const;
 
+        void operator()(ast::sp_let const& _let) const {
+            mOut << "TBD";
+        }
+
         void operator()(ast::sp_lambda const& _val) const {
             mOut << "(lambda ";
             renderVector(_val.mArgs.mForms, "args ");

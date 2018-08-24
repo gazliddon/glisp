@@ -51,7 +51,7 @@ namespace grammar {
     // Symbol
     struct symbol_class;
     rule<symbol_class, ast::symbol> const symbol("symbol");
-    auto const echars     = char_("=_.?!*+-/");
+    auto const echars     = char_("=_.?!*+-/><");
     auto const symbol_def = lexeme[(alpha | echars) >> *(alnum | echars)];
     BOOST_SPIRIT_DEFINE(symbol);
 

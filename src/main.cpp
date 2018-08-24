@@ -52,12 +52,17 @@ namespace glisp {
     void print(T const& _ast, std::ostream& _out = std::cout) {
         ast::printer printIt(_out);
         boost::apply_visitor(printIt, _ast);
+        _out << endl;
     }
 
     void print(ast::program const& _p, std::ostream& _out = std::cout) {
-        ast::printer printIt(_out);
-        for (auto const& i : _p.mForms) {
-            boost::apply_visitor(printIt, i);
+        if (_p.mForms.size() != 0) {
+            ast::printer printIt(_out);
+            for (auto const& i : _p.mForms) {
+                boost::apply_visitor(printIt, i);
+                _out << endl;
+            }
+            _out << endl;
         }
     }
 
@@ -75,15 +80,13 @@ namespace glisp {
             if (str[0] == 'q' || str[0] == 'Q') {
                 break;
             } else {
-                if (!str.empty()) {
-                    auto ast = glisp::read(str);
-                    glisp::print(ast, _out);
-                    _out << endl;
-                }
-
+                auto ast = glisp::read(str);
+                // EXECCUTE HERE
+                glisp::print(ast, _out);
             }
         }
     }
+
 }; // namespace glisp
 
 int main(int argc, char* argv[]) {

@@ -30,6 +30,7 @@ namespace ast {
     struct sp_lambda;
     struct sp_quote;
     struct sp_list;
+    struct sp_let;
 
     struct symbol {
         char mStart;
@@ -61,6 +62,7 @@ namespace ast {
                  , double
                  , char
                  , keyword
+                 , forward_ast<sp_let>
                  , forward_ast<application>
                  , forward_ast<sp_define>
                  , forward_ast<sp_if>
@@ -82,6 +84,11 @@ namespace ast {
     
     struct vector {
         std::vector<val> mForms;
+    };
+
+    struct sp_let {
+        std::vector<std::pair<symbol, val>> mBindings;
+        val mBody;
     };
 
     struct sp_list {
