@@ -62,7 +62,6 @@ namespace ast {
                  , double
                  , char
                  , keyword
-                 , forward_ast<sp_let>
                  , forward_ast<application>
                  , forward_ast<sp_define>
                  , forward_ast<sp_if>
@@ -73,6 +72,7 @@ namespace ast {
                  , forward_ast<sp_list>
                  , forward_ast<vector>
                  , forward_ast<map>
+                 , forward_ast<sp_let>
                   > {
 
         using base_type::base_type;

@@ -35,6 +35,7 @@ namespace grammar {
     struct sp_lambda_class;
     struct sp_quote_class;
     struct sp_list_class;
+    struct sp_let_class;
     // bool
     //
     struct boolean_class;
@@ -86,6 +87,7 @@ namespace grammar {
     rule<sp_list_class, ast::sp_list> const sp_list("sp_list");
     rule<application_class, ast::application> const application("application");
     rule<program_class, ast::program> const program("program");
+    rule<sp_let_class, ast::sp_let> const sp_let("sp_let");
 
     // clang-format off
 
@@ -116,12 +118,18 @@ namespace grammar {
     auto const program_def = *val;
     BOOST_SPIRIT_DEFINE(program);
 
-    // Special forms
-    // need special evaluation
-    //
     auto const bo = lit('(');
     auto const qu = lit('\'');
     auto const bc = lit(')');
+
+
+    // Special forms
+    // need special evaluation
+
+    // Let
+    auto const binding = symbol > val;
+    auto const sp_let_def = bo >> lit("let") > '[' > (*binding) > ']' > val > bc;
+    BOOST_SPIRIT_DEFINE(sp_let);
 
     // list - horrid quote bodge
     auto const sp_list_def = bo >> lit("list") > *(val) > bc;
