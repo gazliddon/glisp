@@ -127,14 +127,13 @@ namespace grammar {
     // Special forms
     // need special evaluation
 
-    
     // a binding
     rule<binding_class, ast::binding> const binding("binding");
     auto const binding_def = symbol > val;
     BOOST_SPIRIT_DEFINE(binding);
 
     // Let
-    auto const sp_let_def = bo >> lit("let") >> '[' >> *binding >> ']' >> val >> bc;
+    auto const sp_let_def = bo >> lit("let") > '[' > *binding > ']' > val > bc;
     BOOST_SPIRIT_DEFINE(sp_let);
 
     // list - horrid quote bodge

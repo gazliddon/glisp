@@ -39,7 +39,17 @@ namespace ast {
         void operator()(ast::sp_define const& _define) const;
 
         void operator()(ast::sp_let const& _let) const {
-            mOut << "TBD";
+            mOut << "(let [";
+
+            for (auto const& p : _let.mBindings) {
+                (*this)(p.mSym);
+                mOut << " ";
+                (*this)(p.mVal);
+                mOut << " ";
+            }
+            mOut << "] ";
+            (*this)(_let.mBody);
+            mOut << "):let";
         }
 
         void operator()(ast::sp_lambda const& _val) const {
@@ -50,7 +60,8 @@ namespace ast {
         }
 
         void operator()(ast::sp_if const& _sp_if) const {
-            std::vector<val> vals = {val{ "if" }, _sp_if.mPred, _sp_if.mTrue, _sp_if.mFalse};
+            std::vector<val> vals
+                = { val{ "if" }, _sp_if.mPred, _sp_if.mTrue, _sp_if.mFalse };
             renderList(vals, "special");
         }
 
@@ -77,8 +88,10 @@ namespace ast {
         }
 
         template <typename T>
-        void renderCollection(
-            T const& _col, char const * _pre = "", char const * _post = "", char const * _intersperse = " ") const {
+        void renderCollection(T const& _col,
+            char const* _pre         = "",
+            char const* _post        = "",
+            char const* _intersperse = " ") const {
             auto b = _col.begin();
             auto e = _col.end();
             mOut << _pre;
@@ -93,26 +106,24 @@ namespace ast {
         }
 
         template <typename T>
-        void renderList(T const& _col,
-            std::string const& _type) const {
+        void renderList(T const& _col, std::string const& _type) const {
             renderCollection(_col, "(", ")");
-            mOut <<  ":" << _type;
+            mOut << ":" << _type;
         }
 
         template <typename T>
-        void renderVector(T const& _col,
-            std::string const& _type) const {
+        void renderVector(T const& _col, std::string const& _type) const {
             renderCollection(_col, "[", "]");
-            mOut <<  ":" << _type;
+            mOut << ":" << _type;
         }
 
         template <typename T>
         void renderCollection(T const& _col,
-            char const * _pre,
-            char const * _post,
+            char const* _pre,
+            char const* _post,
             std::string const& _type) const {
             renderCollection(_col, _pre, _post);
-            mOut <<  ":" << _type;
+            mOut << ":" << _type;
         }
     };
 
