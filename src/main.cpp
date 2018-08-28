@@ -13,6 +13,8 @@
 #include "eval.h"
 #include "run.h"
 
+#include "errors.h"
+
 // I need to walk my ast
 //
 

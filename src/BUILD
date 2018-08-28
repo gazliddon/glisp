@@ -7,7 +7,7 @@ cc_binary(
 
     includes = ["."],
 
-    linkopts = ["-lm"],
+    linkopts = ["-lm -lboost_system"],
     copts    = ["-Werror", "-Wno-unused-variable"],
 
 )

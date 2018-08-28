@@ -9,6 +9,7 @@
 /* #include <boost/config/warning_disable.hpp> */
 #include <boost/spirit/home/x3.hpp>
 #include <boost/spirit/home/x3/support/ast/variant.hpp>
+#include <boost/spirit/home/x3/support/ast/position_tagged.hpp>
 
 namespace ast {
     namespace x3 = boost::spirit::x3;
@@ -149,7 +150,7 @@ namespace ast {
         std::vector<val> mForms;
     };
 
-    struct program {
+    struct program : x3::position_tagged {
         std::vector<val> mForms;
     };
 
