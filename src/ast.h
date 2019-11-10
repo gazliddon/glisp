@@ -118,15 +118,15 @@ namespace ast {
         val mVal;
     };
 
-    struct sp_or : x3::position_tagged{
+    struct sp_or : x3::position_tagged {
         std::vector<val> mVals;
     };
 
-    struct sp_and : x3::position_tagged{
+    struct sp_and : x3::position_tagged {
         std::vector<val> mVals;
     };
 
-    struct sp_if : x3::position_tagged{
+    struct sp_if : x3::position_tagged {
         val mPred, mTrue, mFalse;
     };
 

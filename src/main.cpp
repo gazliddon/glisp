@@ -29,56 +29,34 @@ namespace glisp {
         return ret;
     }
 
-
-
-///////////////////////////////////////////////////////////////////////
-        //  Our annotation handler
-        ///////////////////////////////////////////////////////////////////////
-
-        // tag used to get the position cache from the context
-    struct position_cache_tag;
-
-    struct annotate_position {
-        template <typename T, typename Iterator, typename Context>
-            inline void on_success(Iterator const& first, Iterator const& last
-                    , T& ast, Context const& context)
-            {
-                auto& position_cache = boost::spirit::x3::get<position_cache_tag>(context).get();
-                position_cache.annotate(ast, first, last);
-            }
-    };
-
-
     ast::program read(std::string const& _str) {
+
+        namespace x3 = boost::spirit::x3;
 
         std::cout << "READING !" << endl;
 
-        using boost::spirit::x3::ascii::space_type;
+        using x3::ascii::space_type;
         ast::program ast;
 
         space_type space;
-        using boost::spirit::x3::with;
+        using x3::with;
 
-        using boost::spirit::x3::error_handler_tag;
+        using x3::error_handler_tag;
 
         using iterator_type = std::string::const_iterator;
-        using position_cache = boost::spirit::x3::position_cache<std::vector<iterator_type>>;
-
 
         auto iter = _str.begin(), end = _str.end();
-        position_cache positions(_str.begin(), _str.end());
 
-        using error_handler_type = boost::spirit::x3::error_handler<iterator_type>;
+        using error_handler_type = x3::error_handler<iterator_type>;
         error_handler_type error_handler(iter, end, std::cerr);
 
         auto const parser =
-            // we pass our position_cache to the parser so we can access
-            // it later in our on_sucess handlers
             with<error_handler_tag>(std::ref(error_handler))[grammar::program];
 
         bool r = phrase_parse(iter, end, parser, space, ast);
 
         if (r && iter == end) {
+
         } else {
             cout << "-------------------------\n";
             cout << "Parsing failed\n";

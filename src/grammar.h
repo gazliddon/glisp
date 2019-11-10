@@ -45,7 +45,7 @@ namespace grammar {
     struct val_class : boost::spirit::x3::annotate_on_success, error_handler {};
     struct sp_define_class;
     struct sp_or_class;
-    struct sp_if_class;
+    struct sp_if_class : boost::spirit::x3::annotate_on_success, error_handler {};
     struct sp_and_class;
     struct sp_lambda_class;
     struct sp_quote_class;
@@ -104,21 +104,21 @@ namespace grammar {
     rule<map_class, ast::map> const map("map");
     rule<map_class, ast::meta> const meta("meta");
     rule<set_class, ast::set> const set("set");
-    rule<sp_or_class, ast::sp_or> const sp_or("sp_or");
-    rule<sp_define_class, ast::sp_define> const sp_define("sp_define");
-    rule<sp_and_class, ast::sp_and> const sp_and("sp_and");
+    rule<sp_or_class, ast::sp_or> const sp_or("or");
+    rule<sp_define_class, ast::sp_define> const sp_define("define");
+    rule<sp_and_class, ast::sp_and> const sp_and("and");
     rule<sp_if_class, ast::sp_if> const sp_if("sp_if");
-    rule<sp_lambda_class, ast::sp_lambda> const sp_lambda("sp_lambda");
-    rule<sp_quote_class, ast::sp_quote> const sp_quote("sp_quote");
-    rule<sp_list_class, ast::sp_list> const sp_list("sp_list");
+    rule<sp_lambda_class, ast::sp_lambda> const sp_lambda("lambda");
+    rule<sp_quote_class, ast::sp_quote> const sp_quote("quote");
+    rule<sp_list_class, ast::sp_list> const sp_list("list");
     rule<application_class, ast::application> const application("application");
     rule<program_class, ast::program> const program("program");
-    rule<sp_let_class, ast::sp_let> const sp_let("sp_let");
+    rule<sp_let_class, ast::sp_let> const sp_let("let");
 
     // clang-format off
 
     // A Val
-    rule<val_class, ast::val> const val("val");
+    rule<val_class, ast::val> const val("value");
     auto const val_def =
         sp_null
         | boolean
@@ -175,6 +175,7 @@ namespace grammar {
     // Define!
     auto const sp_if_def = bo >> lit("if") > ws > val > val > val > bc;
     BOOST_SPIRIT_DEFINE(sp_if);
+
 
     // Or
     auto const sp_or_def = bo >> lit("or") > ws > +val > bc;
