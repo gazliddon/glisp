@@ -12,7 +12,6 @@ namespace ast2 {
 
 
         Printer(std::ostream & _out) : mOut(_out) {
-
         }
 
         ~Printer() {

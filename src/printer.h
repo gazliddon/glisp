@@ -87,6 +87,10 @@ namespace ast {
             renderList(_val.mVals, "list");
         }
 
+        void operator()(ast::sp_null const& _val) const {
+            mOut << "():null";
+        }
+
         template <typename T>
         void renderCollection(T const& _col,
             char const* _pre         = "",

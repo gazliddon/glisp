@@ -3,6 +3,7 @@
 
 #include <boost/spirit/home/x3.hpp>
 #include <boost/spirit/home/x3/support/ast/variant.hpp>
+#include <boost/spirit/home/x3/support/ast/position_tagged.hpp>
 
 namespace ast2 {
     namespace x3 = boost::spirit::x3;
@@ -13,16 +14,16 @@ namespace ast2 {
 
     struct error_t {};
 
-    struct nil_t {};
+    struct nil_t : x3::position_tagged{};
 
-    struct symbol_t {
+    struct symbol_t : x3::position_tagged {
         std::string mName;
     };
 
     struct proc_t;
     struct list_t;
 
-    struct truthy_t {
+    struct truthy_t : x3::position_tagged {
         bool mValue;
     };
 
@@ -48,7 +49,7 @@ namespace ast2 {
                          std::string,
                          truthy_t,
                          double,
-                         char> {
+                         char>, x3::position_tagged{
         using base_type::base_type;
         using base_type::operator=;
 
@@ -61,47 +62,41 @@ namespace ast2 {
         }
     };
 
-    struct list_t {
+    struct list_t : x3::position_tagged {
 
         std::vector<value_t> mData;
-
-        list_t cdr() const;
-        value_t car() const;
-
-        bool empty() const {
-            return mData.empty();
-        }
     };
 
-    struct proc_t {
+    struct proc_t : x3::position_tagged {
         unsigned mNargs;
         std::function<value_t(env_t& _env, list_t const& args)> mFunc;
     };
 
 
-    struct if_t {
+    struct if_t : x3::position_tagged{
         value_t mPred;
         value_t mA;
         value_t mB;
     };
 
-    struct and_t {
+    struct and_t : x3::position_tagged{
         list_t mArgs;
     };
 
-    struct or_t {
+    struct or_t : x3::position_tagged{
         list_t mArgs;
     };
 
-    struct define_t {
+    struct define_t : x3::position_tagged{
         symbol_t mSym;
         value_t mVal;
     };
 
-    struct quote_t {
+    struct quote_t : x3::position_tagged{
         value_t mArg;
     };
 
+    using boost::fusion::operator<<;
 }
 
 #endif /* end of include guard: AST2_H_L6QKBOEP */

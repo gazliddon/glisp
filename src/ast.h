@@ -33,7 +33,9 @@ namespace ast {
     struct sp_list;
     struct sp_let;
 
-    struct symbol {
+    struct sp_null : x3::position_tagged {};
+
+    struct symbol : x3::position_tagged {
         char mStart;
         std::string mName;
         std::string get() const {
@@ -41,15 +43,15 @@ namespace ast {
         }
     };
 
-    struct boolean {
+    struct boolean : x3::position_tagged {
         std::string mVal;
     };
 
-    struct keyword {
+    struct keyword : x3::position_tagged{
         symbol mSym;
     };
 
-    struct hint {
+    struct hint : x3::position_tagged {
         symbol mSym;
     };
 
@@ -63,6 +65,7 @@ namespace ast {
                  , double
                  , char
                  , keyword
+                 , sp_null
                  , forward_ast<application>
                  , forward_ast<sp_define>
                  , forward_ast<sp_if>
@@ -74,7 +77,7 @@ namespace ast {
                  , forward_ast<vector>
                  , forward_ast<map>
                  , forward_ast<sp_let>
-                  > {
+                  > , x3::position_tagged {
 
         using base_type::base_type;
         using base_type::operator=;
@@ -83,70 +86,70 @@ namespace ast {
     // clang-format on
     //
     
-    struct vector {
+    struct vector : x3::position_tagged {
         std::vector<val> mForms;
     };
 
-    struct binding {
+    struct binding : x3::position_tagged{
         symbol mSym;
         val mVal;
     };
 
-    struct sp_let {
+    struct sp_let : x3::position_tagged{
         std::vector<binding> mBindings;
         val mBody;
     };
 
-    struct sp_list {
+    struct sp_list : x3::position_tagged{
         std::vector<val> mVals;
     };
 
-    struct sp_quote {
+    struct sp_quote : x3::position_tagged{
         val mVal;
     };
 
-    struct sp_lambda {
+    struct sp_lambda : x3::position_tagged{
         vector mArgs;
         std::vector<val> mForms;
     };
 
-    struct sp_define {
+    struct sp_define : x3::position_tagged{
         symbol mSym;
         val mVal;
     };
 
-    struct sp_or {
+    struct sp_or : x3::position_tagged{
         std::vector<val> mVals;
     };
 
-    struct sp_and {
+    struct sp_and : x3::position_tagged{
         std::vector<val> mVals;
     };
 
-    struct sp_if {
+    struct sp_if : x3::position_tagged{
         val mPred, mTrue, mFalse;
     };
 
-    struct application {
+    struct application : x3::position_tagged{
         val mFunc;
         std::vector<val> mForms;
     };
 
 
-    struct map_entry {
+    struct map_entry : x3::position_tagged{
         val mKey;
         val mValue;
     };
 
-    struct map {
+    struct map : x3::position_tagged{
         std::list<map_entry> mHashMap;
     };
 
-    struct meta {
+    struct meta : x3::position_tagged{
         std::list<map_entry> mHashMap;
     };
 
-    struct set {
+    struct set : x3::position_tagged{
         std::vector<val> mForms;
     };
 

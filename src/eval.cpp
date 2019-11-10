@@ -78,19 +78,19 @@ namespace ast2 {
     value_t Evaluator::operator()(list_t const& _l) {
         cout << "List eval" << endl;
 
-        list_t evaled;
+        /* list_t evaled; */
 
-        for (auto const& i : _l.mData) {
-            auto v = eval(i);
-            evaled.mData.push_back(v);
-        }
+        /* for (auto const& i : _l.mData) { */
+        /*     auto v = eval(i); */
+        /*     evaled.mData.push_back(v); */
+        /* } */
 
-        auto proc = evaled.car();
-        auto args = evaled.cdr();
+        /* auto proc = evaled.car(); */
+        /* auto args = evaled.cdr(); */
 
-        if (auto p = asProc(proc)) {
-            return apply(*p, args);
-        }
+        /* if (auto p = asProc(proc)) { */
+        /*     return apply(*p, args); */
+        /* } */
 
         assert(false);
     }
@@ -224,31 +224,5 @@ namespace ast2 {
     void testEval() {
         using namespace std;
         Printer p(cout);
-
-        auto pred_func
-            = proc_t{ 0, [](env_t& _env, list_t const& args) -> value_t {
-                return truthy_t{ true };
-            } };
-
-        Evaluator e;
-
-        auto sym = symbol_t{"test-func"};
-
-        value_t prog[]{ define_t{ sym, pred_func },
-            if_t{
-                value_t{ list_t{ {sym}}},
-                1.0,
-                0.0,
-            } };
-
-        for (auto const & f : prog) {
-            boost::apply_visitor(p, f );
-            cout << endl;
-            auto ret = e.eval(f);
-            cout << "> ";
-            boost::apply_visitor(p, ret );
-            cout << endl;
-
-        }
     }
 }
