@@ -1,1 +1,1 @@
-bazel build --ignore_unsupported_sandboxing -c dbg src/glisp
+bazel build -c dbg src/glisp

@@ -3,11 +3,13 @@ package(default_visibility = ["//visibility:public"])
 cc_binary(
     name     = "glisp",
 
+    deps = [
+            "@boost//:spirit",
+            "@boost//:system"
+            ],
+
     srcs     = glob([ "*.cpp", "**/*.h"]),
 
-    includes = ["."],
-
-    linkopts = ["-lm -lboost_system"],
     copts    = ["-Werror", "-Wno-unused-variable"],
 
 )
