@@ -1,3 +1,7 @@
 #include "env.h"
 
-namespace ast2 {} /*  ast2 */
+namespace ast {
+
+} /*  ast2 */
+
+

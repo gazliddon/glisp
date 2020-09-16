@@ -1,22 +1,32 @@
 #ifndef ENV_H_UCLWRIVL
 #define ENV_H_UCLWRIVL
 
-#include "ast2.h"
+#include "ast.h"
+#include "printer.h"
 
 #include <map>
 
-namespace ast2 {
+namespace ast {
 
     struct env_t {
-        std::map<std::string, value_t> mEnv;
+        void dump(std::ostream & _out) {
 
-        value_t const & get(std::string const & _k) {
+            for (auto const & p : mEnv) {
+                _out << p.first << " = ";
+                print(p.second, _out);
+                _out << std::endl;
+            }
+        }
+
+        std::map<std::string, val> mEnv;
+
+        val const & get(std::string const & _k) {
             auto it = mEnv.find(_k);
             assert(it != mEnv.end());
             return it->second;
         }
 
-        void add(std::string const & k, value_t const & _val) {
+        void add(std::string const & k, val const & _val) {
             mEnv[k] = _val;
         }
 
@@ -24,6 +34,7 @@ namespace ast2 {
             auto it = mEnv.find(k);
             return it != mEnv.end();
         }
+
 
     };
 }

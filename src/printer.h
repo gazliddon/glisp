@@ -31,65 +31,27 @@ namespace ast {
         void operator()(double _v) const;
         void operator()(char _v) const;
         void operator()(ast::set const& _set) const;
-        void operator()(ast::application const& _list) const;
+        void operator()(ast::list const& _list) const;
         void operator()(ast::vector const& _vector) const;
         void operator()(ast::map const& _map) const;
         void operator()(ast::meta const& _value) const;
         void operator()(ast::map_entry const& _map_entry) const;
-        void operator()(ast::sp_define const& _define) const;
+        void operator()(ast::lambda const& _lambda) const;
 
-        void operator()(ast::sp_let const& _let) const {
-            mOut << "(let [";
-
-            for (auto const& p : _let.mBindings) {
-                (*this)(p.mSym);
-                mOut << " ";
-                (*this)(p.mVal);
-                mOut << " ";
-            }
-            mOut << "] ";
-            (*this)(_let.mBody);
-            mOut << "):let";
-        }
-
-        void operator()(ast::sp_lambda const& _val) const {
-            mOut << "(lambda ";
-            renderVector(_val.mArgs.mForms, "args ");
-            renderCollection(_val.mForms);
-            mOut << "):special";
-        }
-
-        void operator()(ast::sp_if const& _sp_if) const {
-            std::vector<val> vals
-                = { val{ "if" }, _sp_if.mPred, _sp_if.mTrue, _sp_if.mFalse };
-            renderList(vals, "special");
-        }
-
-        void operator()(ast::sp_or const& _sp_or) const {
-            renderCollection(_sp_or.mVals, "(or ", ")", "special");
-        }
-
-        void operator()(ast::sp_and const& _sp_and) const {
-            renderCollection(_sp_and.mVals, "(and ", ")", "special");
+        void operator()(ast::define const& _def) const {
+            mOut << "(define " << _def.mSym.get() << " ";
+            boost::apply_visitor(*this, _def.mVal);
+            mOut << "):define";
         }
 
         void operator()(ast::val const& _val) const {
             boost::apply_visitor(*this, _val);
         }
 
-        void operator()(ast::sp_quote const& _val) const {
-            mOut << "'";
-            (*this)(_val.mVal);
-            mOut << ":quote";
-        }
-
-        void operator()(ast::sp_list const& _val) const {
-            renderList(_val.mVals, "list");
-        }
-
-        void operator()(ast::sp_null const& _val) const {
-            mOut << "():null";
-        }
+        /* template<class T> */
+        /*     void operator()(T const & _) const { */
+        /*     mOut << "Sort this print out you lazy twat" << std::endl; */
+        /*     } */
 
         template <typename T>
         void renderCollection(T const& _col,
@@ -130,6 +92,15 @@ namespace ast {
             mOut << ":" << _type;
         }
     };
+
+    template <typename T>
+    void print(T const& _ast, std::ostream& _out = std::cout) {
+        ast::printer printIt(_out);
+        boost::apply_visitor(printIt, _ast);
+        _out << std::endl;
+    }
+
+    void print(ast::program const& _p, std::ostream& _out = std::cout);
 
 } // namespace ast
 

@@ -8,9 +8,8 @@ cc_binary(
             "@boost//:system"
             ],
 
+    # link_opts = ['-framework cocoa', '-framework OpenGl'],
+
     srcs     = glob([ "*.cpp", "**/*.h"]),
-
-    copts    = ["-Werror", "-Wno-unused-variable"],
-
 )
 

@@ -1,124 +1,39 @@
 #ifndef EVAL_H_I8ZWFS1M
 #define EVAL_H_I8ZWFS1M
 
-#include "ast2.h"
+#include "ast.h"
 #include "env.h"
 
-namespace ast2 {
+namespace ast {
 
     // Visitor to evaluate this expression
     struct Evaluator {
-        typedef value_t result_type;
-        result_type operator()(symbol_t const&);
-        result_type operator()(truthy_t const&);
-        result_type operator()(list_t const&);
-        result_type operator()(proc_t const&);
-        result_type operator()(if_t const&);
-        result_type operator()(and_t const&);
-        result_type operator()(or_t const&);
-        result_type operator()(define_t const&);
-        result_type operator()(quote_t const&);
-        result_type operator()(error_t const&);
-        result_type operator()(nil_t const&);
-        result_type operator()(std::string const&);
-        result_type operator()(double const&);
-        result_type operator()(char const&);
-
-        value_t apply(proc_t const& _p, list_t const& _args);
-
         env_t mEnv;
 
-        value_t eval(value_t const& _v);
+        val eval(program const& _v) ;
+
+        val eval(val const & _v);
+
+        val operator()(define const& _v) ;
+        val operator()(ast::boolean const&) ;
+        val operator()(ast::symbol const& _v) ;
+        val operator()(ast::keyword const& _keyword) ;
+        val operator()(std::string const& _v) ;
+        val operator()(ast::hint const& _hint) ;
+        val operator()(ast::nil const&) ;
+        val operator()(double _v) ;
+        val operator()(char _v) ;
+        val operator()(ast::set const& _set) ;
+        val operator()(ast::list const& _list) ;
+        val operator()(ast::vector const& _vector) ;
+        val operator()(ast::map const& _map) ;
+        val operator()(ast::meta const& _value) ;
+        val operator()(ast::map_entry const& _map_entry) ;
+        val operator()(ast::lambda const& _lambda) ;
+
+
+        void testEval();
     };
-
-    // Visitor to return whether this
-    // variant will evail to itself or
-    // not
-    struct does_eval {
-        typedef bool result_type;
-        result_type operator()(symbol_t const&) const;
-        result_type operator()(truthy_t const&) const;
-        result_type operator()(list_t const&) const;
-        result_type operator()(proc_t const&) const;
-        result_type operator()(if_t const&) const;
-        result_type operator()(and_t const&) const;
-        result_type operator()(or_t const&) const;
-        result_type operator()(define_t const&) const;
-        result_type operator()(quote_t const&) const;
-        result_type operator()(error_t const&) const;
-        result_type operator()(nil_t const&) const;
-        result_type operator()(std::string const&) const;
-        result_type operator()(double const&) const;
-        result_type operator()(char const&) const;
-    };
-
-    struct to_bool {
-        typedef bool result_type;
-
-        result_type operator()(symbol_t const&) const {
-            return false;
-        }
-
-        result_type operator()(truthy_t const&_v) const {
-            return _v.mValue;
-        }
-        result_type operator()(list_t const&) const {
-            return true;
-        }
-        result_type operator()(proc_t const&) const {
-            return false;
-        }
-        result_type operator()(if_t const&) const {
-            return false;
-        }
-        result_type operator()(and_t const&) const {
-            return false;
-        }
-        result_type operator()(or_t const&) const {
-            return false;
-        }
-        result_type operator()(define_t const&) const {
-            return false;
-        }
-        result_type operator()(quote_t const&) const {
-            return false;
-        }
-        result_type operator()(error_t const&) const {
-            return false;
-        }
-        result_type operator()(nil_t const&) const {
-            return false;
-        }
-        result_type operator()(std::string const&) const {
-            return true;
-        }
-        result_type operator()(double const&) const {
-            return false;
-        }
-        result_type operator()(char const&) const {
-            return false;
-        }
-    };
-
-    struct print_val {
-        typedef std::string result_type;
-        result_type operator()(symbol_t const&) const;
-        result_type operator()(truthy_t const&) const;
-        result_type operator()(list_t const&) const;
-        result_type operator()(proc_t const&) const;
-        result_type operator()(if_t const&) const;
-        result_type operator()(and_t const&) const;
-        result_type operator()(or_t const&) const;
-        result_type operator()(define_t const&) const;
-        result_type operator()(quote_t const&) const;
-        result_type operator()(error_t const&) const;
-        result_type operator()(nil_t const&) const;
-        result_type operator()(std::string const&) const;
-        result_type operator()(double const&) const;
-        result_type operator()(char const&) const;
-    };
-
-    void testEval();
 }
 
 #endif /* end of include guard: EVAL_H_I8ZWFS1M */

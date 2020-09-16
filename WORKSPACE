@@ -1,16 +1,14 @@
-load("@bazel_tools//tools/build_defs/repo:git.bzl", "git_repository")
+load("@bazel_tools//tools/build_defs/repo:http.bzl", "http_archive")
 
-git_repository(
-    name = "com_github_nelhage_rules_boost",
-    commit = "9f9fb8b2f0213989247c9d5c0e814a8451d18d7f",
-    remote = "https://github.com/nelhage/rules_boost",
-    shallow_since = "1570056263 -0700",
-)
+http_archive(
+        name = 'com_github_nelhage_rules_boost',
+        urls = ['https://github.com/nelhage/rules_boost/archive/2613d04ab3d22dfc4543ea0a083d9adeaa0daf09.zip'],
+        sha256 = '9a588a62062c8bf352b398a5db3ccc65561d43c40968762f7e05da76ccb5a6c9',
+        strip_prefix = 'rules_boost-2613d04ab3d22dfc4543ea0a083d9adeaa0daf09',
+        )
 
 load("@com_github_nelhage_rules_boost//:boost/boost.bzl", "boost_deps")
 boost_deps()
-
-load("@bazel_tools//tools/build_defs/repo:http.bzl", "http_archive")
 
 http_archive(
     name = "immer",

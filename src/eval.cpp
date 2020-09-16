@@ -1,38 +1,51 @@
 #include "eval.h"
 
-#include "printer2.h"
+#include <iostream>
 
-namespace ast2 {
+namespace ast {
     using boost::apply_visitor;
     using namespace std;
 
-    // helpers
+    namespace x3 = boost::spirit::x3;
 
-    static bool valToBool(value_t const& _val) {
-        bool ret = false;
-
-        if (auto truth = boost::get<truthy_t>(&_val)) {
-            ret = truth->mValue;
+    val Evaluator::eval(program const& _v) {
+        val ret;
+        for (auto const& form : _v.mForms) {
+            ret = apply_visitor(*this, form);
         }
+
         return ret;
     }
 
-    static bool doesThisEval(value_t const& _val) {
-        return apply_visitor(does_eval{}, _val);
-    }
+    // helpers
 
-    static bool isListEvaled(list_t const& _lst) {
-        bool allEvalled = true;
+    /* static bool valToBool(val const& _val) { */
+    /*     bool ret = false; */
 
-        for (auto const& i : _lst.mData) {
-            allEvalled &= doesThisEval(i);
-        }
+    /*     if (auto truth = boost::get<boolean>(&_val)) { */
+    /*         ret = false; */
+    /*         assert(!"fucked"); */
+    /*     } */
+    /*     return ret; */
+    /* } */
 
-        return allEvalled;
-    }
+    /* static bool doesThisEval(val const& _val) { */
+    /*     /1* return apply_visitor(does_eval{}, _val); *1/ */
+    /*     return false; */
+    /* } */
+
+    /* static bool isListEvaled(list const& _lst) { */
+    /*     bool allEvalled = true; */
+
+    /*     for (auto const& i : _lst.mForms) { */
+    /*         allEvalled &= doesThisEval(i); */
+    /*     } */
+
+    /*     return allEvalled; */
+    /* } */
 
     template <typename T>
-    bool isSame(value_t const& _v) {
+    bool isSame(val const& _v) {
         if (_v.get().type() == typeid(T)) {
             return true;
         }
@@ -41,7 +54,7 @@ namespace ast2 {
     }
 
     template <typename T>
-    bool doTo(value_t const& _v, std::function<void(T const&)> _func) {
+    bool doTo(val const& _v, std::function<void(T const&)> _func) {
         auto okay = isSame<T>(_v);
         if (okay) {
             if (_v.get().type() == typeid(T)) {
@@ -52,177 +65,98 @@ namespace ast2 {
         }
         return okay;
     }
+    const auto ret = val(list());
+
+    val Evaluator::operator()(define const& _v) {
+        val ret = boost::apply_visitor(*this, _v.mVal);
+        mEnv.add(_v.mSym.mName, ret);
+        return val(list());
+    }
+
+    val Evaluator::operator()(ast::boolean const&) {
+        std::cout << "boolean" << std::endl;
+        return ret;
+    }
+    val Evaluator::operator()(ast::symbol const& _v) {
+        std::cout << "symbol" << std::endl;
+        return ret;
+    }
+    val Evaluator::operator()(ast::keyword const& _keyword) {
+        std::cout << "keyword" << std::endl;
+        return ret;
+    }
+    val Evaluator::operator()(std::string const& _v) {
+        std::cout << "string" << std::endl;
+        return ret;
+    }
+    val Evaluator::operator()(ast::hint const& _hint) {
+        std::cout << "hint" << std::endl;
+        return ret;
+    }
+    val Evaluator::operator()(ast::nil const&) {
+        std::cout << "nil" << std::endl;
+        return ret;
+    }
+    val Evaluator::operator()(double _v) {
+        std::cout << "double" << std::endl;
+        return ret;
+    }
+    val Evaluator::operator()(char _v) {
+        std::cout << "char" << std::endl;
+        return ret;
+    }
+    val Evaluator::operator()(ast::set const& _set) {
+        std::cout << "set" << std::endl;
+        return ret;
+    }
+    val Evaluator::operator()(ast::list const& _list) {
+        std::cout << "list" << std::endl;
+        return ret;
+    }
+    val Evaluator::operator()(ast::vector const& _vector) {
+        std::cout << "vector" << std::endl;
+        return ret;
+    }
+    val Evaluator::operator()(ast::map const& _map) {
+        std::cout << "map" << std::endl;
+        return ret;
+    }
+    val Evaluator::operator()(ast::meta const& _value) {
+        std::cout << "meta" << std::endl;
+        return ret;
+    }
+    val Evaluator::operator()(ast::map_entry const& _map_entry) {
+        std::cout << "map_entry" << std::endl;
+        return ret;
+    }
+    val Evaluator::operator()(ast::lambda const& _lambda) {
+        std::cout << "lambda" << std::endl;
+        return ret;
+    }
+
+
+    val Evaluator::eval(val const& _v) {
+
+        namespace x3 = boost::spirit::x3;
+
+        using namespace ast;
+
+        val ret;
+
+        if (isSame<forward_ast<define>>(_v)) {
+            auto& val = boost::get<forward_ast<define>>(_v);
+        }
+        if (isSame<forward_ast<lambda>>(_v)) {
+            auto& val = boost::get<forward_ast<lambda>>(_v);
+        }
+        else {
+            std::cout << "Could not eval " << _v.get().type().name()
+                      << std::endl;
+        }
+
+        return ret;
+    }
 
     ////////////////////////////////////////////////////////////////////////////////
 
-    value_t Evaluator::eval(value_t const& _v) {
-        if (doesThisEval(_v)) {
-            return boost::apply_visitor(*this, _v);
-        } else {
-            auto ret = _v;
-            return ret;
-        }
-    }
-
-    value_t Evaluator::apply(proc_t const& _p, list_t const& _args) {
-        cout << "About to apply" << endl;
-        auto evalled = isListEvaled(_args);
-        assert(evalled);
-        return _p.mFunc(mEnv, _args);
-    }
-
-    forward_ast<proc_t> const* asProc(value_t const& _val) {
-        return boost::get<forward_ast<proc_t>>(&_val);
-    }
-
-    value_t Evaluator::operator()(list_t const& _l) {
-        cout << "List eval" << endl;
-
-        /* list_t evaled; */
-
-        /* for (auto const& i : _l.mData) { */
-        /*     auto v = eval(i); */
-        /*     evaled.mData.push_back(v); */
-        /* } */
-
-        /* auto proc = evaled.car(); */
-        /* auto args = evaled.cdr(); */
-
-        /* if (auto p = asProc(proc)) { */
-        /*     return apply(*p, args); */
-        /* } */
-
-        assert(false);
-    }
-
-    value_t Evaluator::operator()(if_t const& _val) {
-        auto pred = eval(_val.mPred);
-
-        if (valToBool(pred)) {
-            return eval(_val.mA);
-        } else {
-            return eval(_val.mB);
-        }
-    }
-
-    value_t Evaluator::operator()(and_t const&) {
-        assert(false);
-    }
-    value_t Evaluator::operator()(or_t const&) {
-        assert(false);
-    }
-
-    value_t Evaluator::operator()(define_t const& _val) {
-        mEnv.add(_val.mSym.mName, eval(_val.mVal));
-        return _val.mSym;
-    }
-
-    value_t Evaluator::operator()(quote_t const&) {
-        assert(false);
-    }
-
-    // No eval for these
-    value_t Evaluator::operator()(proc_t const& _p) {
-        return _p;
-    }
-
-    value_t Evaluator::operator()(symbol_t const& _sym) {
-        assert(mEnv.isDefined(_sym.mName));
-        return mEnv.get(_sym.mName);
-    }
-
-    value_t Evaluator::operator()(truthy_t const&) {
-        assert(false);
-    }
-
-    value_t Evaluator::operator()(error_t const&) {
-        assert(false);
-    }
-
-    value_t Evaluator::operator()(nil_t const&) {
-        assert(false);
-    }
-
-    value_t Evaluator::operator()(std::string const&) {
-        assert(false);
-    }
-
-    value_t Evaluator::operator()(double const&) {
-        assert(false);
-    }
-
-    value_t Evaluator::operator()(char const&) {
-        assert(false);
-    }
-}
-
-namespace ast2 {
-
-    bool does_eval::operator()(symbol_t const&) const {
-        return true;
-    }
-
-    bool does_eval::operator()(truthy_t const&) const {
-        return false;
-    }
-
-    bool does_eval::operator()(list_t const&) const {
-        return true;
-    }
-
-    bool does_eval::operator()(proc_t const&) const {
-        return false;
-    }
-
-    bool does_eval::operator()(if_t const&) const {
-        return true;
-    }
-
-    bool does_eval::operator()(and_t const&) const {
-        assert(false);
-    }
-    bool does_eval::operator()(or_t const&) const {
-        assert(false);
-    }
-
-    bool does_eval::operator()(define_t const&) const {
-        return true;
-    }
-
-    bool does_eval::operator()(quote_t const&) const {
-        assert(false);
-    }
-
-    bool does_eval::operator()(error_t const&) const {
-        assert(false);
-    }
-
-    bool does_eval::operator()(nil_t const&) const {
-        return false;
-    }
-
-    bool does_eval::operator()(std::string const&) const {
-        return false;
-    }
-
-    bool does_eval::operator()(double const&) const {
-        return false;
-    }
-
-    bool does_eval::operator()(char const&) const {
-        return false;
-    }
-}
-
-
-namespace ast2 {
-
-    value_t println(env_t& _env, list_t const& args) {
-        return {};
-    }
-
-    void testEval() {
-        using namespace std;
-        Printer p(cout);
-    }
 }

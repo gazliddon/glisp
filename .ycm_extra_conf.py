@@ -47,7 +47,7 @@ flags = [
     '-Wno-unused-parameter',
     # You 100% do NOT need -DUSE_CLANG_COMPLETER in your flags; only the YCM
     # source code needs it.
-    '-std=c++1z',
+    '-std=c++2a',
     '-lc++experimental',
     "-stdlib=libc++",
 

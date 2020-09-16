@@ -5,6 +5,16 @@
 
 namespace ast {
     using boost::apply_visitor;
+    void print(ast::program const& _p, std::ostream& _out) {
+        if (_p.mForms.size() != 0) {
+            ast::printer printIt(_out);
+            for (auto const& i : _p.mForms) {
+                boost::apply_visitor(printIt, i);
+                _out << std::endl;
+            }
+            _out << std::endl;
+        }
+    }
 
 
     /* void printer::operator()(ast::val const& _v) const { */
@@ -14,6 +24,14 @@ namespace ast {
 
     printer::printer(std::ostream& _out)
         : printer_base(_out) {
+    }
+    
+    void printer::operator()(ast::lambda const& _lambda) const {
+        mOut << "(" << "lambda";
+        renderVector(_lambda.mArgs, "args");
+        mOut << " ";
+        (*this)(_lambda.mBody);
+        mOut << "):lambda";
     }
 
     void printer::operator()(ast::keyword const& _keyword) const {
@@ -49,9 +67,8 @@ namespace ast {
     }
 
 
-    void printer::operator()(ast::application const& _list) const {
+    void printer::operator()(ast::list const& _list) const {
         mOut << "(";
-        (*this)(_list.mFunc);
 
         if (!_list.mForms.empty()) {
             mOut << " ";
@@ -78,13 +95,6 @@ namespace ast {
         renderCollection(_set.mForms, "#{", "}", "set");
     }
 
-    void printer::operator()(ast::sp_define const& _define) const {
-        auto def = "(define " + _define.mSym.get() + " ";
-
-        mOut << def;
-        (*this)(_define.mVal);
-        mOut << "):special";
-    }
 
     void printer::operator()(ast::map_entry const& _map_entry) const {
         (*this)(_map_entry.mKey);

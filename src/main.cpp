@@ -67,23 +67,6 @@ namespace glisp {
         return ast;
     }
 
-    template <typename T>
-        void print(T const& _ast, std::ostream& _out = std::cout) {
-            ast::printer printIt(_out);
-            boost::apply_visitor(printIt, _ast);
-            _out << endl;
-        }
-
-    void print(ast::program const& _p, std::ostream& _out = std::cout) {
-        if (_p.mForms.size() != 0) {
-            ast::printer printIt(_out);
-            for (auto const& i : _p.mForms) {
-                boost::apply_visitor(printIt, i);
-                _out << endl;
-            }
-            _out << endl;
-        }
-    }
 
     void repl() {
         auto& _in  = std::cin;
@@ -91,6 +74,8 @@ namespace glisp {
 
         _out << "Glisp lisp parser\n";
         _out << "Type an expression...or [q or Q] to quit\n\n";
+
+        ast::Evaluator evaluator;
 
         while (true) {
 
@@ -102,12 +87,13 @@ namespace glisp {
                     break;
                 } else {
                     auto ast = glisp::read(str);
-                    // EXECCUTE HERE
-                    glisp::print(ast, _out);
+                    ast::print(ast, _out);
+                    auto res = evaluator.eval(ast);
+                    ast::print(res,_out);
+
                 }
             } catch(boost::spirit::x3::expectation_failure<char const *> & e) {
-                _out << "ERROR " << e;
-
+                _out << "ERROR " << e.what();
             }
         }
     }
@@ -117,7 +103,7 @@ namespace glisp {
 int main(int argc, char* argv[]) {
     using namespace std;
 
-    using namespace ast2;
+    using namespace ast;
 
     if (false) {
 
@@ -130,7 +116,7 @@ int main(int argc, char* argv[]) {
                     (istreambuf_iterator<char>(t)), istreambuf_iterator<char>());
 
             auto ast = glisp::read(str);
-            glisp::print(ast, cout);
+            ast::print(ast, cout);
 
         } else {
             glisp::repl();
