@@ -9,12 +9,13 @@
 namespace ast {
 
     struct env_t {
-        void dump(std::ostream & _out) {
+        void dump(std::ostream & _out = std::cout) {
+            _out << "Symbol table" << std::endl;
+            _out << "------------" << std::endl;
 
             for (auto const & p : mEnv) {
                 _out << p.first << " = ";
                 print(p.second, _out);
-                _out << std::endl;
             }
         }
 
@@ -26,8 +27,9 @@ namespace ast {
             return it->second;
         }
 
-        void add(std::string const & k, val const & _val) {
+        val const & add(std::string const & k, val const & _val) {
             mEnv[k] = _val;
+            return _val;
         }
 
         bool isDefined(std::string const & k) {

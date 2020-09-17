@@ -12,6 +12,7 @@ namespace ast {
 
         val eval(program const& _v) ;
 
+    val const & eval(val const & _v) const;
         val eval(val const & _v);
 
         val operator()(define const& _v) ;
@@ -33,6 +34,13 @@ namespace ast {
 
 
         void testEval();
+
+        template <typename T>
+        void eval_collection_in_place(T & _col) {
+            auto b = _col.begin();
+            auto e = _col.end();
+            bool all_atoms = true;
+        }
     };
 }
 

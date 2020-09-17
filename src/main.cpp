@@ -33,8 +33,6 @@ namespace glisp {
 
         namespace x3 = boost::spirit::x3;
 
-        std::cout << "READING !" << endl;
-
         using x3::ascii::space_type;
         ast::program ast;
 
@@ -50,8 +48,8 @@ namespace glisp {
         using error_handler_type = x3::error_handler<iterator_type>;
         error_handler_type error_handler(iter, end, std::cerr);
 
-        auto const parser =
-            with<error_handler_tag>(std::ref(error_handler))[grammar::program];
+        auto const parser = with<error_handler_tag>(
+            std::ref(error_handler))[grammar::program];
 
         bool r = phrase_parse(iter, end, parser, space, ast);
 
@@ -66,7 +64,6 @@ namespace glisp {
 
         return ast;
     }
-
 
     void repl() {
         auto& _in  = std::cin;
@@ -85,14 +82,18 @@ namespace glisp {
 
                 if (str[0] == 'q' || str[0] == 'Q') {
                     break;
+                } else if (str[0] == 's') {
+                    evaluator.mEnv.dump(_out);
+
                 } else {
                     auto ast = glisp::read(str);
-                    ast::print(ast, _out);
+                    /* ast::print(ast, _out); */
                     auto res = evaluator.eval(ast);
-                    ast::print(res,_out);
 
+                    _out << "-> ";
+                    ast::print(res, _out);
                 }
-            } catch(boost::spirit::x3::expectation_failure<char const *> & e) {
+            } catch (boost::spirit::x3::expectation_failure<char const*>& e) {
                 _out << "ERROR " << e.what();
             }
         }
@@ -113,7 +114,7 @@ int main(int argc, char* argv[]) {
             ifstream t(argv[1]);
 
             string str(
-                    (istreambuf_iterator<char>(t)), istreambuf_iterator<char>());
+                (istreambuf_iterator<char>(t)), istreambuf_iterator<char>());
 
             auto ast = glisp::read(str);
             ast::print(ast, cout);

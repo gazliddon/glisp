@@ -59,7 +59,7 @@ namespace ast {
     }
 
     void printer::operator()(std::string const& _v) const {
-        mOut << _v << ":string";
+        mOut << "\"" << _v << "\"" << ":string";
     }
 
     void printer::operator()(ast::symbol const& _v) const {
