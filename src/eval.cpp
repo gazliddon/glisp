@@ -145,7 +145,7 @@ namespace ast {
         using namespace ast;
         val ret;
 
-        if (_v.is_atom() || _v.is_lambda()) 
+        if (_v.is_atom() || _v.is<lambda>()) 
             return _v;
         else
            return boost::apply_visitor(*this, _v);

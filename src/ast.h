@@ -1,14 +1,13 @@
 #ifndef AST_H_4GSXUIIF
 #define AST_H_4GSXUIIF
 
-
 #include <list>
 #include <map>
 #include <set>
 #include <string>
 
-#include <boost/mpl/copy.hpp>
 #include <boost/mp11/mpl.hpp>
+#include <boost/mpl/copy.hpp>
 
 #include <boost/spirit/home/x3.hpp>
 #include <boost/spirit/home/x3/support/ast/position_tagged.hpp>
@@ -103,28 +102,26 @@ namespace ast {
         using base_type::base_type;
         using base_type::operator=;
 
-        template<typename T> 
-            T * get_val() {
-                if constexpr (is_atom<T>()) {
-                    return boost::get<T>(this);
-                }
-                if constexpr (mp_count<composites, T>() != 0) {
-                    return boost::get<forward_ast<T>>(this)->get_pointer();
-                }
+        template <typename T>
+        bool is() const {
+            auto id = var.which();
+            return id == mp_find<types, T>();
+        }
 
-                return nullptr;
+        template <typename T>
+        T* get_val() {
+            if constexpr (is_atom<T>()) {
+                return boost::get<T>(this);
+            }
+            if constexpr (mp_count<composites, T>() != 0) {
+                return boost::get<forward_ast<T>>(this)->get_pointer();
             }
 
-        bool is_lambda() const {
-            const size_t lambda_id = mp_find<mp_append<atoms, composites>, lambda>();
-            return lambda_id == var.which();
+            return nullptr;
         }
 
         bool is_atom() const {
-            // get the index
             auto i = var.which();
-            // assuming which is order of types in variant args
-            // that's okay yeah?
             return i < int(mp_size<atoms>());
         }
     };
@@ -168,6 +165,14 @@ namespace ast {
         val mBody;
     };
 
+    struct application : x3::variant<forward_ast<application>, symbol, lambda> {
+        std::vector<val> mArgs;
+        template <typename T>
+        bool is() const {
+            auto id = var.which();
+            return id == mp_find<types, T>();
+        }
+    };
 
     // print function for debugging
     inline std::ostream& operator<<(std::ostream& out, nil) {
