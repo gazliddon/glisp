@@ -31,6 +31,7 @@ namespace ast {
         val operator()(ast::meta const& _value) ;
         val operator()(ast::map_entry const& _map_entry) ;
         val operator()(ast::lambda const& _lambda) ;
+        val operator()(ast::native_function const& _lambda) ;
 
 
         void testEval();

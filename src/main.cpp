@@ -19,6 +19,18 @@
 //
 
 namespace glisp {
+    ast::val println(ast::env_t const& e, ast::val const& _v) {
+        if (_v.is_atom()) {
+            ast::print(_v, std::cout);
+        } else {
+            std::cout << "Fuck knows" << std::endl;
+        }
+        return ast::val(ast::list());
+    }
+
+    void test_func(void) {
+        std::cout << "GELLO!" << std::endl;
+    }
 
     using std::cout;
     using std::endl;
@@ -73,6 +85,16 @@ namespace glisp {
         _out << "Type an expression...or [q or Q] to quit\n\n";
 
         ast::Evaluator evaluator;
+
+        evaluator.mEnv.add_native_func("println", test_func, 1);
+
+        /* evaluator.mEnv.add( */
+        /*         "println", */
+        /*         ast::native_function { */
+        /*             .mNumOfArgs = 1, */
+        /*             .mFunc = println */
+        /*         } */
+        /*         ); */
 
         while (true) {
 

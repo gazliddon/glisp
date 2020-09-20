@@ -37,6 +37,7 @@ namespace ast {
         void operator()(ast::meta const& _value) const;
         void operator()(ast::map_entry const& _map_entry) const;
         void operator()(ast::lambda const& _lambda) const;
+        void operator()(ast::native_function const& _lambda) const;
 
         void operator()(ast::define const& _def) const {
             mOut << "(define " << _def.mSym.get() << " ";

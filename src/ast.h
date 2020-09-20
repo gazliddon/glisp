@@ -1,19 +1,22 @@
 #ifndef AST_H_4GSXUIIF
 #define AST_H_4GSXUIIF
 
+
 #include <list>
 #include <map>
 #include <set>
 #include <string>
 
-/* #include <boost/config/warning_disable.hpp> */
 #include <boost/mpl/copy.hpp>
-
 #include <boost/mp11/mpl.hpp>
 
 #include <boost/spirit/home/x3.hpp>
 #include <boost/spirit/home/x3/support/ast/position_tagged.hpp>
 #include <boost/spirit/home/x3/support/ast/variant.hpp>
+
+namespace ast {
+    struct env_t;
+}
 
 namespace ast {
     using namespace boost::mp11;
@@ -46,6 +49,15 @@ namespace ast {
     constexpr bool is_atom() {
         return mp_count<atoms, T>() != 0;
     }
+
+    struct val;
+    struct env_t;
+    struct native_function {
+        /* std::function<val(env_t const &, val const &, int )> mFunc; */
+        std::function<void(void)> mFunc;
+        int mNumOfArgs;
+    };
+
 }
 
 namespace ast {
@@ -74,6 +86,7 @@ namespace ast {
         , map
         , define
         , symbol
+        , native_function
         >;
 
     // clang-format on
@@ -102,6 +115,11 @@ namespace ast {
                 return nullptr;
             }
 
+        bool is_lambda() const {
+            const size_t lambda_id = mp_find<mp_append<atoms, composites>, lambda>();
+            return lambda_id == var.which();
+        }
+
         bool is_atom() const {
             // get the index
             auto i = var.which();
@@ -118,11 +136,6 @@ namespace ast {
 
     struct vector : x3::position_tagged {
         std::vector<val> mForms;
-    };
-
-    struct binding : x3::position_tagged {
-        symbol mSym;
-        val mVal;
     };
 
     struct list : x3::position_tagged {
@@ -154,6 +167,7 @@ namespace ast {
         std::vector<symbol> mArgs;
         val mBody;
     };
+
 
     // print function for debugging
     inline std::ostream& operator<<(std::ostream& out, nil) {

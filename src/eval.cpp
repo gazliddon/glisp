@@ -137,11 +137,15 @@ namespace ast {
         assert(false);
     }
 
+    val Evaluator::operator()(ast::native_function const& _lambda)  {
+        assert(false);
+    }
+
     val Evaluator::eval(val const & _v) {
         using namespace ast;
         val ret;
 
-        if (_v.is_atom()) 
+        if (_v.is_atom() || _v.is_lambda()) 
             return _v;
         else
            return boost::apply_visitor(*this, _v);

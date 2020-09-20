@@ -83,6 +83,10 @@ namespace ast {
         mOut << ":vector";
     }
 
+    void printer::operator()(native_function const & _func) const {
+        mOut << ":native function with " << _func.mNumOfArgs << " args";
+    }
+
     void printer::operator()(ast::map const& _map) const {
         renderCollection(_map.mHashMap, "{", "}", "map");
     }
@@ -94,7 +98,6 @@ namespace ast {
     void printer::operator()(ast::set const& _set) const {
         renderCollection(_set.mForms, "#{", "}", "set");
     }
-
 
     void printer::operator()(ast::map_entry const& _map_entry) const {
         (*this)(_map_entry.mKey);
