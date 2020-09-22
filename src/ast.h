@@ -74,7 +74,7 @@ namespace ast {
     struct meta;
     struct set;
     struct define;
-    struct application;
+    struct function_t;
     /* struct fn; */
 
     // clang-format off
@@ -87,6 +87,7 @@ namespace ast {
         , define
         , symbol
         , native_function
+        , function_t
         >;
 
     // clang-format on
@@ -166,7 +167,8 @@ namespace ast {
         val mBody;
     };
 
-    struct application_t : x3::variant<forward_ast<application_t>, symbol, lambda> {
+
+    struct function : x3::variant<forward_ast<function_t>, symbol, lambda> {
         template <typename T>
         bool is() const {
             auto id = var.which();
@@ -174,8 +176,8 @@ namespace ast {
         }
     };
 
-    struct application {
-        application_t mFunc;
+    struct function_t {
+        function mFunc;
         std::vector<val> mArgs;
     };
 

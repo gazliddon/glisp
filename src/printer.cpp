@@ -75,7 +75,7 @@ namespace ast {
             renderCollection(_list.mForms);
         }
 
-        mOut << "):application";
+        mOut << "):list";
     }
 
     void printer::operator()(ast::vector const& _vector) const {
