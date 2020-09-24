@@ -16,7 +16,6 @@ namespace ast {
         }
     }
 
-
     /* void printer::operator()(ast::val const& _v) const { */
     /*     assert(false); */
 
@@ -25,9 +24,25 @@ namespace ast {
     printer::printer(std::ostream& _out)
         : printer_base(_out) {
     }
-    
+    void printer::operator()(ast::function const& _func) const {
+
+        mOut << "(";
+
+        (*this)(_func.mFunc);
+
+        mOut << " ";
+
+        if (!_func.mArgs.empty()) {
+            mOut << " ";
+            renderCollection(_func.mArgs);
+        }
+
+        mOut << "):func (" << _func.mArgs.size() << " args)";
+    }
+
     void printer::operator()(ast::lambda const& _lambda) const {
-        mOut << "(" << "lambda";
+        mOut << "("
+             << "lambda";
         renderVector(_lambda.mArgs, "args");
         mOut << " ";
         (*this)(_lambda.mBody);
@@ -59,13 +74,13 @@ namespace ast {
     }
 
     void printer::operator()(std::string const& _v) const {
-        mOut << "\"" << _v << "\"" << ":string";
+        mOut << "\"" << _v << "\""
+             << ":string";
     }
 
     void printer::operator()(ast::symbol const& _v) const {
         mOut << _v.get() << ":symbol";
     }
-
 
     void printer::operator()(ast::list const& _list) const {
         mOut << "(";
@@ -83,7 +98,7 @@ namespace ast {
         mOut << ":vector";
     }
 
-    void printer::operator()(native_function const & _func) const {
+    void printer::operator()(native_function const& _func) const {
         mOut << ":native function with " << _func.mNumOfArgs << " args";
     }
 

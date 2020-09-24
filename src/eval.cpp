@@ -141,6 +141,11 @@ namespace ast {
         assert(false);
     }
 
+    val Evaluator::operator()(ast::function const& _func)  {
+        std::cout << "FUNC TBD" << std::endl;
+        return ret;
+    }
+
     val Evaluator::eval(val const & _v) {
         using namespace ast;
         val ret;

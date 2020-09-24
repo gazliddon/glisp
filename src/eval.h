@@ -32,9 +32,7 @@ namespace ast {
         val operator()(ast::map_entry const& _map_entry) ;
         val operator()(ast::lambda const& _lambda) ;
         val operator()(ast::native_function const& _lambda) ;
-        val operator()(ast::function_t const& _lambda)  {
-            assert(false);
-        }
+        val operator()(ast::function const& _lambda) ;
 
 
         void testEval();

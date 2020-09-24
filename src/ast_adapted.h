@@ -18,6 +18,6 @@ BOOST_FUSION_ADAPT_STRUCT( ast::boolean, mVal )
 BOOST_FUSION_ADAPT_STRUCT( ast::meta, mHashMap )
 BOOST_FUSION_ADAPT_STRUCT( ast::define, mSym, mVal )
 BOOST_FUSION_ADAPT_STRUCT( ast::lambda, mArgs, mBody )
-BOOST_FUSION_ADAPT_STRUCT( ast::function_t, mFunc, mArgs )
+BOOST_FUSION_ADAPT_STRUCT( ast::function, mFunc, mArgs )
 
 #endif /* end of include guard: AST_ADAPTED_H_KW9BM5GS */

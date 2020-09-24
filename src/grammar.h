@@ -104,6 +104,12 @@ namespace grammar {
     auto const lambda_def = '(' >> lit("lambda") > '[' > *symbol > ']' > val > ')';
     BOOST_SPIRIT_DEFINE(lambda);
 
+    struct function_class {};
+    rule<function_class, ast::function> const function = "function";
+    auto const function_def = '(' > (symbol | lambda | function) > *val > ')';
+    BOOST_SPIRIT_DEFINE(function);
+
+
     auto const val_def =
          boolean
         | symbol
@@ -113,6 +119,7 @@ namespace grammar {
         | double_
         | lambda
         | define
+        | function
         | list
         | vector
         | map
