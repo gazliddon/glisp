@@ -5,7 +5,8 @@ cc_binary(
 
     deps = [
             "@boost//:spirit",
-            "@boost//:system"
+            "@boost//:system",
+            "@immer//:immer",
             ],
 
     # link_opts = ['-framework cocoa', '-framework OpenGl'],

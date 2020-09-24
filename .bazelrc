@@ -5,6 +5,5 @@ build --cxxopt "-std=c++2a"
 build --show_progress_rate_limit -1
 build --jobs 10
 build --cxxopt "-U_FORTIFY_SOURCE"
-build --symlink_prefix=.bazel/
 build --verbose_failures
 build --apple_generate_dsym

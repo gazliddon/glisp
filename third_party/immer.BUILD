@@ -1,6 +1,5 @@
 cc_library( name = "immer",
-        hdrs = glob(["immer/**/*"]),
-        includes = ["."],
+       hdrs = glob(["immer/**/*.hpp"]),
         visibility = ["//visibility:public"],
         )
 
