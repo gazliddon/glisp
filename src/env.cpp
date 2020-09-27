@@ -3,36 +3,30 @@
 
 namespace ast {
 
-    void env_t::dump(std::ostream& _out) const {
+    void dump(env_t const & _env, std::ostream& _out) {
         _out << "Symbol table" << std::endl;
         _out << "------------" << std::endl;
 
-        for (auto const& p : mEnv) {
+        auto i = _env.begin();
+        auto  e = _env.end();
+
+        for (auto const& p : _env) {
             _out << p.first << " = ";
             print(p.second, _out);
         }
     }
-    void env_t::add_native_func(std::string const& name,
-        std::function<void(void)> func,
-        int numOfArgs) {
 
-        add(name, val(native_function{func, numOfArgs}));
+    env_t add_native_function(env_t _env, std::string const& _name,
+        std::function<val(env_t, std::vector<val> const&)> _func,
+        int _nargs) {
+
+        native_function x {
+            .mFunc      = _func,
+            .mNumOfArgs = _nargs,
+        };
+        
+       return _env.set(_name, val(x));
     }
 
-    val const& env_t::get(std::string const& _k) const {
-        auto it = mEnv.find(_k);
-        assert(it != mEnv.end());
-        return it->second;
-    }
-
-    val const& env_t::add(std::string const& k, val const& _val) {
-        mEnv[k] = _val;
-        return _val;
-    }
-
-    bool env_t::isDefined(std::string const& k) const {
-        auto it = mEnv.find(k);
-        return it != mEnv.end();
-    }
 } /*  ast2 */
 

@@ -1,1 +1,1 @@
-rlwrap .bazel/bin/src/glisp $@
+rlwrap ./bazel-out/darwin-dbg/bin/src/glisp $@

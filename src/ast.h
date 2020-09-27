@@ -12,10 +12,9 @@
 #include <boost/spirit/home/x3.hpp>
 #include <boost/spirit/home/x3/support/ast/position_tagged.hpp>
 #include <boost/spirit/home/x3/support/ast/variant.hpp>
+#include <immer/map.hpp>
 
-namespace ast {
-    struct env_t;
-}
+namespace ast { }
 
 namespace ast {
     using namespace boost::mp11;
@@ -49,14 +48,6 @@ namespace ast {
         return mp_count<atoms, T>() != 0;
     }
 
-    struct val;
-    struct env_t;
-    struct native_function {
-        /* std::function<val(env_t const &, val const &, int )> mFunc; */
-        std::function<void(void)> mFunc;
-        int mNumOfArgs;
-    };
-
 }
 
 namespace ast {
@@ -75,6 +66,7 @@ namespace ast {
     struct set;
     struct define;
     struct function;
+    struct native_function;
     /* struct fn; */
 
     // clang-format off
@@ -104,28 +96,39 @@ namespace ast {
         using base_type::base_type;
         using base_type::operator=;
 
+        bool to_bool() const {
+            assert(false);
+        }
+
         template <typename T>
         bool is() const {
             auto id = var.which();
             return id == mp_find<types, T>();
         }
-
-        template <typename T>
-        T* get_val() {
-            if constexpr (is_atom<T>()) {
-                return boost::get<T>(this);
-            }
-            if constexpr (mp_count<composites, T>() != 0) {
-                return boost::get<forward_ast<T>>(this)->get_pointer();
-            }
-
-            return nullptr;
-        }
-
         bool is_atom() const {
             auto i = var.which();
             return i < int(mp_size<atoms>());
         }
+
+        template <typename T>
+        T const* get_val() const {
+
+            if (is<T>()) {
+                if constexpr (mp_count<atoms, T>() != 0) {
+                    return boost::get<T>(this);
+                } else {
+                    return boost::get<forward_ast<T>>(this)->get_pointer();
+                }
+            }
+            return nullptr;
+        }
+    };
+
+    using env_t = immer::map<std::string, val>;
+
+    struct native_function {
+        std::function<val(env_t, std::vector<val> const&)> mFunc;
+        int mNumOfArgs;
     };
 
     struct define : x3::position_tagged {
@@ -166,7 +169,6 @@ namespace ast {
         std::vector<symbol> mArgs;
         val mBody;
     };
-
 
     struct function {
         val mFunc;

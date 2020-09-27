@@ -58,6 +58,10 @@ flags = [
     '-x',
     'c++',
 
+    # My additions
+    "-I", "src",
+    "-I", "bazel-glisp/external/immer",
+    "-I", "bazel-glisp/external/boost",
 
     "-I", "/usr/include",
     # "-I", "/usr/include/c++/5.3.0/x86_64-unknown-linux-gnu",
@@ -66,10 +70,7 @@ flags = [
     "-I", "/usr/include",
     "-I", "/usr/local/include",
 
-    # My additions
 
-    "-I", "src",
-    "-I", ".bazel/glisp/external/immer",
 ]
 
 

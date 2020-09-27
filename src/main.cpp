@@ -12,6 +12,7 @@
 
 #include "eval.h"
 #include "run.h"
+#include "env.h"
 
 #include "errors.h"
 
@@ -19,18 +20,22 @@
 //
 
 namespace glisp {
-    ast::val println(ast::env_t const& e, ast::val const& _v) {
-        if (_v.is_atom()) {
-            ast::print(_v, std::cout);
+    ast::val println(ast::env_t e, std::vector<ast::val> const & _args) {
+        if (_args[0].is_atom()) {
+            ast::print(_args[0], std::cout);
         } else {
             std::cout << "Fuck knows" << std::endl;
         }
         return ast::val(ast::list());
     }
 
-    void test_func(void) {
-        std::cout << "GELLO!" << std::endl;
+    ast::val add(ast::env_t e, std::vector<ast::val> const & _args) {
+        assert(_args.size() == 2);
+        auto a0 = _args[0].get_val<double>();
+        auto a1 = _args[1].get_val<double>();
+        return ast::val(*a0+*a1);
     }
+
 
     using std::cout;
     using std::endl;
@@ -86,15 +91,12 @@ namespace glisp {
 
         ast::Evaluator evaluator;
 
-        evaluator.mEnv.add_native_func("println", test_func, 1);
+        auto func = [](env_t , int) -> ast::val {
+            assert(false);
+        };
 
-        /* evaluator.mEnv.add( */
-        /*         "println", */
-        /*         ast::native_function { */
-        /*             .mNumOfArgs = 1, */
-        /*             .mFunc = println */
-        /*         } */
-        /*         ); */
+        evaluator.add_native_function("println", println, 1);
+        evaluator.add_native_function("+", add, 2);
 
         while (true) {
 
@@ -105,8 +107,7 @@ namespace glisp {
                 if (str[0] == 'q' || str[0] == 'Q') {
                     break;
                 } else if (str[0] == 's') {
-                    evaluator.mEnv.dump(_out);
-
+                    dump(evaluator.mEnv, _out);
                 } else {
                     auto ast = glisp::read(str);
                     /* ast::print(ast, _out); */
