@@ -10,9 +10,9 @@
 #include "grammar.h"
 #include "printer.h"
 
+#include "env.h"
 #include "eval.h"
 #include "run.h"
-#include "env.h"
 
 #include "errors.h"
 
@@ -20,7 +20,19 @@
 //
 
 namespace glisp {
-    ast::val println(ast::env_t e, std::vector<ast::val> const & _args) {
+
+    template <typename T>
+    ast::val twin_op(ast::env_t e,
+        std::vector<ast::val> const& _args,
+        std::function<T(T const &, T const&)>&& _func) {
+        assert(_args.size() == 2);
+        auto a0 = _args[0].get_val<T>();
+        auto a1 = _args[1].get_val<T>();
+        return ast::val(_func(*a0, *a1));
+    }
+
+    ast::val println(ast::env_t e, std::vector<ast::val> const& _args) {
+
         if (_args[0].is_atom()) {
             ast::print(_args[0], std::cout);
         } else {
@@ -29,13 +41,29 @@ namespace glisp {
         return ast::val(ast::list());
     }
 
-    ast::val add(ast::env_t e, std::vector<ast::val> const & _args) {
-        assert(_args.size() == 2);
-        auto a0 = _args[0].get_val<double>();
-        auto a1 = _args[1].get_val<double>();
-        return ast::val(*a0+*a1);
+    ast::val add(ast::env_t e, std::vector<ast::val> const& _args) {
+        return twin_op<double>(e, _args, [](auto a, auto b) {
+                return a + b;
+                });
     }
 
+    ast::val sub(ast::env_t e, std::vector<ast::val> const& _args) {
+        return twin_op<double>(e, _args, [](auto a, auto b) {
+                return a - b;
+                });
+    }
+
+    ast::val mul(ast::env_t e, std::vector<ast::val> const& _args) {
+        return twin_op<double>(e, _args, [](auto a, auto b) {
+                return a * b;
+                });
+    }
+
+    ast::val div(ast::env_t e, std::vector<ast::val> const& _args) {
+        return twin_op<double>(e, _args, [](auto a, auto b) {
+                return a / b;
+                });
+    }
 
     using std::cout;
     using std::endl;
@@ -91,12 +119,14 @@ namespace glisp {
 
         ast::Evaluator evaluator;
 
-        auto func = [](env_t , int) -> ast::val {
-            assert(false);
-        };
+        auto func = [](env_t, int) -> ast::val { assert(false); };
 
         evaluator.add_native_function("println", println, 1);
-        evaluator.add_native_function("+", add, 2);
+
+        evaluator.add_twin_op<double>("+", [](auto a, auto b) { return a + b; });
+        evaluator.add_twin_op<double>("-", [](auto a, auto b) { return a - b; });
+        evaluator.add_twin_op<double>("*", [](auto a, auto b) { return a * b; });
+        evaluator.add_twin_op<double>("/", [](auto a, auto b) { return a / b; });
 
         while (true) {
 

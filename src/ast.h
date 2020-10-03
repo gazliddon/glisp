@@ -29,8 +29,10 @@ namespace ast {
         char mStart;
         std::string mName;
         std::string get() const {
+            /* return mFullName; */
             return mStart + mName;
         }
+        std::string mFullName;
     };
 
     struct keyword : x3::position_tagged {

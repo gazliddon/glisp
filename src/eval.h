@@ -43,11 +43,27 @@ namespace ast {
             bool all_atoms = true;
         }
 
-    void add_native_function(std::string const& _name,
-        std::function<val(env_t, std::vector<val> const&)> _func,
-        int _nargs) {
-        mEnv = ::ast::add_native_function(mEnv, _name, _func,_nargs);
-    }};
+        void add_native_function(std::string const& _name,
+            std::function<val(env_t, std::vector<val> const&)> _func,
+            int _nargs) {
+            mEnv = ::ast::add_native_function(mEnv, _name, _func, _nargs);
+        }
+
+        template <typename T>
+        void add_twin_op(std::string const& _name,
+            std::function<T(T const&, T const&)>&& _func) {
+
+            auto func = [&_func](env_t, std::vector<val> const& _args) {
+                assert(_args.size() == 2);
+                auto a0 = _args[0].get_val<T>();
+                auto a1 = _args[1].get_val<T>();
+                return ast::val(_func(*a0, *a1));
+            };
+
+            mEnv = ::ast::add_native_function(mEnv, _name, func, 2);
+        }
+
+    };
 }
 
 #endif /* end of include guard: EVAL_H_I8ZWFS1M */

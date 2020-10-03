@@ -68,6 +68,11 @@ namespace ast {
 
     val Evaluator::operator()(ast::symbol const& _v) {
         auto ret = mEnv.find(_v.get());
+
+        if (ret == nullptr) {
+            std::cout << "Could not find " << _v.get() << std::endl;
+        }
+
         assert(ret != nullptr);
         return *ret;
     }
@@ -145,6 +150,8 @@ namespace ast {
     val Evaluator::operator()(ast::function const& _func) {
         val ret;
 
+        std::cout << "Evaluating function" << std::endl;
+
         auto nArgs = _func.mArgs.size();
 
         if (auto sym = _func.mFunc.get_val<symbol>()) {
@@ -153,7 +160,9 @@ namespace ast {
 
             if (name == "if") {
                 assert(nArgs == 3);
+
                 auto predicate = apply_visitor(*this, _func.mArgs[0]);
+
                 if (predicate.to_bool()) {
                     return apply_visitor(*this, _func.mArgs[1]);
                 } else {
@@ -189,6 +198,10 @@ namespace ast {
             vals.push_back(apply_visitor(*this, v));
         }
 
+        if (auto nf = func.get_val<native_function>()) {
+            return nf->mFunc(mEnv, vals);
+        }
+
         if (auto nf = func.get_val<lambda>()) {
             auto env = mEnv;
             assert(nf->mArgs.size() <= _func.mArgs.size());
@@ -204,9 +217,6 @@ namespace ast {
             return retVal;
         }
 
-        if (auto nf = func.get_val<native_function>()) {
-            return nf->mFunc(mEnv, vals);
-        }
 
         return ret;
     }
