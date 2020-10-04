@@ -50,11 +50,11 @@ namespace ast {
     }
 
     void printer::operator()(ast::keyword const& _keyword) const {
-        mOut << ":" << _keyword.mSym.get() << ":keyword";
+        mOut << ":" << _keyword.mSym.mName << ":keyword";
     }
 
     void printer::operator()(ast::hint const& _keyword) const {
-        mOut << "^" << _keyword.mSym.get() << ":typehint";
+        mOut << "^" << _keyword.mSym.mName << ":typehint";
     }
 
     void printer::operator()(ast::boolean const& _val) const {
@@ -79,7 +79,7 @@ namespace ast {
     }
 
     void printer::operator()(ast::symbol const& _v) const {
-        mOut << _v.get() << ":symbol";
+        mOut << _v.mName << ":symbol";
     }
 
     void printer::operator()(ast::list const& _list) const {

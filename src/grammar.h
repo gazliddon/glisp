@@ -10,7 +10,6 @@
 
 #include <cxxabi.h>
 
-
 namespace grammar {
 
     struct error_handler {
@@ -83,51 +82,50 @@ namespace grammar {
     auto const str_def = lexeme['"' > *(char_ - '"') > '"'];
     BOOST_SPIRIT_DEFINE(str);
 
-    template<typename T>
-        std::string demangle() {
-            const size_t max_size = 20000;
+    template <typename T>
+    std::string demangle() {
+        const size_t max_size = 20000;
 
-            char buff[max_size ];
-            auto mangled = typeid(T).name();
-            int stat = 0;
-            size_t len= max_size;
+        char buff[max_size];
+        auto mangled = typeid(T).name();
+        int stat     = 0;
+        size_t len   = max_size;
 
-            auto c = abi::__cxa_demangle(mangled, buff, &len, &stat);
-            return c;
-        }
-    template<typename T>
-        std::string demangle(T const & _arg) {
-            return demangle<decltype(_arg)>();
-        }
+        auto c = abi::__cxa_demangle(mangled, buff, &len, &stat);
+        return c;
+    }
 
-    struct create_symbol {
-        template <typename Context>
-        void operator()(Context & ctx) const {
-            using namespace std;
-            using namespace boost::fusion;
+    template <typename T>
+    std::string demangle(T const& _arg) {
+        return demangle<decltype(_arg)>();
+    }
 
-            auto attr = _attr(ctx);
-            auto val = _val(ctx);
-
-            val.mFullName += boost::get<char>(at_c<0>(attr));
-
-            for(auto & c : at_c<1>(attr)) {
-                val.mFullName += boost::get<char>(c);
-            }
-
-            cout << "full name is" << val.mFullName << endl;
+    // --------------------------------------------------------------------------------
+    // Helpful adaptor
+    template <typename T>
+    struct as_type {
+        template <typename E>
+        constexpr auto operator[](E e) const {
+            return x3::rule<struct _, T> {} = e;
         }
     };
 
+    template <typename T>
+    static inline constexpr as_type<T> as;
+
+    // --------------------------------------------------------------------------------
     // Symbol
+
+
     struct symbol_class : boost::spirit::x3::annotate_on_success,
                           error_handler { };
-    rule<symbol_class, ast::symbol> const symbol = "symbol";
+    rule<symbol_class, ast::symbol, true> const symbol = "symbol";
 
     auto const echars = char_("=_.?!*+-/><$@");
 
     auto const symbol_def
-        = (lexeme[(alpha | echars) >> *(alnum | echars)])[create_symbol()];
+        = as<std::string> [lexeme[(alpha | echars) >> *(alnum | echars)]];
+
     BOOST_SPIRIT_DEFINE(symbol);
 
     // Character

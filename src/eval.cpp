@@ -48,7 +48,7 @@ namespace ast {
     const auto ret = val(list());
 
     val Evaluator::operator()(define const& _v) {
-        auto sym = _v.mSym.get();
+        auto & sym = _v.mSym.mName;
 
         auto ret = _v.mVal;
 
@@ -67,10 +67,10 @@ namespace ast {
     }
 
     val Evaluator::operator()(ast::symbol const& _v) {
-        auto ret = mEnv.find(_v.get());
+        auto ret = mEnv.find(_v.mName);
 
         if (ret == nullptr) {
-            std::cout << "Could not find " << _v.get() << std::endl;
+            std::cout << "Could not find " << _v.mName << std::endl;
         }
 
         assert(ret != nullptr);
@@ -156,7 +156,7 @@ namespace ast {
 
         if (auto sym = _func.mFunc.get_val<symbol>()) {
 
-            auto name = sym->get();
+            auto & name = sym->mName;
 
             if (name == "if") {
                 assert(nArgs == 3);
@@ -208,7 +208,7 @@ namespace ast {
             auto i = 0;
 
             for (auto const& a : nf->mArgs) {
-                mEnv = mEnv.set(a.get(), vals[i++]);
+                mEnv = mEnv.set(a.mName, vals[i++]);
             }
 
             auto retVal = eval(nf->mBody);

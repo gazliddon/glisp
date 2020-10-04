@@ -26,14 +26,18 @@ namespace ast {
     };
 
     struct symbol : x3::position_tagged {
-        char mStart;
         std::string mName;
-        std::string get() const {
-            /* return mFullName; */
-            return mStart + mName;
-        }
-        std::string mFullName;
     };
+
+    /* struct symbol : x3::position_tagged { */
+
+    /*     char mStart; */
+    /*     std::string mName; */
+    /*     std::string get() const { */
+    /*         return mFullName; */
+    /*     } */
+    /*     std::string mFullName; */
+    /* }; */
 
     struct keyword : x3::position_tagged {
         symbol mSym;

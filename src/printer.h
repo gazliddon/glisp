@@ -8,6 +8,28 @@
 
 // Ast printer
 namespace ast {
+    struct traverse_base {
+        virtual void operator()(ast::boolean &) ;
+        virtual void operator()(ast::symbol & _v) ;
+        virtual void operator()(ast::keyword & _keyword) ;
+        virtual void operator()(std::string & _v) ;
+        virtual void operator()(ast::hint & _hint) ;
+        virtual void operator()(ast::nil &) ;
+        virtual void operator()(double _v) ;
+        virtual void operator()(char _v) ;
+        virtual void operator()(ast::set & _set) ;
+        virtual void operator()(ast::list & _list) ;
+        virtual void operator()(ast::vector & _vector) ;
+        virtual void operator()(ast::map & _map) ;
+        virtual void operator()(ast::meta & _value) ;
+        virtual void operator()(ast::map_entry & _map_entry) ;
+        virtual void operator()(ast::lambda & _lambda) ;
+        virtual void operator()(ast::native_function & _lambda) ;
+        virtual void operator()(ast::function & _func)  ;
+        virtual void operator()(ast::define & _def) ;
+        virtual void operator()(ast::val & _val) ;;
+    };
+
     struct printer_base {
         typedef void result_type;
         std::ostream& mOut;
@@ -41,7 +63,7 @@ namespace ast {
         void operator()(ast::function const& _func) const ;
 
         void operator()(ast::define const& _def) const {
-            mOut << "(define " << _def.mSym.get() << " ";
+            mOut << "(define " << _def.mSym.mName << " ";
             boost::apply_visitor(*this, _def.mVal);
             mOut << "):define";
         }
