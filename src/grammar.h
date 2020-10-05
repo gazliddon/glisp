@@ -8,6 +8,7 @@
 #pragma GCC diagnostic ignored "-Wparentheses"
 #include <iostream>
 
+#include <boost/spirit/home/x3/string/detail/string_parse.hpp>
 #include <cxxabi.h>
 
 namespace grammar {
@@ -28,6 +29,7 @@ namespace grammar {
             return boost::spirit::x3::error_handler_result::fail;
         }
     };
+
     namespace x3 = boost::spirit::x3;
 
     using x3::alnum;
@@ -114,8 +116,44 @@ namespace grammar {
     static inline constexpr as_type<T> as;
 
     // --------------------------------------------------------------------------------
-    // Symbol
+    // Adapting bool parser for lisp bool
+    //
+    template <typename T = bool>
+    struct lisp_bool_policies {
+        template <typename Iterator, typename Attribute, typename CaseCompare>
+        static bool parse_true(Iterator& first,
+            Iterator const& last,
+            Attribute& attr_,
+            CaseCompare const& case_compare) {
+            using namespace x3;
+            if (detail::string_parse("#t", first, last, unused, case_compare)) {
+                traits::move_to(T(true), attr_); // result is true
+                return true;
+            }
+            return false;
+        }
 
+        template <typename Iterator, typename Attribute, typename CaseCompare>
+        static bool parse_false(Iterator& first,
+            Iterator const& last,
+            Attribute& attr_,
+            CaseCompare const& case_compare) {
+            using namespace x3;
+            if (detail::string_parse("#f", first, last, unused, case_compare)) {
+                traits::move_to(T(false), attr_); // result is false
+                return true;
+            }
+            return false;
+        }
+    };
+    using lisp_bool_type = x3::bool_parser<bool,
+        boost::spirit::char_encoding::standard,
+        lisp_bool_policies<bool>>;
+
+    lisp_bool_type const lisp_bool_ = {};
+
+    // --------------------------------------------------------------------------------
+    // Symbol
 
     struct symbol_class : boost::spirit::x3::annotate_on_success,
                           error_handler { };
@@ -124,7 +162,7 @@ namespace grammar {
     auto const echars = char_("=_.?!*+-/><$@");
 
     auto const symbol_def
-        = as<std::string> [lexeme[(alpha | echars) >> *(alnum | echars)]];
+        = as<std::string>[lexeme[(alpha | echars) >> *(alnum | echars)]];
 
     BOOST_SPIRIT_DEFINE(symbol);
 
