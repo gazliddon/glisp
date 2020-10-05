@@ -91,6 +91,7 @@ namespace glisp {
         auto iter = _str.begin(), end = _str.end();
 
         using error_handler_type = x3::error_handler<iterator_type>;
+        
         error_handler_type error_handler(iter, end, std::cerr);
 
         auto const parser = with<error_handler_tag>(
