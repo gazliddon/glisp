@@ -12,7 +12,7 @@ namespace ast {
         val ret;
 
         for (auto const& form : _v.mForms) {
-            ret = apply_visitor(*this, form);
+            ret = eval( form);
         }
 
         return ret;
@@ -62,7 +62,7 @@ namespace ast {
     }
 
     val Evaluator::operator()(bool const& _val) {
-        return val(_val);
+        assert(false);
     }
 
     val Evaluator::operator()(ast::symbol const& _v) {
@@ -149,8 +149,6 @@ namespace ast {
     val Evaluator::operator()(ast::function const& _func) {
         val ret;
 
-        std::cout << "Evaluating function" << std::endl;
-
         auto nArgs = _func.mArgs.size();
 
         if (auto sym = _func.mFunc.get_val<symbol>()) {
@@ -160,23 +158,32 @@ namespace ast {
             if (name == "if") {
                 assert(nArgs == 3);
 
-                auto predicate = apply_visitor(*this, _func.mArgs[0]);
+                auto predicate = eval(_func.mArgs[0]);
 
                 if (predicate.to_bool()) {
-                    return apply_visitor(*this, _func.mArgs[1]);
+                    return eval( _func.mArgs[1]);
                 } else {
-                    return apply_visitor(*this, _func.mArgs[2]);
+                    return eval( _func.mArgs[2]);
                 }
             }
 
             if (name == "or") {
-                assert(nArgs == 2);
-                assert(false);
+                for (auto const& v : _func.mArgs) {
+                    if (eval(v).to_bool()) {
+                        return val(true);
+                    }
+                }
+                return val(false);
+
             }
 
             if (name == "and") {
-                assert(nArgs == 2);
-                assert(false);
+                for (auto const& v : _func.mArgs) {
+                    if (!eval(v).to_bool()) {
+                        return val(false);
+                    }
+                }
+                return val(true);
             }
 
             if (name == "list") {
@@ -184,17 +191,21 @@ namespace ast {
             }
 
             if (name == "quote") {
-                assert(false);
+
+                list ret = {
+                    .mForms = _func.mArgs
+                };
+                return val(ret);
             }
         }
 
-        auto func = apply_visitor(*this, _func.mFunc);
+        auto func = eval( _func.mFunc);
 
         std::vector<val> vals;
         vals.reserve(_func.mArgs.size());
 
         for (auto const& v : _func.mArgs) {
-            vals.push_back(apply_visitor(*this, v));
+            vals.push_back(eval( v));
         }
 
         if (auto nf = func.get_val<native_function>()) {
@@ -215,7 +226,6 @@ namespace ast {
             mEnv = env;
             return retVal;
         }
-
 
         return ret;
     }

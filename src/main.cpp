@@ -24,7 +24,7 @@ namespace glisp {
     template <typename T>
     ast::val twin_op(ast::env_t e,
         std::vector<ast::val> const& _args,
-        std::function<T(T const &, T const&)>&& _func) {
+        std::function<T(T const&, T const&)>&& _func) {
         assert(_args.size() == 2);
         auto a0 = _args[0].get_val<T>();
         auto a1 = _args[1].get_val<T>();
@@ -42,27 +42,26 @@ namespace glisp {
     }
 
     ast::val add(ast::env_t e, std::vector<ast::val> const& _args) {
-        return twin_op<double>(e, _args, [](auto a, auto b) {
-                return a + b;
-                });
+        return twin_op<double>(e, _args, [](auto a, auto b) { return a + b; });
+    }
+
+    ast::val equal(ast::env_t e, std::vector<ast::val> const& _args) {
+        assert(_args.size() == 2);
+        auto const& a = _args[0];
+        auto const& b = _args[1];
+        return ast::val(a.var == b.var);
     }
 
     ast::val sub(ast::env_t e, std::vector<ast::val> const& _args) {
-        return twin_op<double>(e, _args, [](auto a, auto b) {
-                return a - b;
-                });
+        return twin_op<double>(e, _args, [](auto a, auto b) { return a - b; });
     }
 
     ast::val mul(ast::env_t e, std::vector<ast::val> const& _args) {
-        return twin_op<double>(e, _args, [](auto a, auto b) {
-                return a * b;
-                });
+        return twin_op<double>(e, _args, [](auto a, auto b) { return a * b; });
     }
 
     ast::val div(ast::env_t e, std::vector<ast::val> const& _args) {
-        return twin_op<double>(e, _args, [](auto a, auto b) {
-                return a / b;
-                });
+        return twin_op<double>(e, _args, [](auto a, auto b) { return a / b; });
     }
 
     using std::cout;
@@ -91,7 +90,7 @@ namespace glisp {
         auto iter = _str.begin(), end = _str.end();
 
         using error_handler_type = x3::error_handler<iterator_type>;
-        
+
         error_handler_type error_handler(iter, end, std::cerr);
 
         auto const parser = with<error_handler_tag>(
@@ -124,10 +123,16 @@ namespace glisp {
 
         evaluator.add_native_function("println", println, 1);
 
-        evaluator.add_twin_op<double>("+", [](auto a, auto b) { return a + b; });
-        evaluator.add_twin_op<double>("-", [](auto a, auto b) { return a - b; });
-        evaluator.add_twin_op<double>("*", [](auto a, auto b) { return a * b; });
-        evaluator.add_twin_op<double>("/", [](auto a, auto b) { return a / b; });
+        evaluator.add_twin_op<double>(
+            "+", [](auto a, auto b) { return a + b; });
+        evaluator.add_twin_op<double>(
+            "-", [](auto a, auto b) { return a - b; });
+        evaluator.add_twin_op<double>(
+            "*", [](auto a, auto b) { return a * b; });
+        evaluator.add_twin_op<double>(
+            "/", [](auto a, auto b) { return a / b; });
+
+        evaluator.add_native_function("=", equal, 2);
 
         while (true) {
 

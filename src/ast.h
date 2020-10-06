@@ -21,9 +21,9 @@ namespace ast {
 
     namespace x3 = boost::spirit::x3;
 
-
     struct symbol : x3::position_tagged {
         std::string mName;
+        friend bool operator==(symbol const& _lhs, symbol const& _rhs);
     };
 
     /* struct symbol : x3::position_tagged { */
@@ -38,6 +38,7 @@ namespace ast {
 
     struct keyword : x3::position_tagged {
         symbol mSym;
+        friend bool operator==(keyword const& _lhs, keyword const& _rhs);
     };
 
     struct hint : x3::position_tagged {
@@ -100,7 +101,11 @@ namespace ast {
         using base_type::operator=;
 
         bool to_bool() const {
-            assert(false);
+            if (is<bool>()) {
+                return *get_val<bool>();
+            } else {
+                return true;
+            }
         }
 
         template <typename T>
@@ -132,36 +137,45 @@ namespace ast {
     struct native_function {
         std::function<val(env_t, std::vector<val> const&)> mFunc;
         int mNumOfArgs;
+        friend bool operator==(
+            native_function const& _lhs, native_function const& _rhs);
     };
 
     struct define : x3::position_tagged {
         symbol mSym;
         val mVal;
+        friend bool operator==(define const& _lhs, define const& _rhs);
     };
 
     struct vector : x3::position_tagged {
         std::vector<val> mForms;
+        friend bool operator==(vector const& _lhs, vector const& _rhs);
     };
 
     struct list : x3::position_tagged {
         std::vector<val> mForms;
+        friend bool operator==(list const& _lhs, list const& _rhs);
     };
 
     struct map_entry : x3::position_tagged {
         val mKey;
         val mValue;
+        friend bool operator==(map_entry const& _lhs, map_entry const& _rhs);
     };
 
     struct map : x3::position_tagged {
         std::list<map_entry> mHashMap;
+        friend bool operator==(map const& _lhs, map const& _rhs);
     };
 
     struct meta : x3::position_tagged {
         std::list<map_entry> mHashMap;
+        friend bool operator==(meta const& _lhs, meta const& _rhs);
     };
 
     struct set : x3::position_tagged {
         std::vector<val> mForms;
+        friend bool operator==(set const& _lhs, set const& _rhs);
     };
 
     struct program : x3::position_tagged {
@@ -171,11 +185,13 @@ namespace ast {
     struct lambda {
         std::vector<symbol> mArgs;
         val mBody;
+        friend bool operator==(lambda const& _lhs, lambda const& _rhs);
     };
 
     struct function {
         val mFunc;
         std::vector<val> mArgs;
+        friend bool operator==(function const& _lhs, function const& _rhs);
     };
 
     // print function for debugging
