@@ -57,8 +57,14 @@ namespace ast {
         mOut << "^" << _keyword.mSym.mName << ":typehint";
     }
 
-    void printer::operator()(ast::boolean const& _val) const {
-        mOut << _val.mVal << ":bool";
+    void printer::operator()(bool const& _val) const {
+        if (_val) {
+            mOut << "true";
+        } else {
+
+            mOut << "false";
+        }
+        mOut << ":bool";
     }
 
     void printer::operator()(char _v) const {

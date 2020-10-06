@@ -21,9 +21,6 @@ namespace ast {
 
     namespace x3 = boost::spirit::x3;
 
-    struct boolean : x3::position_tagged {
-        std::string mVal;
-    };
 
     struct symbol : x3::position_tagged {
         std::string mName;
@@ -47,7 +44,7 @@ namespace ast {
         symbol mSym;
     };
 
-    using atoms = mp_list<boolean, std::string, double, char, keyword>;
+    using atoms = mp_list<bool, std::string, double, char, keyword>;
 
     template <typename T>
     constexpr bool is_atom() {

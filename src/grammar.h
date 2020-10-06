@@ -9,7 +9,6 @@
 #include <iostream>
 
 #include <boost/spirit/home/x3/string/detail/string_parse.hpp>
-#include <cxxabi.h>
 
 namespace grammar {
 
@@ -72,35 +71,12 @@ namespace grammar {
     struct define_class { };
     rule<define_class, ast::define> const define = "define";
 
-    // bool
-    struct boolean_class;
-    rule<boolean_class, ast::boolean> const boolean("boolean");
-    auto const boolean_def = (string("#t") | string("#f"));
-    BOOST_SPIRIT_DEFINE(boolean);
-
     // Strings
     struct str_class;
     rule<str_class, std::string> const str("str");
     auto const str_def = lexeme['"' > *(char_ - '"') > '"'];
     BOOST_SPIRIT_DEFINE(str);
 
-    template <typename T>
-    std::string demangle() {
-        const size_t max_size = 20000;
-
-        char buff[max_size];
-        auto mangled = typeid(T).name();
-        int stat     = 0;
-        size_t len   = max_size;
-
-        auto c = abi::__cxa_demangle(mangled, buff, &len, &stat);
-        return c;
-    }
-
-    template <typename T>
-    std::string demangle(T const& _arg) {
-        return demangle<decltype(_arg)>();
-    }
 
     // --------------------------------------------------------------------------------
     // Helpful adaptor
@@ -117,20 +93,35 @@ namespace grammar {
 
     // --------------------------------------------------------------------------------
     // Adapting bool parser for lisp bool
-    //
+    // parses for #t / #f and true / false
     template <typename T = bool>
     struct lisp_bool_policies {
+        template <typename Iterator, typename Attribute, typename CaseCompare>
+        static bool parse_true_false(Iterator& first,
+            Iterator const& last,
+            Attribute& attr_,
+            CaseCompare const& case_compare, 
+            char const * _id1,
+            char const * _id2,
+            T _val
+            ) {
+            using namespace x3;
+            auto is_id1 = detail::string_parse(_id1, first, last, unused, case_compare);
+            auto is_id2 = detail::string_parse(_id2, first, last, unused, case_compare);
+
+            if (is_id1 || is_id2) {
+                traits::move_to(T(_val), attr_); // result is true
+                return true;
+            }
+            return false;
+        }
+
         template <typename Iterator, typename Attribute, typename CaseCompare>
         static bool parse_true(Iterator& first,
             Iterator const& last,
             Attribute& attr_,
             CaseCompare const& case_compare) {
-            using namespace x3;
-            if (detail::string_parse("#t", first, last, unused, case_compare)) {
-                traits::move_to(T(true), attr_); // result is true
-                return true;
-            }
-            return false;
+            return parse_true_false(first, last,attr_, case_compare, "#t", "true", true);
         }
 
         template <typename Iterator, typename Attribute, typename CaseCompare>
@@ -138,14 +129,10 @@ namespace grammar {
             Iterator const& last,
             Attribute& attr_,
             CaseCompare const& case_compare) {
-            using namespace x3;
-            if (detail::string_parse("#f", first, last, unused, case_compare)) {
-                traits::move_to(T(false), attr_); // result is false
-                return true;
-            }
-            return false;
+            return parse_true_false(first, last,attr_, case_compare, "#f", "false", false);
         }
     };
+
     using lisp_bool_type = x3::bool_parser<bool,
         boost::spirit::char_encoding::standard,
         lisp_bool_policies<bool>>;
@@ -205,7 +192,7 @@ namespace grammar {
     auto const function_def = '(' > (symbol | lambda | function) > *val > ')';
     BOOST_SPIRIT_DEFINE(function);
 
-    auto const val_def = boolean | symbol | keyword | str | character | double_
+    auto const val_def = lexeme[lisp_bool_] | symbol | keyword | str | character | double_
         | lambda | define | function | list | vector | map;
 
     BOOST_SPIRIT_DEFINE(val);

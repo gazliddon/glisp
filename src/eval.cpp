@@ -61,9 +61,8 @@ namespace ast {
         return ret;
     }
 
-    val Evaluator::operator()(ast::boolean const&) {
-        assert(false);
-        return ret;
+    val Evaluator::operator()(bool const& _val) {
+        return val(_val);
     }
 
     val Evaluator::operator()(ast::symbol const& _v) {

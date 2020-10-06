@@ -16,7 +16,7 @@ namespace ast {
         val eval(val const& _v);
 
         val operator()(define const& _v);
-        val operator()(ast::boolean const&);
+        val operator()(bool const&);
         val operator()(ast::symbol const& _v);
         val operator()(ast::keyword const& _keyword);
         val operator()(std::string const& _v);

@@ -9,7 +9,7 @@
 // Ast printer
 namespace ast {
     struct traverse_base {
-        virtual void operator()(ast::boolean &) ;
+        virtual void operator()(bool &) ;
         virtual void operator()(ast::symbol & _v) ;
         virtual void operator()(ast::keyword & _keyword) ;
         virtual void operator()(std::string & _v) ;
@@ -44,7 +44,7 @@ namespace ast {
         printer(std::ostream& _out = std::cout);
 
         /* void operator()(ast::val const& _v) const; */
-        void operator()(ast::boolean const&) const;
+        void operator()(bool const&) const;
         void operator()(ast::symbol const& _v) const;
         void operator()(ast::keyword const& _keyword) const;
         void operator()(std::string const& _v) const;
