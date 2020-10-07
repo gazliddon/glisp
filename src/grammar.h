@@ -153,6 +153,19 @@ namespace grammar {
 
     BOOST_SPIRIT_DEFINE(symbol);
 
+
+
+
+    // nil
+    auto constexpr f = []() {
+        // dummy semantic action to prevent
+        // serializing to synthetict attribute
+    };
+    struct nil_class;
+    rule<nil_class, ast::nil, false> const nil("nil");
+    auto const nil_def = lit("nil")[f];
+    BOOST_SPIRIT_DEFINE(nil);
+
     // Character
     struct character_class;
     rule<character_class, char> const character("character");
@@ -192,7 +205,7 @@ namespace grammar {
     auto const function_def = '(' > (symbol | lambda | function) > *val > ')';
     BOOST_SPIRIT_DEFINE(function);
 
-    auto const val_def = lexeme[lisp_bool_] | symbol | keyword | str | character | double_
+    auto const val_def = lexeme[lisp_bool_] | nil | symbol | keyword | str | character | double_
         | lambda | define | function | list | vector | map;
 
     BOOST_SPIRIT_DEFINE(val);

@@ -18,6 +18,11 @@ namespace ast { }
 
 namespace ast {
     using namespace boost::mp11;
+    struct nil { 
+        friend bool operator==(nil const& _lhs, nil const& _rhs) {
+            return true;
+        }
+    };
 
     namespace x3 = boost::spirit::x3;
 
@@ -45,7 +50,7 @@ namespace ast {
         symbol mSym;
     };
 
-    using atoms = mp_list<bool, std::string, double, char, keyword>;
+    using atoms = mp_list<bool, std::string, double, char, keyword, nil>;
 
     template <typename T>
     constexpr bool is_atom() {
@@ -59,7 +64,6 @@ namespace ast {
     namespace x3 = boost::spirit::x3;
     using x3::forward_ast;
 
-    struct nil { };
 
     struct list;
     struct val;
@@ -101,11 +105,15 @@ namespace ast {
         using base_type::operator=;
 
         bool to_bool() const {
+            if (is<nil>()) {
+                return false;
+            }
+
             if (is<bool>()) {
                 return *get_val<bool>();
-            } else {
-                return true;
             }
+
+            return true;
         }
 
         template <typename T>

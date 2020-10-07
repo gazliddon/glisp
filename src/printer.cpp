@@ -72,7 +72,7 @@ namespace ast {
     }
 
     void printer::operator()(ast::nil const&) const {
-        BOOST_ASSERT(0);
+        mOut << "nil:nil\n"; 
     }
 
     void printer::operator()(double _v) const {
