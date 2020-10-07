@@ -16,30 +16,21 @@
 
 namespace ast { }
 
+
 namespace ast {
+    namespace x3 = boost::spirit::x3;
     using namespace boost::mp11;
+
     struct nil { 
         friend bool operator==(nil const& _lhs, nil const& _rhs) {
             return true;
         }
     };
 
-    namespace x3 = boost::spirit::x3;
-
     struct symbol : x3::position_tagged {
         std::string mName;
         friend bool operator==(symbol const& _lhs, symbol const& _rhs);
     };
-
-    /* struct symbol : x3::position_tagged { */
-
-    /*     char mStart; */
-    /*     std::string mName; */
-    /*     std::string get() const { */
-    /*         return mFullName; */
-    /*     } */
-    /*     std::string mFullName; */
-    /* }; */
 
     struct keyword : x3::position_tagged {
         symbol mSym;
