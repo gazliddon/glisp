@@ -1,6 +1,7 @@
 build --spawn_strategy=standalone
 build --cxxopt "-Werror"
 build --cxxopt "-Wno-unused-variable" 
+build --cxxopt "-Wno-macro-redefined" 
 build --cxxopt "-std=c++2a" 
 build --show_progress_rate_limit -1
 build --jobs 10
