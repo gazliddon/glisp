@@ -67,6 +67,11 @@ namespace ast {
             boost::apply_visitor(*this, _def.mVal);
             mOut << "):define";
         }
+        /* template<class T> */
+        /*     void operator()(T const& _func) const { */
+        /*         mOut << "Fuck knows" << std::endl; */
+        /*     } */
+
 
         void operator()(ast::val const& _val) const {
             boost::apply_visitor(*this, _val);

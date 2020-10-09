@@ -45,7 +45,6 @@ namespace ast {
     /*     return allEvalled; */
     /* } */
 
-    const auto ret = val(list());
 
     val Evaluator::operator()(define const& _v) {
         auto & sym = _v.mSym.mName;
@@ -58,7 +57,7 @@ namespace ast {
 
         mEnv = mEnv.set(sym, ret);
 
-        return ret;
+        return val(_v.mSym);
     }
 
     val Evaluator::operator()(bool const& _val) {
@@ -78,64 +77,71 @@ namespace ast {
 
     val Evaluator::operator()(ast::keyword const& _keyword) {
         assert(false);
-        return ret;
+        return val(nil());
     }
 
     val Evaluator::operator()(std::string const& _v) {
         assert(false);
-        return ret;
+        return val(nil());
     }
 
     val Evaluator::operator()(ast::hint const& _hint) {
         assert(false);
-        return ret;
+        return val(nil());
     }
 
     val Evaluator::operator()(ast::nil const&) {
         assert(false);
-        return ret;
+        return val(nil());
     }
     val Evaluator::operator()(double _v) {
         return val(_v);
     }
     val Evaluator::operator()(char _v) {
         assert(false);
-        return ret;
+        return val(nil());
     }
 
     val Evaluator::operator()(ast::set const& _set) {
         std::cout << "set" << std::endl;
-        return ret;
+        assert(false);
+        return val(nil());
     }
 
     val Evaluator::operator()(ast::list const& _list) {
         std::cout << "list" << std::endl;
-        return ret;
+        assert(false);
+        return val(nil());
     }
 
     val Evaluator::operator()(ast::vector const& _vector) {
         std::cout << "vector" << std::endl;
-        return ret;
+        assert(false);
+        return val(nil());
     }
 
     val Evaluator::operator()(ast::map const& _map) {
         std::cout << "map" << std::endl;
-        return ret;
+        assert(false);
+        return val(nil());
     }
 
     val Evaluator::operator()(ast::meta const& _value) {
         std::cout << "meta" << std::endl;
-        return ret;
+        assert(false);
+        return val(nil());
     }
 
     val Evaluator::operator()(ast::map_entry const& _map_entry) {
         std::cout << "map_entry" << std::endl;
-        return ret;
+        assert(false);
+        return val(nil());
     }
 
     val Evaluator::operator()(ast::lambda const& _lambda) {
         std::cout << "lambda" << std::endl;
-        return ret;
+        assert(false);
+        return val(nil());
     }
 
     val const& Evaluator::eval(val const& _v) const {
@@ -144,6 +150,7 @@ namespace ast {
 
     val Evaluator::operator()(ast::native_function const& _lambda) {
         assert(false);
+        return val(nil());
     }
 
     val Evaluator::operator()(ast::function const& _func) {
@@ -174,7 +181,6 @@ namespace ast {
                     }
                 }
                 return val(false);
-
             }
 
             if (name == "and") {

@@ -31,14 +31,17 @@ namespace glisp {
         return ast::val(_func(*a0, *a1));
     }
 
-    ast::val println(ast::env_t e, std::vector<ast::val> const& _args) {
+    ast::val read(ast::Evaluator & valuator, std::string a) {
+        assert(false);
+    }
 
+    ast::val println(ast::env_t e, std::vector<ast::val> const& _args) {
         if (_args[0].is_atom()) {
             ast::print(_args[0], std::cout);
         } else {
             std::cout << "Fuck knows" << std::endl;
         }
-        return ast::val(ast::list());
+        return ast::val(ast::nil());
     }
 
     ast::val add(ast::env_t e, std::vector<ast::val> const& _args) {
@@ -132,7 +135,13 @@ namespace glisp {
         evaluator.add_twin_op<double>(
             "/", [](auto a, auto b) { return a / b; });
 
-        evaluator.add_native_function("=", equal, 2);
+        auto read_fn = [&evaluator](ast::env_t e, std::vector<ast::val> const& _args) {
+            auto x = _args[0].get_val<std::string>();
+            auto ret = read(evaluator, *x);
+            return ret;
+        };
+
+        evaluator.add_native_function("read", read_fn, 1);
 
         while (true) {
 

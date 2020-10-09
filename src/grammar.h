@@ -77,7 +77,6 @@ namespace grammar {
     auto const str_def = lexeme['"' > *(char_ - '"') > '"'];
     BOOST_SPIRIT_DEFINE(str);
 
-
     // --------------------------------------------------------------------------------
     // Helpful adaptor
     template <typename T>
@@ -100,14 +99,15 @@ namespace grammar {
         static bool parse_true_false(Iterator& first,
             Iterator const& last,
             Attribute& attr_,
-            CaseCompare const& case_compare, 
-            char const * _id1,
-            char const * _id2,
-            T _val
-            ) {
+            CaseCompare const& case_compare,
+            char const* _id1,
+            char const* _id2,
+            T _val) {
             using namespace x3;
-            auto is_id1 = detail::string_parse(_id1, first, last, unused, case_compare);
-            auto is_id2 = detail::string_parse(_id2, first, last, unused, case_compare);
+            auto is_id1
+                = detail::string_parse(_id1, first, last, unused, case_compare);
+            auto is_id2
+                = detail::string_parse(_id2, first, last, unused, case_compare);
 
             if (is_id1 || is_id2) {
                 traits::move_to(T(_val), attr_); // result is true
@@ -121,7 +121,8 @@ namespace grammar {
             Iterator const& last,
             Attribute& attr_,
             CaseCompare const& case_compare) {
-            return parse_true_false(first, last,attr_, case_compare, "#t", "true", true);
+            return parse_true_false(
+                first, last, attr_, case_compare, "#t", "true", true);
         }
 
         template <typename Iterator, typename Attribute, typename CaseCompare>
@@ -129,7 +130,8 @@ namespace grammar {
             Iterator const& last,
             Attribute& attr_,
             CaseCompare const& case_compare) {
-            return parse_true_false(first, last,attr_, case_compare, "#f", "false", false);
+            return parse_true_false(
+                first, last, attr_, case_compare, "#f", "false", false);
         }
     };
 
@@ -153,16 +155,12 @@ namespace grammar {
 
     BOOST_SPIRIT_DEFINE(symbol);
 
-
-
-
     // nil
-    auto constexpr f = []() {
-        // dummy semantic action to prevent
-        // serializing to synthetict attribute
-    };
+    auto constexpr f = []() {};
     struct nil_class;
-    rule<nil_class, ast::nil, false> const nil("nil");
+    rule<nil_class, ast::nil> const nil("nil");
+    // dummy semantic action to prevent
+    // serializing to synthetict attribute
     auto const nil_def = lit("nil")[f];
     BOOST_SPIRIT_DEFINE(nil);
 
@@ -205,8 +203,9 @@ namespace grammar {
     auto const function_def = '(' > (symbol | lambda | function) > *val > ')';
     BOOST_SPIRIT_DEFINE(function);
 
-    auto const val_def = lexeme[lisp_bool_] | nil | symbol | keyword | str | character | double_
-        | lambda | define | function | list | vector | map;
+    auto const val_def = lexeme[lisp_bool_] | nil | symbol | keyword | str
+        | character | double_ | lambda | define | function | list | vector
+        | map;
 
     BOOST_SPIRIT_DEFINE(val);
 
