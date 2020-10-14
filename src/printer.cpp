@@ -16,45 +16,43 @@ namespace ast {
         }
     }
 
+    void print(glisp::reader_reslult_t const& _p, std::ostream& _out) {
+        print(_p.mAst, _out);
+    }
+
     /* void printer::operator()(ast::val const& _v) const { */
     /*     assert(false); */
 
     /* } */
 
-    printer::printer(std::ostream& _out)
-        : printer_base(_out) {
+    printer::printer(std::ostream& _out, bool print_types)
+        : printer_base(_out), mPrintTypes(print_types) {
     }
-    void printer::operator()(ast::function const& _func) const {
 
+    void printer::operator()(ast::program const& _program) const {
+        renderCollection(_program.mForms,"","","\n");
+    }
+
+    void printer::operator()(ast::sexp const& _func) const {
         mOut << "(";
-
-        (*this)(_func.mFunc);
-
-        mOut << " ";
-
-        if (!_func.mArgs.empty()) {
-            mOut << " ";
-            renderCollection(_func.mArgs);
-        }
-
-        mOut << "):func (" << _func.mArgs.size() << " args)";
+        renderCollection(_func.mForms);
+        mOut << ")";
     }
 
     void printer::operator()(ast::lambda const& _lambda) const {
-        mOut << "("
-             << "lambda";
-        renderVector(_lambda.mArgs, "args");
+        mOut << "(lambda ";
+        renderVector(_lambda.mArgs);
         mOut << " ";
-        (*this)(_lambda.mBody);
-        mOut << "):lambda";
+        render(_lambda.mBody);
+        mOut << ")";
     }
 
     void printer::operator()(ast::keyword const& _keyword) const {
-        mOut << ":" << _keyword.mSym.mName << ":keyword";
+        mOut << ":" << _keyword.mSym.mName << "";
     }
 
     void printer::operator()(ast::hint const& _keyword) const {
-        mOut << "^" << _keyword.mSym.mName << ":typehint";
+        mOut << "^" << _keyword.mSym.mName << "";
     }
 
     void printer::operator()(bool const& _val) const {
@@ -64,44 +62,33 @@ namespace ast {
 
             mOut << "false";
         }
-        mOut << ":bool";
+        mOut << "";
     }
 
     void printer::operator()(char _v) const {
-        mOut << _v << ":char";
+        mOut << _v << "";
     }
 
     void printer::operator()(ast::nil const&) const {
-        mOut << "nil:nil\n"; 
+        mOut << "nil";
     }
 
     void printer::operator()(double _v) const {
-        mOut << _v << ":double";
+        mOut << _v << "";
     }
 
     void printer::operator()(std::string const& _v) const {
         mOut << "\"" << _v << "\""
-             << ":string";
+             << "";
     }
 
     void printer::operator()(ast::symbol const& _v) const {
-        mOut << _v.mName << ":symbol";
-    }
-
-    void printer::operator()(ast::list const& _list) const {
-        mOut << "(";
-
-        if (!_list.mForms.empty()) {
-            mOut << " ";
-            renderCollection(_list.mForms);
-        }
-
-        mOut << "):list";
+        mOut << _v.mName << "";
     }
 
     void printer::operator()(ast::vector const& _vector) const {
         renderCollection(_vector.mForms, "[", "]");
-        mOut << ":vector";
+        mOut << "";
     }
 
     void printer::operator()(native_function const& _func) const {
@@ -109,20 +96,20 @@ namespace ast {
     }
 
     void printer::operator()(ast::map const& _map) const {
-        renderCollection(_map.mHashMap, "{", "}", "map");
+        renderCollection(_map.mHashMap, "{", "}", "");
     }
 
     void printer::operator()(ast::meta const& _val) const {
-        renderCollection(_val.mHashMap, "^{", "}", "meta");
+        renderCollection(_val.mHashMap, "^{", "}", "");
     }
 
     void printer::operator()(ast::set const& _set) const {
-        renderCollection(_set.mForms, "#{", "}", "set");
+        renderCollection(_set.mForms, "#{", "}", "");
     }
 
     void printer::operator()(ast::map_entry const& _map_entry) const {
-        (*this)(_map_entry.mKey);
+        render(_map_entry.mKey);
         mOut << " ";
-        (*this)(_map_entry.mValue);
+        render(_map_entry.mValue);
     }
 }

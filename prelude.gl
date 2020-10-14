@@ -1,0 +1,40 @@
+(def dec (fn [a] (- a 1)))
+(def inc (fn [a] (+ a 1)))
+(def not (fn [a] (if a false true)))
+
+(def neg (fn [a] (- 0 a)))
+
+(def nil? (fn [a] (= (type a) "nil")))
+
+(def second (fn [a] (first (rest a))))
+
+(def identity (fn [a] a))
+
+(def newline (fn[] (puts \newline)))
+
+(def println (fn [a] (puts (str a \newline))))
+
+(def map
+  (fn 
+    "map
+    ([f coll])
+    Returns a sequence consisting of the result of applying f to
+    items of coll"
+    [f xs]
+    (let [map-fn (fn [f xs res]
+                   (if xs
+                     (map-fn f (rest xs) (cons (f (first xs)) res))
+                     res))]
+      (map-fn f xs '()))))
+
+(def reduce
+  (fn 
+    "reduce
+    ([f coll init])
+    Returns a sequence consisting of the result of applying f to
+    items of coll"
+    [f coll init] (if col 
+                    (reduce f (rest coll) (f (first coll) init))
+                    init)))
+
+

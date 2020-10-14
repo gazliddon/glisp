@@ -1,0 +1,22 @@
+(def fib
+  (fn [n]
+    (if (<= n 2)
+      1
+      (+ (fib (- n 1)) (fib (- n 2))))))
+
+(def doc 
+  (fn "get the docstring for object o"
+    [o]
+    (let [m (meta o)]
+      (println "Getting docs")
+      (if m
+        (:docstring m)
+        nil))))
+
+(def loop-test 
+  (fn "test the loops"
+    [o]
+    (println o)
+    (if o
+      (loop-test (rest o))
+      "done")))
