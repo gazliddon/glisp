@@ -1,0 +1,16 @@
+(define dec (lambda [a] (- a 1)))
+(define inc (lambda [a] (+ a 1)))
+(define not (lambda [a] (if a false true)))
+(define neg (lambda [a] (- 0 a)))
+
+(define nil? (lambda [a] (= (type a) "nil")))
+
+(define load (lambda [f] 
+    (eval (read (slurp f)))))
+
+(defmacro infix
+  [infixed]
+  (list (second infixed) (first infixed) (last infixed)))
+
+
+

@@ -14,12 +14,24 @@
 #include <boost/spirit/home/x3/support/ast/variant.hpp>
 #include <immer/map.hpp>
 
-namespace ast { }
+namespace ast { 
+    template<typename T>
+        struct dummy_compare {
+        using type = T;
+            friend bool operator==(T const& _lhs, T const& _rhs) {
+                assert(false);
+            }
+        };
+}
 
 
 namespace ast {
     namespace x3 = boost::spirit::x3;
     using namespace boost::mp11;
+
+    struct v4 {
+
+    };
 
     struct nil { 
         friend bool operator==(nil const& _lhs, nil const& _rhs) {
@@ -56,7 +68,6 @@ namespace ast {
     using x3::forward_ast;
 
 
-    struct list;
     struct val;
     struct vector;
     struct lambda;
@@ -64,25 +75,27 @@ namespace ast {
     struct meta;
     struct set;
     struct define;
-    struct function;
+    struct sexp;
     struct native_function;
+    struct program;
+    struct macro;
     /* struct fn; */
 
     // clang-format off
 
     using composites = mp_list
         < lambda
-        , list
         , vector
         , map
         , define
         , symbol
         , native_function
-        , function
+        , sexp
+        , program
+        , macro
         >;
 
     // clang-format on
-    //
 
     template <typename T>
     using add_forward_ast = forward_ast<T>;
@@ -140,6 +153,7 @@ namespace ast {
             native_function const& _lhs, native_function const& _rhs);
     };
 
+
     struct define : x3::position_tagged {
         symbol mSym;
         val mVal;
@@ -151,10 +165,6 @@ namespace ast {
         friend bool operator==(vector const& _lhs, vector const& _rhs);
     };
 
-    struct list : x3::position_tagged {
-        std::vector<val> mForms;
-        friend bool operator==(list const& _lhs, list const& _rhs);
-    };
 
     struct map_entry : x3::position_tagged {
         val mKey;
@@ -179,6 +189,7 @@ namespace ast {
 
     struct program : x3::position_tagged {
         std::vector<val> mForms;
+        friend bool operator==(program const& _lhs, program const& _rhs);
     };
 
     struct lambda {
@@ -187,10 +198,16 @@ namespace ast {
         friend bool operator==(lambda const& _lhs, lambda const& _rhs);
     };
 
-    struct function {
-        val mFunc;
-        std::vector<val> mArgs;
-        friend bool operator==(function const& _lhs, function const& _rhs);
+    struct sexp {
+        std::vector<val> mForms;
+        friend bool operator==(sexp const& _lhs, sexp const& _rhs);
+    };
+
+
+    struct macro : x3::position_tagged, dummy_compare<macro> {
+        symbol mSym;
+        vector mArgs;
+        sexp mForms;
     };
 
     // print function for debugging

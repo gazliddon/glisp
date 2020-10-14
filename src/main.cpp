@@ -16,36 +16,135 @@
 
 #include "errors.h"
 
-// I need to walk my ast
-//
-
 namespace glisp {
+    using std::cout;
+    using std::endl;
 
-    template <typename T>
+    template <typename T, typename R = T>
     ast::val twin_op(ast::env_t e,
         std::vector<ast::val> const& _args,
-        std::function<T(T const&, T const&)>&& _func) {
+        std::function<R(T const&, T const&)>&& _func) {
         assert(_args.size() == 2);
         auto a0 = _args[0].get_val<T>();
         auto a1 = _args[1].get_val<T>();
+        assert(a0 && a1);
         return ast::val(_func(*a0, *a1));
     }
 
-    ast::val read(ast::Evaluator & valuator, std::string a) {
-        assert(false);
+    ast::val greater_equal(ast::env_t e, std::vector<ast::val> const& _args) {
+        return twin_op<double, bool>(
+            e, _args, [](auto a, auto b) { return a >= b; });
+    }
+
+    ast::val less_than_equal(ast::env_t e, std::vector<ast::val> const& _args) {
+        return twin_op<double, bool>(
+            e, _args, [](auto a, auto b) { return a <= b; });
+    }
+
+    ast::val less_than(ast::env_t e, std::vector<ast::val> const& _args) {
+        return twin_op<double, bool>(
+            e, _args, [](auto a, auto b) { return a < b; });
+    }
+
+    ast::val greater_than(ast::env_t e, std::vector<ast::val> const& _args) {
+        return twin_op<double, bool>(
+            e, _args, [](auto a, auto b) { return a > b; });
+    }
+
+    template<typename T>
+        ast::val low_first(T const & _v) {
+            if (_v.size() > 0) {
+                return *_v.begin();
+            }
+        return ast::val(ast::nil());
+        }
+
+    template <class I>
+        ast::val low_rest(I _begin, I _end) {
+            if (_end - _begin > 1) {
+                std::vector<ast::val> ret;
+                _begin++;
+                while (_begin != _end) {
+                    ret.push_back(*_begin);
+                    _begin++;
+                }
+            auto ret_wrapped = ast::sexp {
+                .mForms = ret
+            };
+            return ast::val( ret_wrapped );
+            } else  {
+                return ast::val(ast::nil());
+            }
+        }
+
+    ast::val str(ast::env_t e, std::vector<ast::val> const& _args) {
+        return ast::val(ast::nil());
+    }
+
+    ast::val first(ast::env_t e, std::vector<ast::val> const& _args) {
+        assert(_args.size() == 1);
+
+        auto & arg = _args[0];
+
+        if (auto p = arg.get_val<ast::sexp>()) {
+            return low_first(p->mForms);
+        }
+
+        if (auto p = arg.get_val<ast::vector>()) {
+            return low_first(p->mForms);
+        }
+
+        if (auto p = arg.get_val<ast::sexp>()) {
+            return low_first(p->mForms);
+        }
+
+        return ast::val(ast::nil());
+    }
+
+    ast::val rest(ast::env_t e, std::vector<ast::val> const& _args) {
+        assert(_args.size() == 1);
+
+        auto & arg = _args[0];
+
+        if (auto p = arg.get_val<ast::sexp>()) {
+            return low_rest(p->mForms.begin(), p->mForms.end());
+        }
+
+        if (auto p = arg.get_val<ast::vector>()) {
+            return low_rest(p->mForms.begin(), p->mForms.end());
+        }
+
+        if (auto p = arg.get_val<ast::sexp>()) {
+            return low_rest(p->mForms.begin(), p->mForms.end());
+        }
+
+        return ast::val(ast::nil());
+    }
+
+    ast::val slurp(ast::env_t e, std::vector<ast::val> const& _args) {
+        assert(_args.size() == 1);
+
+        if (auto file_name = _args[0].get_val<std::string>()) {
+            std::ifstream inFile;
+            inFile.open(file_name->c_str()); // open the input file
+            std::stringstream strStream;
+            strStream << inFile.rdbuf(); // read the file
+            std::string str
+                = strStream.str(); // str holds the content of the file
+            return ast::val(str);
+        } else {
+            return ast::val(ast::nil());
+        }
     }
 
     ast::val println(ast::env_t e, std::vector<ast::val> const& _args) {
-        if (_args[0].is_atom()) {
-            ast::print(_args[0], std::cout);
-        } else {
-            std::cout << "Fuck knows" << std::endl;
-        }
+        ast::print(_args[0], std::cout);
         return ast::val(ast::nil());
     }
 
     ast::val add(ast::env_t e, std::vector<ast::val> const& _args) {
-        return twin_op<double>(e, _args, [](auto a, auto b) { return a + b; });
+        return twin_op<double, double>(
+            e, _args, [](auto a, auto b) { return a + b; });
     }
 
     ast::val equal(ast::env_t e, std::vector<ast::val> const& _args) {
@@ -56,19 +155,19 @@ namespace glisp {
     }
 
     ast::val sub(ast::env_t e, std::vector<ast::val> const& _args) {
-        return twin_op<double>(e, _args, [](auto a, auto b) { return a - b; });
+        return twin_op<double, double>(
+            e, _args, [](auto a, auto b) { return a - b; });
     }
 
     ast::val mul(ast::env_t e, std::vector<ast::val> const& _args) {
-        return twin_op<double>(e, _args, [](auto a, auto b) { return a * b; });
+        return twin_op<double, double>(
+            e, _args, [](auto a, auto b) { return a * b; });
     }
 
     ast::val div(ast::env_t e, std::vector<ast::val> const& _args) {
-        return twin_op<double>(e, _args, [](auto a, auto b) { return a / b; });
+        return twin_op<double, double>(
+            e, _args, [](auto a, auto b) { return a / b; });
     }
-
-    using std::cout;
-    using std::endl;
 
     std::string read(std::istream& _in = std::cin) {
         std::string ret;
@@ -77,7 +176,6 @@ namespace glisp {
     }
 
     ast::program read(std::string const& _str) {
-
         namespace x3 = boost::spirit::x3;
 
         using x3::ascii::space_type;
@@ -113,6 +211,57 @@ namespace glisp {
         return ast;
     }
 
+    ast::val read(ast::Evaluator& valuator, std::string a) {
+        auto read_ast = glisp::read(a);
+        return ast::val(read_ast);
+    }
+
+
+    static constexpr auto double_add  = [](auto a, auto b) {return a + b;};
+
+    void add_natives(ast::Evaluator & evaluator) {
+
+        evaluator.add_native_function("println", println, 1);
+
+        evaluator.add_twin_op<double>( "+", double_add);
+
+        evaluator.add_twin_op<double>(
+            "-", [](auto a, auto b) { return a - b; });
+        evaluator.add_twin_op<double>(
+            "*", [](auto a, auto b) { return a * b; });
+        evaluator.add_twin_op<double>(
+            "/", [](auto a, auto b) { return a / b; });
+
+        auto read_fn
+            = [&evaluator](ast::env_t e, std::vector<ast::val> const& _args) {
+                  auto x   = _args[0].get_val<std::string>();
+                  auto ret = read(evaluator, *x);
+                  return ret;
+              };
+
+        auto eval_fn
+            = [&evaluator](ast::env_t e, std::vector<ast::val> const& _args) {
+                  ast::program p { .mForms = _args };
+                  return evaluator.eval(p);
+              };
+
+        evaluator.add_native_function("slurp", slurp, 1);
+        evaluator.add_native_function("read", read_fn, 1);
+        evaluator.add_native_function("eval", eval_fn, 1);
+        evaluator.add_native_function(">=", greater_equal, 2);
+        evaluator.add_native_function("<=", less_than_equal, 2);
+        evaluator.add_native_function("<", less_than, 2);
+        evaluator.add_native_function(">", greater_than, 2);
+        evaluator.add_native_function("=", equal, 2);
+        evaluator.add_native_function("first", first, 1);
+        evaluator.add_native_function("rest", rest, 1);
+    }
+
+    void include_prelude(ast::Evaluator & evaluator) {
+        auto prelude = glisp::read("(eval (read (slurp \"prelude.gl\")))");
+        evaluator.eval(prelude);
+    }
+
     void repl() {
         auto& _in  = std::cin;
         auto& _out = std::cout;
@@ -121,30 +270,12 @@ namespace glisp {
         _out << "Type an expression...or [q or Q] to quit\n\n";
 
         ast::Evaluator evaluator;
+        add_natives(evaluator);
 
-        auto func = [](env_t, int) -> ast::val { assert(false); };
-
-        evaluator.add_native_function("println", println, 1);
-
-        evaluator.add_twin_op<double>(
-            "+", [](auto a, auto b) { return a + b; });
-        evaluator.add_twin_op<double>(
-            "-", [](auto a, auto b) { return a - b; });
-        evaluator.add_twin_op<double>(
-            "*", [](auto a, auto b) { return a * b; });
-        evaluator.add_twin_op<double>(
-            "/", [](auto a, auto b) { return a / b; });
-
-        auto read_fn = [&evaluator](ast::env_t e, std::vector<ast::val> const& _args) {
-            auto x = _args[0].get_val<std::string>();
-            auto ret = read(evaluator, *x);
-            return ret;
-        };
-
-        evaluator.add_native_function("read", read_fn, 1);
+        _out << "including prelude.gl" << endl;
+        include_prelude(evaluator);
 
         while (true) {
-
             try {
                 _out << "> ";
                 auto str = glisp::read(_in);
@@ -155,11 +286,13 @@ namespace glisp {
                     dump(evaluator.mEnv, _out);
                 } else {
                     auto ast = glisp::read(str);
-                    /* ast::print(ast, _out); */
                     auto res = evaluator.eval(ast);
 
                     _out << "-> ";
+
                     ast::print(res, _out);
+
+                    evaluator.mEnv = evaluator.mEnv.set("*1", res);
                 }
             } catch (boost::spirit::x3::expectation_failure<char const*>& e) {
                 _out << "ERROR " << e.what();
@@ -171,7 +304,6 @@ namespace glisp {
 
 int main(int argc, char* argv[]) {
     using namespace std;
-
     using namespace ast;
 
     if (false) {

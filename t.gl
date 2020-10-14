@@ -1,0 +1,22 @@
+(define fib
+ (lambda [n]
+  (if (<= n 2)
+   1
+   (+ (fib (- n 1)) (fib (- n 2)))))
+ )
+
+(define
+ dump (lambda [m]
+     (do 
+      (if (first m)
+       (do 
+        (println (first m))
+        (dump (rest m)))
+
+       (println "done")))))
+
+(println "loaded")
+
+
+
+

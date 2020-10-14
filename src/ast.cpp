@@ -1,6 +1,6 @@
 #include "ast.h"
 namespace ast {
-    bool operator==(function const& _lhs, function const& _rhs) {
+    bool operator==(sexp const& _lhs, sexp const& _rhs) {
         assert(false);
     }
     bool operator==(lambda const& _lhs, lambda const& _rhs) {
@@ -16,9 +16,6 @@ namespace ast {
         assert(false);
     }
     bool operator==(map_entry const& _lhs, map_entry const& _rhs) {
-        assert(false);
-    }
-    bool operator==(list const& _lhs, list const& _rhs) {
         assert(false);
     }
     bool operator==(vector const& _lhs, vector const& _rhs) {
@@ -37,4 +34,9 @@ namespace ast {
     bool operator==(symbol const& _lhs, symbol const& _rhs) {
         assert(false);
     }
+
+    bool operator==(program const& _lhs, program const& _rhs) {
+        assert(false);
+    }
+
 }

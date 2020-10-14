@@ -17,11 +17,11 @@ namespace ast {
     }
 
     env_t add_native_function(env_t _env, std::string const& _name,
-        std::function<val(env_t, std::vector<val> const&)> _func,
+        std::function<val(env_t, std::vector<val> const&)> && _func,
         int _nargs) {
 
         native_function x {
-            .mFunc      = _func,
+            .mFunc      = std::move(_func),
             .mNumOfArgs = _nargs,
         };
         

@@ -42,12 +42,12 @@ namespace grammar {
     /* using x3::string; */
 
     // composite types
+    struct macro_class { };
+    rule<macro_class, ast::macro> const macro("macro");
 
     struct lambda_class { };
-    struct list_class : boost::spirit::x3::annotate_on_success,
-                        error_handler { };
-    /* struct vector_class : boost::spirit::x3::annotate_on_success,
-     * error_handler {};; */
+
+
     struct vector_class { };
     struct map_entry_class : boost::spirit::x3::annotate_on_success,
                              error_handler { };
@@ -148,7 +148,7 @@ namespace grammar {
                           error_handler { };
     rule<symbol_class, ast::symbol, true> const symbol = "symbol";
 
-    auto const echars = char_("=_.?!*+-/><$@");
+    auto const echars = char_("?=_.!*+-/><$@");
 
     auto const symbol_def
         = as<std::string>[lexeme[(alpha | echars) >> *(alnum | echars)]];
@@ -161,7 +161,7 @@ namespace grammar {
     rule<nil_class, ast::nil> const nil("nil");
     // dummy semantic action to prevent
     // serializing to synthetict attribute
-    auto const nil_def = lit("nil")[f];
+    auto const nil_def = lexeme[lit("nil")][f];
     BOOST_SPIRIT_DEFINE(nil);
 
     // Character
@@ -186,7 +186,6 @@ namespace grammar {
     rule<map_class, ast::map> const map("map");
     rule<map_class, ast::meta> const meta("meta");
     rule<set_class, ast::set> const set("set");
-    rule<list_class, ast::list> const list("list");
 
     // clang-format off
 
@@ -198,13 +197,13 @@ namespace grammar {
         = '(' >> lit("lambda") > '[' > *symbol > ']' > val > ')';
     BOOST_SPIRIT_DEFINE(lambda);
 
-    struct function_class { };
-    rule<function_class, ast::function> const function = "function";
-    auto const function_def = '(' > (symbol | lambda | function) > *val > ')';
-    BOOST_SPIRIT_DEFINE(function);
+    struct sexp_class { };
+    rule<sexp_class, ast::sexp> const sexp = "sexp";
+    auto const sexp_def = '(' > *val > ')';
+    BOOST_SPIRIT_DEFINE(sexp);
 
-    auto const val_def = lexeme[lisp_bool_] | nil | symbol | keyword | str
-        | character | double_ | lambda | define | function | list | vector
+    auto const val_def = lexeme[lisp_bool_] | symbol | nil | keyword | str
+        | character | double_ | lambda | define | macro | sexp | vector
         | map;
 
     BOOST_SPIRIT_DEFINE(val);
@@ -217,10 +216,6 @@ namespace grammar {
     // a define
     auto const define_def = '(' >> lit("define") > symbol > val > ')';
     BOOST_SPIRIT_DEFINE(define);
-
-    // List
-    auto const list_def = '(' > *val > ')';
-    BOOST_SPIRIT_DEFINE(list);
 
     // A vector
     auto const vector_def = '[' > *val > ']';
@@ -242,6 +237,10 @@ namespace grammar {
     // meta data
     auto const meta_def = lit("^{") > *map_entry > '}';
     BOOST_SPIRIT_DEFINE(meta);
+    
+    // macro
+    auto const macro_def = '(' >> lit("defmacro") >> symbol >> vector >> sexp >> ')';
+    BOOST_SPIRIT_DEFINE(macro);
 }
 
 #endif /* end of include guard: GRAMMAR_H_SLEB5MGA */

@@ -1,4 +1,5 @@
 #include "eval.h"
+#include "printer.h"
 
 #include <iostream>
 
@@ -8,11 +9,17 @@ namespace ast {
 
     namespace x3 = boost::spirit::x3;
 
+    val Evaluator::operator()(ast::macro const& _macro) {
+        auto& sym = _macro.mSym.mName;
+        mEnv      = mEnv.set(sym, ast::val(_macro));
+        return ast::val(_macro.mSym);
+    }
+
     val Evaluator::eval(program const& _v) {
         val ret;
 
         for (auto const& form : _v.mForms) {
-            ret = eval( form);
+            ret = eval(form);
         }
 
         return ret;
@@ -45,9 +52,8 @@ namespace ast {
     /*     return allEvalled; */
     /* } */
 
-
     val Evaluator::operator()(define const& _v) {
-        auto & sym = _v.mSym.mName;
+        auto& sym = _v.mSym.mName;
 
         auto ret = _v.mVal;
 
@@ -108,16 +114,16 @@ namespace ast {
         return val(nil());
     }
 
-    val Evaluator::operator()(ast::list const& _list) {
-        std::cout << "list" << std::endl;
-        assert(false);
-        return val(nil());
-    }
-
     val Evaluator::operator()(ast::vector const& _vector) {
-        std::cout << "vector" << std::endl;
-        assert(false);
-        return val(nil());
+        auto args = _vector;
+
+        for (auto& v : args.mForms) {
+            if (!v.is_atom()) {
+                v = eval(v);
+            }
+        }
+
+        return val(args);
     }
 
     val Evaluator::operator()(ast::map const& _map) {
@@ -153,29 +159,108 @@ namespace ast {
         return val(nil());
     }
 
-    val Evaluator::operator()(ast::function const& _func) {
+    template <class I>
+        ast::val get_first(I _begin, I _end) {
+            if (_end - _begin > 0) {
+                return *_begin;
+            } else {
+                return ast::val(ast::nil());
+            }
+        }
+
+    template <class I>
+        std::vector<ast::val> get_rest(I _begin, I _end) {
+            std::vector<ast::val> ret;
+            if (_end - _begin > 1) {
+                _begin++;
+                while (_begin != _end) {
+                    ret.push_back(*_begin);
+                    _begin++;
+                }
+            }
+            return ret;
+        }
+
+    ast::val Evaluator::operator()(ast::program const& _program) {
+        auto ret = ast::val(ast::nil());
+
+        for (auto const& f : _program.mForms) {
+            ret = eval(f);
+        }
+
+        return ret;
+    }
+
+    std::vector<ast::val> get_rest(std::vector<ast::val> const& _args) {
+        return get_rest(_args.begin(), _args.end());
+    }
+
+    ast::val get_first(std::vector<ast::val> const& _args) {
+        return get_first(_args.begin(), _args.end());
+    }
+
+    val Evaluator::operator()(ast::sexp const& _func) {
         val ret;
 
-        auto nArgs = _func.mArgs.size();
+        auto const& exps = _func.mForms;
+        auto first       = get_first(exps);
 
-        if (auto sym = _func.mFunc.get_val<symbol>()) {
+        if (auto sym = first.get_val<symbol>()) {
 
-            auto & name = sym->mName;
+            auto args  = get_rest(_func.mForms);
+            auto nArgs = args.size();
+            auto& name = sym->mName;
+
+            if (name == "type") {
+                if (nArgs != 1) {
+                    cout << "nargs " << nArgs << endl;
+                    /* assert(nArgs == 1); */
+                }
+                ast::type_getter_t t;
+                auto x = t(eval(args[0]));
+                return ast::val(x);
+            }
+
+            if (name == "do") {
+
+                auto ret = ast::val(ast::nil());
+
+                for (auto const& v : args) {
+                    ret = eval(v);
+                }
+                return ret;
+            }
+
+            if (name == "list") {
+                for (auto& v : args) {
+                    v = eval(v);
+                }
+                sexp ret = { .mForms = args };
+                return val(ret);
+            }
+
+            if (name == "vec") {
+                for (auto& v : args) {
+                    v = eval(v);
+                }
+                vector ret = { .mForms = args };
+                return val(ret);
+            }
 
             if (name == "if") {
                 assert(nArgs == 3);
 
-                auto predicate = eval(_func.mArgs[0]);
+                auto predicate = eval(args[0]);
 
                 if (predicate.to_bool()) {
-                    return eval( _func.mArgs[1]);
+                    return eval(args[1]);
                 } else {
-                    return eval( _func.mArgs[2]);
+                    return eval(args[2]);
                 }
             }
 
             if (name == "or") {
-                for (auto const& v : _func.mArgs) {
+                for (auto const& v : args) {
                     if (eval(v).to_bool()) {
                         return val(true);
                     }
@@ -184,7 +269,7 @@ namespace ast {
             }
 
             if (name == "and") {
-                for (auto const& v : _func.mArgs) {
+                for (auto const& v : args) {
                     if (!eval(v).to_bool()) {
                         return val(false);
                     }
@@ -192,46 +277,43 @@ namespace ast {
                 return val(true);
             }
 
-            if (name == "list") {
-                assert(false);
-            }
-
             if (name == "quote") {
-
-                list ret = {
-                    .mForms = _func.mArgs
-                };
+                sexp ret = { .mForms = args };
                 return val(ret);
             }
-        }
 
-        auto func = eval( _func.mFunc);
+            first = eval(first);
 
-        std::vector<val> vals;
-        vals.reserve(_func.mArgs.size());
-
-        for (auto const& v : _func.mArgs) {
-            vals.push_back(eval( v));
-        }
-
-        if (auto nf = func.get_val<native_function>()) {
-            return nf->mFunc(mEnv, vals);
-        }
-
-        if (auto nf = func.get_val<lambda>()) {
-            auto env = mEnv;
-            assert(nf->mArgs.size() <= _func.mArgs.size());
-            auto i = 0;
-
-            for (auto const& a : nf->mArgs) {
-                mEnv = mEnv.set(a.mName, vals[i++]);
+            for (auto& v : args) {
+                v = eval(v);
             }
 
-            auto retVal = eval(nf->mBody);
+            if (auto nf = first.get_val<native_function>()) {
+                return nf->mFunc(mEnv, args);
+            }
 
-            mEnv = env;
-            return retVal;
+            if (auto nf = first.get_val<lambda>()) {
+                auto env = mEnv;
+                assert(args.size() == nf->mArgs.size());
+                auto i = 0;
+
+                for (auto const& a : nf->mArgs) {
+                    mEnv = mEnv.set(a.mName, args[i++]);
+                }
+
+                auto retVal = eval(nf->mBody);
+
+                mEnv = env;
+                return retVal;
+            }
+
+            if (auto p = first.get_val<macro>()) {
+                cout << "unexpanded MACRO " << p->mSym.mName << endl;
+                return ast::val(*p);
+            }
         }
+
+        assert(!"can't eval");
 
         return ret;
     }

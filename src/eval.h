@@ -4,6 +4,8 @@
 #include "ast.h"
 #include "env.h"
 
+#include <stack>
+
 namespace ast {
 
     // Visitor to evaluate this expression
@@ -25,14 +27,15 @@ namespace ast {
         val operator()(double _v);
         val operator()(char _v);
         val operator()(ast::set const& _set);
-        val operator()(ast::list const& _list);
         val operator()(ast::vector const& _vector);
         val operator()(ast::map const& _map);
         val operator()(ast::meta const& _value);
         val operator()(ast::map_entry const& _map_entry);
         val operator()(ast::lambda const& _lambda);
         val operator()(ast::native_function const& _lambda);
-        val operator()(ast::function const& _lambda);
+        val operator()(ast::sexp const& _sexp);
+        val operator()(ast::program const& _program);
+        val operator()(ast::macro const& _macro);
 
         void testEval();
 
@@ -44,14 +47,14 @@ namespace ast {
         }
 
         void add_native_function(std::string const& _name,
-            std::function<val(env_t, std::vector<val> const&)> _func,
+            std::function<val(env_t, std::vector<val> const&)> && _func,
             int _nargs) {
-            mEnv = ::ast::add_native_function(mEnv, _name, _func, _nargs);
+            mEnv = ::ast::add_native_function(mEnv, _name, std::move(_func), _nargs);
         }
 
         template <typename T>
         void add_twin_op(std::string const& _name,
-            std::function<T(T const&, T const&)>&& _func) {
+            std::function<T(T const&, T const&)> &&_func) {
 
             auto func = [&_func](env_t, std::vector<val> const& _args) {
                 assert(_args.size() == 2);
@@ -60,9 +63,10 @@ namespace ast {
                 return ast::val(_func(*a0, *a1));
             };
 
-            mEnv = ::ast::add_native_function(mEnv, _name, func, 2);
+            mEnv = ::ast::add_native_function(mEnv, _name, std::move(func), 2);
         }
 
+        std::stack<ast::val> mCallStack;
     };
 }
 
