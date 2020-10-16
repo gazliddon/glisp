@@ -2,13 +2,35 @@
 #define GRAMMAR_H_SLEB5MGA
 
 #include "ast_adapted.h"
-#include "grammar_atoms.h"
+#include "ast_adapted.h"
+/* #include "grammar_atoms.h" */
 #include <boost/spirit/home/x3/support/utility/annotate_on_success.hpp>
 
 #pragma GCC diagnostic ignored "-Wparentheses"
 #include <iostream>
 
 #include <boost/spirit/home/x3/string/detail/string_parse.hpp>
+
+
+namespace grammar {
+
+  namespace x3 = boost::spirit::x3;
+
+  using x3::uint_;
+  using x3::int_;
+  using x3::double_;
+  using x3::char_;
+  using x3::hex;
+  using x3::lit;
+  using x3::lexeme;
+  using x3::rule;
+  using x3::alpha;
+  using x3::alnum;
+  using x3::bool_;
+  using x3::string;
+
+
+}
 
 namespace grammar {
 
