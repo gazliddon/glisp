@@ -7,6 +7,7 @@ cc_binary(
             "@boost//:spirit",
             "@boost//:system",
             "@immer//:immer",
+            "@spdlog//:spdlog"
             ],
 
     # link_opts = ['-framework cocoa', '-framework OpenGl'],

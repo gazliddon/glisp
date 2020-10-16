@@ -9,6 +9,14 @@ http_archive(
 )
 
 http_archive(
+        name = "spdlog",
+        url = "https://github.com/gabime/spdlog/archive/v1.7.0.zip",
+        sha256 = "c8f1e1103e0b148eb8832275d8e68036f2fdd3975a1199af0e844908c56f6ea5",
+        build_file = "@//:third_party/spdlog.BUILD",
+        strip_prefix = "spdlog-1.7.0",
+        )
+
+http_archive(
         name = 'com_github_nelhage_rules_boost',
         urls = ['https://github.com/nelhage/rules_boost/archive/2613d04ab3d22dfc4543ea0a083d9adeaa0daf09.zip'],
         sha256 = '9a588a62062c8bf352b398a5db3ccc65561d43c40968762f7e05da76ccb5a6c9',
