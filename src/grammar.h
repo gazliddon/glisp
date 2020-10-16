@@ -209,9 +209,23 @@ namespace grammar {
     auto const sexp_def = '(' > *val > ')';
     BOOST_SPIRIT_DEFINE(sexp);
 
-    auto const val_def = lexeme[lisp_bool_] | symbol | nil | keyword | str
-        | character | double_ | lambda | define | macro | let | sexp | vector
-        | map;
+    struct quote_class { };
+    rule<quote_class, ast::sexp> const quote = "quote";
+
+    auto const base_def = lexeme[lisp_bool_] | symbol | nil | keyword | str
+        | character | double_ | sexp | vector | map;
+
+    auto const special_def =  lambda | define | macro | let | quote;
+
+    auto const val_def = special_def | base_def;
+
+    struct base_class { };
+    rule<base_class, ast::val> const base = "base";
+    BOOST_SPIRIT_DEFINE(base);
+
+    auto const quote_def = '(' >> &lit( "quote" )> *base >> ')';
+    BOOST_SPIRIT_DEFINE(quote);
+
 
     BOOST_SPIRIT_DEFINE(val);
 

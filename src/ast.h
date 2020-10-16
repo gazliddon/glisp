@@ -159,6 +159,11 @@ namespace ast {
         int mNumOfArgs;
         friend bool operator==(
             native_function const& _lhs, native_function const& _rhs);
+
+        val call(env_t env, std::vector<val> const& args) const {
+            assert(args.size() >= unsigned(mNumOfArgs));
+            return mFunc(env, args);
+        }
     };
 
     struct define : x3::position_tagged {
@@ -222,7 +227,7 @@ namespace ast {
 
         friend bool operator==(sexp const& _lhs, sexp const& _rhs);
 
-        void conj(ast::val const & _val) {
+        void conj(ast::val const& _val) {
             mForms.push_back(_val);
         }
     };

@@ -85,7 +85,6 @@ namespace glisp {
     }
 
     ast::val first(ast::env_t e, std::vector<ast::val> const& _args) {
-        assert(_args.size() == 1);
 
         auto& arg = _args[0];
 
@@ -101,7 +100,6 @@ namespace glisp {
     }
 
     ast::val rest(ast::env_t e, std::vector<ast::val> const& _args) {
-        assert(_args.size() == 1);
 
         auto& arg = _args[0];
 
@@ -117,7 +115,6 @@ namespace glisp {
     }
 
     ast::val slurp(ast::env_t e, std::vector<ast::val> const& _args) {
-        assert(_args.size() == 1);
 
         if (auto file_name = _args[0].get_val<std::string>()) {
             std::ifstream inFile;
@@ -134,7 +131,6 @@ namespace glisp {
 
     ast::val conj(ast::env_t e, std::vector<ast::val> const& _args) {
 
-        assert(_args.size() == 2);
 
         auto ret = ast::val();
 
@@ -154,7 +150,6 @@ namespace glisp {
     }
 
     ast::val equal(ast::env_t e, std::vector<ast::val> const& _args) {
-        assert(_args.size() == 2);
         auto const& a = _args[0];
         auto const& b = _args[1];
         return ast::val(a.var == b.var);

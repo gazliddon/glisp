@@ -10,8 +10,9 @@ namespace ast {
     namespace x3 = boost::spirit::x3;
 
     val Evaluator::operator()(ast::macro const& _macro) {
-        auto& sym = _macro.mSym.mName;
-        mEnv      = mEnv.set(sym, ast::val(_macro));
+
+        mEnv  = mEnv.set(_macro.mSym.mName, ast::val(_macro));
+
         return ast::val(_macro.mSym);
     }
 
@@ -42,33 +43,6 @@ namespace ast {
         return ret;
     }
 
-    // helpers
-
-    /* static bool valToBool(val const& _val) { */
-    /*     bool ret = false; */
-
-    /*     if (auto truth = boost::get<boolean>(&_val)) { */
-    /*         ret = false; */
-    /*         assert(!"fucked"); */
-    /*     } */
-    /*     return ret; */
-    /* } */
-
-    /* static bool doesThisEval(val const& _val) { */
-    /*     /1* return apply_visitor(does_eval{}, _val); *1/ */
-    /*     return false; */
-    /* } */
-
-    /* static bool isListEvaled(list const& _lst) { */
-    /*     bool allEvalled = true; */
-
-    /*     for (auto const& i : _lst.mForms) { */
-    /*         allEvalled &= doesThisEval(i); */
-    /*     } */
-
-    /*     return allEvalled; */
-    /* } */
-
     val Evaluator::operator()(define const& _v) {
         auto& sym = _v.mSym.mName;
 
@@ -95,17 +69,18 @@ namespace ast {
         }
 
         assert(ret != nullptr);
+
         return *ret;
     }
 
     val Evaluator::operator()(ast::keyword const& _keyword) {
         assert(false);
-        return val(nil());
+        return val();
     }
 
     val Evaluator::operator()(std::string const& _v) {
         assert(false);
-        return val(nil());
+        return val();
     }
 
     val Evaluator::operator()(ast::hint const& _hint) {
@@ -118,7 +93,8 @@ namespace ast {
         return val(nil());
     }
     val Evaluator::operator()(double _v) {
-        return val(_v);
+        assert(false);
+        return val(nil());
     }
     val Evaluator::operator()(char _v) {
         assert(false);
@@ -126,7 +102,6 @@ namespace ast {
     }
 
     val Evaluator::operator()(ast::set const& _set) {
-        std::cout << "set" << std::endl;
         assert(false);
         return val(nil());
     }
@@ -168,7 +143,11 @@ namespace ast {
     }
 
     val const& Evaluator::eval(val const& _v) const {
-        assert(false);
+        if (_v.is_atom()) {
+            return _v;
+        } else {
+            return eval(_v);
+        }
     }
 
     val Evaluator::operator()(ast::native_function const& _lambda) {
@@ -217,6 +196,15 @@ namespace ast {
     }
 
     val Evaluator::operator()(ast::sexp const& _func) {
+
+        auto verbose = false;
+
+        if (auto p = mEnv.find("*verbose*")) {
+            if (auto b = p->get_val<bool>()) {
+                verbose = *b;
+            }
+        }
+
         val ret;
 
         auto const& exps = _func.mForms;
@@ -253,6 +241,10 @@ namespace ast {
             };
 
         if (auto sym = firsti->get_val<symbol>()) {
+
+            if (verbose) {
+                cout << "first sexp arg is sybol " << sym->mName << endl;
+            }
 
             auto& name = sym->mName;
 
@@ -325,24 +317,11 @@ namespace ast {
                 return val(ret);
             }
 
-            if (name == "let") {
-                assert(nArgs >= 1);
-                auto args = argsi->get_val<vector>();
-                assert(args);
-                assert(( args->mForms.size() % 1 ) == 0);
-                auto i = argsi+1;
-
-                auto old_env = mEnv;
-
-
-                mEnv = old_env;
-            }
-
             auto first = eval(*firsti);
             auto args  = eval_args();
 
             if (auto nf = first.get_val<native_function>()) {
-                return nf->mFunc(mEnv, args);
+                return nf->call(mEnv, args);
             }
 
             if (auto nf = first.get_val<lambda>()) {
@@ -367,7 +346,6 @@ namespace ast {
         }
 
         assert(!"can't eval");
-
         return ret;
     }
 
