@@ -50,11 +50,11 @@ protected:
     It mEnd;
     It mIt;
 };
+#include <sstream>
 
 namespace glisp {
     using std::cout;
     using std::endl;
-
 
     template <typename T>
     ast::val low_first(T const& _v) {
@@ -73,7 +73,7 @@ namespace glisp {
                 ret.push_back(*_begin);
                 _begin++;
             }
-            auto ret_wrapped = ast::sexp( ret );
+            auto ret_wrapped = ast::sexp(ret);
             return ast::val(ret_wrapped);
         } else {
             return ast::val(ast::nil());
@@ -81,7 +81,13 @@ namespace glisp {
     }
 
     ast::val str(ast::env_t e, std::vector<ast::val> const& _args) {
-        return ast::val(ast::nil());
+        std::stringstream ret;
+
+        for (auto& a : _args) {
+            ast::print(a, ret);
+        }
+
+        return ast::val(ret.str());
     }
 
     ast::val first(ast::env_t e, std::vector<ast::val> const& _args) {
@@ -130,7 +136,6 @@ namespace glisp {
     }
 
     ast::val conj(ast::env_t e, std::vector<ast::val> const& _args) {
-
 
         auto ret = ast::val();
 
@@ -207,6 +212,7 @@ namespace glisp {
     void add_natives(ast::Evaluator& evaluator) {
 
         evaluator.add_native_function("println", println, 1);
+        evaluator.add_native_function("str", str, 1);
 
         evaluator.add_twin_op<double, double>(
             "+", [](auto a, auto b) { return a + b; });
