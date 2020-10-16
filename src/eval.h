@@ -37,6 +37,12 @@ namespace ast {
         val operator()(ast::program const& _program);
         val operator()(ast::macro const& _macro);
 
+        val operator()(ast::arg const& _macro) {
+            return ast::val();
+        }
+
+        val operator()(ast::let const& _let);
+
         void testEval();
 
         template <typename T>
@@ -52,18 +58,20 @@ namespace ast {
             mEnv = ::ast::add_native_function(mEnv, _name, std::move(_func), _nargs);
         }
 
-        template <typename T>
+        template <typename T, typename R = T>
         void add_twin_op(std::string const& _name,
-            std::function<T(T const&, T const&)> &&_func) {
+            std::function<R(T const&, T const&)> && _func) {
 
-            auto func = [&_func](env_t, std::vector<val> const& _args) {
+            auto f = std::move(_func);
+
+            auto func = [f](env_t, std::vector<val> const& _args) {
                 assert(_args.size() == 2);
                 auto a0 = _args[0].get_val<T>();
                 auto a1 = _args[1].get_val<T>();
-                return ast::val(_func(*a0, *a1));
+                return ast::val(f(*a0, *a1));
             };
 
-            mEnv = ::ast::add_native_function(mEnv, _name, std::move(func), 2);
+            mEnv = ::ast::add_native_function(mEnv, _name, func, 2);
         }
 
         std::stack<ast::val> mCallStack;

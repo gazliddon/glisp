@@ -14,26 +14,23 @@
 #include <boost/spirit/home/x3/support/ast/variant.hpp>
 #include <immer/map.hpp>
 
-namespace ast { 
-    template<typename T>
-        struct dummy_compare {
+namespace ast {
+    template <typename T>
+    struct dummy_compare {
         using type = T;
-            friend bool operator==(T const& _lhs, T const& _rhs) {
-                assert(false);
-            }
-        };
+        friend bool operator==(T const& _lhs, T const& _rhs) {
+            assert(false);
+        }
+    };
 }
-
 
 namespace ast {
     namespace x3 = boost::spirit::x3;
     using namespace boost::mp11;
 
-    struct v4 {
+    struct v4 { };
 
-    };
-
-    struct nil { 
+    struct nil {
         friend bool operator==(nil const& _lhs, nil const& _rhs) {
             return true;
         }
@@ -67,7 +64,6 @@ namespace ast {
     namespace x3 = boost::spirit::x3;
     using x3::forward_ast;
 
-
     struct val;
     struct vector;
     struct lambda;
@@ -79,6 +75,8 @@ namespace ast {
     struct native_function;
     struct program;
     struct macro;
+    struct arg;
+    struct let;
     /* struct fn; */
 
     // clang-format off
@@ -93,6 +91,8 @@ namespace ast {
         , sexp
         , program
         , macro
+        , arg
+        , let
         >;
 
     // clang-format on
@@ -107,6 +107,14 @@ namespace ast {
     struct val : my_variant, x3::position_tagged {
         using base_type::base_type;
         using base_type::operator=;
+
+        val() {
+            *this = ast::nil();
+        }
+
+        val(val const&) = default;
+
+        val& operator=(val const&) = default;
 
         bool to_bool() const {
             if (is<nil>()) {
@@ -153,7 +161,6 @@ namespace ast {
             native_function const& _lhs, native_function const& _rhs);
     };
 
-
     struct define : x3::position_tagged {
         symbol mSym;
         val mVal;
@@ -161,10 +168,16 @@ namespace ast {
     };
 
     struct vector : x3::position_tagged {
+        vector() {
+        }
+
+        vector(std::vector<val> const& _init)
+            : mForms(_init) {
+        }
+
         std::vector<val> mForms;
         friend bool operator==(vector const& _lhs, vector const& _rhs);
     };
-
 
     struct map_entry : x3::position_tagged {
         val mKey;
@@ -199,10 +212,30 @@ namespace ast {
     };
 
     struct sexp {
+        sexp() {
+        }
+
+        sexp(std::vector<val> const& _init)
+            : mForms(_init) {
+        }
         std::vector<val> mForms;
+
         friend bool operator==(sexp const& _lhs, sexp const& _rhs);
+
+        void conj(ast::val const & _val) {
+            mForms.push_back(_val);
+        }
     };
 
+    struct arg : x3::position_tagged, dummy_compare<arg> {
+        symbol mSymbol;
+        val mVal;
+    };
+
+    struct let : x3::position_tagged, dummy_compare<let> {
+        std::vector<arg> mArgs;
+        val mBody;
+    };
 
     struct macro : x3::position_tagged, dummy_compare<macro> {
         symbol mSym;

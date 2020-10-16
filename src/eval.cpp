@@ -25,6 +25,23 @@ namespace ast {
         return ret;
     }
 
+    val Evaluator::operator()(ast::let const& _let) {
+
+        auto oldEnv = mEnv;
+
+        auto ret = val();
+
+        for (auto const & arg : _let.mArgs) {
+            mEnv = mEnv.set(arg.mSymbol.mName, eval(arg.mVal));
+        }
+
+        ret = eval(_let.mBody);
+
+        mEnv = oldEnv;
+
+        return ret;
+    }
+
     // helpers
 
     /* static bool valToBool(val const& _val) { */
@@ -203,12 +220,40 @@ namespace ast {
         val ret;
 
         auto const& exps = _func.mForms;
-        auto first       = get_first(exps);
 
-        if (auto sym = first.get_val<symbol>()) {
+        auto const firsti = exps.begin();
+        auto const argsi  = firsti + 1;
+        auto const argse  = exps.end();
+        auto const nArgs  = exps.size() - 1;
 
-            auto args  = get_rest(_func.mForms);
-            auto nArgs = args.size();
+        auto eval_args = [this, argsi, argse]() {
+            std::vector<ast::val> ret(argsi, argse);
+
+            for (auto& v : ret) {
+                v = eval(v);
+            }
+            return ret;
+        };
+
+        auto reduce_args = [this, argsi, argse]() {
+            auto ret = ast::val(ast::nil());
+            for (auto i = argsi; i != argse; i++) {
+                ret = eval(*i);
+            }
+            return ret;
+        };
+
+        auto map_args
+            = [argsi, argse](std::function<bool(ast::val const&)> _func) {
+                for (auto i = argsi; i != argse; i++) {
+                    if (_func(*i)) {
+                        break;
+                    }
+                }
+            };
+
+        if (auto sym = firsti->get_val<symbol>()) {
+
             auto& name = sym->mName;
 
             if (name == "type") {
@@ -217,76 +262,84 @@ namespace ast {
                     /* assert(nArgs == 1); */
                 }
                 ast::type_getter_t t;
-                auto x = t(eval(args[0]));
+                auto x = t(eval(*argsi));
                 return ast::val(x);
             }
 
             if (name == "do") {
-
-                auto ret = ast::val(ast::nil());
-
-                for (auto const& v : args) {
-                    ret = eval(v);
-                }
-                return ret;
+                return reduce_args();
             }
 
             if (name == "list") {
-                for (auto& v : args) {
-                    v = eval(v);
-                }
-                sexp ret = { .mForms = args };
+                sexp ret( eval_args() );
                 return val(ret);
             }
 
             if (name == "vec") {
-                for (auto& v : args) {
-                    v = eval(v);
-                }
-                vector ret = { .mForms = args };
+                vector ret(eval_args());
                 return val(ret);
+            }
+
+            if (name == "apply") {
+                assert(nArgs == 2);
+                assert(!"TBD");
+                return val(nil());
             }
 
             if (name == "if") {
                 assert(nArgs == 3);
 
-                auto predicate = eval(args[0]);
+                auto predicate = eval(*argsi);
 
                 if (predicate.to_bool()) {
-                    return eval(args[1]);
+                    return eval(*(argsi + 1));
                 } else {
-                    return eval(args[2]);
+                    return eval(*(argsi + 2));
                 }
             }
 
             if (name == "or") {
-                for (auto const& v : args) {
-                    if (eval(v).to_bool()) {
-                        return val(true);
-                    }
-                }
-                return val(false);
-            }
+                auto ret = false;
 
-            if (name == "and") {
-                for (auto const& v : args) {
-                    if (!eval(v).to_bool()) {
-                        return val(false);
-                    }
-                }
-                return val(true);
-            }
+                map_args([this, &ret](auto const& v) {
+                        ret = eval(v).to_bool();
+                        return ret;
+                        });
 
-            if (name == "quote") {
-                sexp ret = { .mForms = args };
                 return val(ret);
             }
 
-            first = eval(first);
+            if (name == "and") {
+                auto ret = true;
 
-            for (auto& v : args) {
-                v = eval(v);
+                map_args([this, &ret](auto const& v) {
+                        ret = eval(v).to_bool();
+                        return !ret;
+                        });
+
+                return val(ret);
             }
+
+            if (name == "quote") {
+                sexp ret( std::vector<ast::val>(argsi, argse) );
+                return val(ret);
+            }
+
+            if (name == "let") {
+                assert(nArgs >= 1);
+                auto args = argsi->get_val<vector>();
+                assert(args);
+                assert(( args->mForms.size() % 1 ) == 0);
+                auto i = argsi+1;
+
+                auto old_env = mEnv;
+
+
+                mEnv = old_env;
+            }
+
+            auto first = eval(*firsti);
+            auto args  = eval_args();
 
             if (auto nf = first.get_val<native_function>()) {
                 return nf->mFunc(mEnv, args);

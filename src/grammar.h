@@ -42,11 +42,16 @@ namespace grammar {
     /* using x3::string; */
 
     // composite types
+    struct let_class { };
+    rule<let_class, ast::let> const let = "let";
+
     struct macro_class { };
     rule<macro_class, ast::macro> const macro("macro");
 
     struct lambda_class { };
 
+    struct arg_class { };
+    rule<arg_class, ast::arg> const arg("arg");
 
     struct vector_class { };
     struct map_entry_class : boost::spirit::x3::annotate_on_success,
@@ -176,6 +181,8 @@ namespace grammar {
     auto const keyword_def = lexeme[':' > symbol];
     BOOST_SPIRIT_DEFINE(keyword);
 
+    // keyord
+
     // Type hint
     struct hint_class;
     rule<str_class, ast::hint> const hint("hint");
@@ -203,10 +210,16 @@ namespace grammar {
     BOOST_SPIRIT_DEFINE(sexp);
 
     auto const val_def = lexeme[lisp_bool_] | symbol | nil | keyword | str
-        | character | double_ | lambda | define | macro | sexp | vector
+        | character | double_ | lambda | define | macro | let | sexp | vector
         | map;
 
     BOOST_SPIRIT_DEFINE(val);
+
+    auto const let_def = '(' >> lit("let") > '[' > *arg > ']' > val > ')';
+    BOOST_SPIRIT_DEFINE(let);
+
+    auto const arg_def = symbol >> val;
+    BOOST_SPIRIT_DEFINE(arg);
 
     struct program_class { };
     rule<program_class, ast::program> const program = "program";

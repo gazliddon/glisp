@@ -19,5 +19,7 @@ BOOST_FUSION_ADAPT_STRUCT( ast::lambda, mArgs, mBody )
 BOOST_FUSION_ADAPT_STRUCT( ast::sexp, mForms )
 BOOST_FUSION_ADAPT_STRUCT( ast::nil )
 BOOST_FUSION_ADAPT_STRUCT( ast::macro, mSym, mArgs, mForms )
+BOOST_FUSION_ADAPT_STRUCT( ast::arg, mSymbol, mVal)
+BOOST_FUSION_ADAPT_STRUCT( ast::let, mArgs, mBody)
 
 #endif /* end of include guard: AST_ADAPTED_H_KW9BM5GS */

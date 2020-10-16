@@ -99,6 +99,13 @@ struct type_getter_t : boost::static_visitor<std::string> {
     std::string operator()(ast::val const& _val) const {
         return boost::apply_visitor(*this, _val);
     }
+
+    std::string operator()(ast::arg const&) const {
+        return "arg";
+    }
+    std::string operator()(ast::let const&) const {
+        return "let";
+    }
 };
 
 struct printer : boost::static_visitor<void>, printer_base {
@@ -122,6 +129,13 @@ struct printer : boost::static_visitor<void>, printer_base {
     void operator()(ast::native_function const& _lambda) const;
     void operator()(ast::sexp const& _func) const;
     void operator()(ast::program const& _program) const;
+    void operator()(ast::arg const& _val) const {
+        assert(false);
+    }
+
+    void operator()(ast::let const& _val) const {
+        assert(false);
+    }
 
     void operator()(ast::macro const& _mac) const {
         mOut << "(defmacro " << _mac.mSym  << " ";
