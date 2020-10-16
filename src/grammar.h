@@ -8,12 +8,12 @@
 
 #pragma GCC diagnostic ignored "-Wparentheses"
 #include <iostream>
+#include "demangle.h"
 
 #include <boost/spirit/home/x3/string/detail/string_parse.hpp>
 
 
 namespace grammar {
-
   namespace x3 = boost::spirit::x3;
 
   using x3::uint_;
@@ -28,8 +28,6 @@ namespace grammar {
   using x3::alnum;
   using x3::bool_;
   using x3::string;
-
-
 }
 
 namespace grammar {
@@ -176,7 +174,6 @@ namespace grammar {
     rule<symbol_class, ast::symbol, true> const symbol = "symbol";
 
     auto const echars = char_("?=_.!*+-/><$@");
-
     auto const symbol_def
         = as<std::string>[lexeme[(alpha | echars) >> *(alnum | echars)]];
 
@@ -192,9 +189,45 @@ namespace grammar {
     BOOST_SPIRIT_DEFINE(nil);
 
     // Character
+    // convert character code to char
+    auto constexpr to_char = [](auto & _ctx) {
+        std::string a = _attr(_ctx);
+
+        char ch = '!';
+
+        if (a.size() == 1) {
+            ch = a[0];
+        } else {
+            if (a == "newline") {
+                ch = '\n';
+            }
+
+            if (a == "tab") {
+                ch = '\t';
+            }
+
+            if (a == "space") {
+                ch = ' ';
+            }
+
+            if (a == "return") {
+                ch = '\r';
+            }
+
+            if (a == "backspace") {
+                ch = '\b';
+            }
+
+            if (a == "formfeed") {
+                ch = '\f';
+            }
+        }
+        _val(_ctx) = ch;
+    };
+
     struct character_class;
     rule<character_class, char> const character("character");
-    auto const character_def = lexeme[lit('\\') >> char_];
+    auto const character_def = lexeme[lit('\\') >> +alnum][to_char];
     BOOST_SPIRIT_DEFINE(character);
 
     // keyord
@@ -223,7 +256,7 @@ namespace grammar {
     // clang-format on
     rule<lambda_class, ast::lambda> const lambda = "lambda";
     auto const lambda_def
-        = '(' >> lit("lambda") > '[' > *symbol > ']' > val > ')';
+        = '(' >> ( lit("lambda") | lit("fn")) > '[' > *symbol > ']' > val > ')';
     BOOST_SPIRIT_DEFINE(lambda);
 
     struct sexp_class { };
@@ -248,7 +281,6 @@ namespace grammar {
     auto const quote_def = '(' >> &lit( "quote" )> *base >> ')';
     BOOST_SPIRIT_DEFINE(quote);
 
-
     BOOST_SPIRIT_DEFINE(val);
 
     auto const let_def = '(' >> lit("let") > '[' > *arg > ']' > val > ')';
@@ -263,7 +295,7 @@ namespace grammar {
     BOOST_SPIRIT_DEFINE(program);
 
     // a define
-    auto const define_def = '(' >> lit("define") > symbol > val > ')';
+    auto const define_def = '(' >> lit("def") > symbol > val > ')';
     BOOST_SPIRIT_DEFINE(define);
 
     // A vector

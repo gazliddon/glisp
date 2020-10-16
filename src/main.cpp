@@ -18,6 +18,20 @@
 
 #include "native.h"
 #include "reader.h"
+#include "tostring.h"
+
+static char const * banner = R"delim(
+   _____ _ _
+  / ____| (_)
+ | |  __| |_ ___ _ __
+ | | |_ | | / __| '_ \
+ | |__| | | \__ \ |_) |
+  \_____|_|_|___/ .__/
+                | |
+                |_| For all you lisp parsing fun
+
+)delim";
+
 
 class seq_it {
 
@@ -69,6 +83,8 @@ namespace glisp {
         auto& _in  = std::cin;
         auto& _out = std::cout;
 
+        _out << banner << std::endl;
+
         _out << "Glisp lisp parser\n";
         _out << "Type an expression...or [q or Q] to quit\n\n";
 
@@ -80,20 +96,19 @@ namespace glisp {
 
         while (true) {
             try {
-                _out << "> ";
+                _out << "=> ";
                 auto str = get_input(_in);
 
-                if (str[0] == 'q' || str[0] == 'Q') {
+                if (str == "q" || str == "Q") {
                     break;
-                } else if (str[0] == 's') {
+                } else if (str == "s") {
                     dump(evaluator.mEnv, _out);
                 } else {
                     auto ast = read(str);
                     auto res = evaluator.eval(ast);
 
-                    _out << "-> ";
-
-                    ast::print(res, _out);
+                    glisp::output_string(_out, res);
+                    _out << "\n";
 
                     evaluator.mEnv = evaluator.mEnv.set("*1", res);
                 }

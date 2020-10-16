@@ -248,6 +248,19 @@ namespace ast {
 
             auto& name = sym->mName;
 
+            if (name == "cond") {
+                assert(( nArgs % 1 )  == 0);
+
+                for(auto i = argsi; i != argse; i+=2) {
+                    auto v = eval(*i);
+                    if (v.to_bool()) {
+                        return eval(*(i+1));
+                    }
+                }
+
+                return val();
+            }
+
             if (name == "type") {
                 if (nArgs != 1) {
                     cout << "nargs " << nArgs << endl;

@@ -31,6 +31,7 @@ namespace ast {
     struct v4 { };
 
     struct nil {
+
         friend bool operator==(nil const& _lhs, nil const& _rhs) {
             return true;
         }
@@ -166,11 +167,6 @@ namespace ast {
         }
     };
 
-    struct define : x3::position_tagged {
-        symbol mSym;
-        val mVal;
-        friend bool operator==(define const& _lhs, define const& _rhs);
-    };
 
     struct vector : x3::position_tagged {
         vector() {
@@ -230,6 +226,26 @@ namespace ast {
         void conj(ast::val const& _val) {
             mForms.push_back(_val);
         }
+    };
+
+    struct define : x3::position_tagged {
+        define() {
+        }
+
+        define(sexp const & exp) {
+            assert(exp.mForms.size() == 3);
+            auto define_id = exp.mForms[0].get_val<symbol>();
+            assert(define_id);
+            assert(define_id->mName == std::string("define"));
+            auto sym_id = exp.mForms[1].get_val<symbol>();
+            assert(sym_id);
+            mSym = *sym_id;
+            mVal = exp.mForms[2];
+        }
+
+        symbol mSym;
+        val mVal;
+        friend bool operator==(define const& _lhs, define const& _rhs);
     };
 
     struct arg : x3::position_tagged, dummy_compare<arg> {

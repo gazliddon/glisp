@@ -1,21 +1,17 @@
-(define fib
- (lambda [n]
+(def fib
+ (fn [n]
   (if (<= n 2)
    1
    (+ (fib (- n 1)) (fib (- n 2)))))
  )
 
-
-(define
- dump (lambda [m]
+(def
+ dump (fn [m]
      (let [f (first m)]
       (if f
        (do 
         (println f)
         (dump (rest m)))
        (println "done")))))
-
-(println "loaded")
-
 
 

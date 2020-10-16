@@ -1,7 +1,7 @@
 #include "native.h"
-#include "printer.h"
 #include "reader.h"
 #include <fstream>
+#include "tostring.h"
 
 #include <spdlog/spdlog.h>
 
@@ -39,7 +39,7 @@ namespace glisp {
         std::stringstream ret;
 
         for (auto& a : _args) {
-            ast::print(a, ret);
+            glisp::output_string(ret, a);
         }
 
         return ast::val(ret.str());
@@ -104,9 +104,9 @@ namespace glisp {
         return ret;
     }
 
-    ast::val println(ast::env_t e, std::vector<ast::val> const& _args) {
-        ast::print(_args[0], std::cout);
-        return ast::val(ast::nil());
+    ast::val puts(ast::env_t e, std::vector<ast::val> const& _args) {
+        glisp::output_string(std::cout, _args[0]);
+        return ast::val();
     }
 
     ast::val equal(ast::env_t e, std::vector<ast::val> const& _args) {
@@ -124,7 +124,7 @@ namespace glisp {
 
     void add_natives(ast::Evaluator& evaluator) {
 
-        evaluator.add_native_function("println", println, 1);
+        evaluator.add_native_function("puts", puts, 1);
         evaluator.add_native_function("str", str, 1);
 
         evaluator.add_twin_op<double, double>(

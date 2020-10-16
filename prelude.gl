@@ -1,24 +1,21 @@
-(define dec (lambda [a] (- a 1)))
-(define inc (lambda [a] (+ a 1)))
-(define not (lambda [a] (if a false true)))
-(define neg (lambda [a] (- 0 a)))
+(def dec (fn [a] (- a 1)))
+(def inc (fn [a] (+ a 1)))
+(def not (fn [a] (if a false true)))
 
-(define nil? (lambda [a] (= (type a) "nil")))
+(def neg (fn [a] (- 0 a)))
 
-(define include (lambda [f] 
-    (eval (read (slurp f)))))
+(def nil? (fn [a] (= (type a) "nil")))
 
-(defmacro infix
-  [infixed]
-  (list (second infixed) (first infixed) (last infixed)))
+(def include (fn [f]
+              (do 
+               (eval (read (slurp f)))
+               (println (str "Loaded " f)))))
 
-(define second (lambda [a] (first (rest a))))
+(def second (fn [a] (first (rest a))))
 
+(def newline (fn[] (puts \newline)))
 
-
-
-
-
-
-
+    (def println (fn [a] (do 
+                          (puts a)
+                          (newline))))
 
