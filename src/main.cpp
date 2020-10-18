@@ -16,6 +16,7 @@
 
 #include "errors.h"
 
+#include "except.h"
 #include "native.h"
 #include "reader.h"
 #include "tostring.h"
@@ -119,13 +120,17 @@ namespace glisp {
                                 break;
                         }
                     } else {
-                        auto ast = read(str);
-                        /* ast      = expand(evaluator, ast); */
-                        auto res = evaluator.eval(ast);
+                        try {
+                            auto ast = read(str);
+                            ast      = expand(evaluator, ast);
+                            auto res = evaluator.eval(ast);
+                            glisp::output_string(_out, res);
+                            _out << "\n";
+                            evaluator.mEnv = evaluator.mEnv.set("*1", res);
 
-                        glisp::output_string(_out, res);
-                        _out << "\n";
-                        evaluator.mEnv = evaluator.mEnv.set("*1", res);
+                        } catch (cEvalError e) {
+                            _out << "Eval Error : " << e.what() << endl;
+                        }
                     }
                 }
             } catch (boost::spirit::x3::expectation_failure<char const*>& e) {

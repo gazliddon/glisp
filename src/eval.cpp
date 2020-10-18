@@ -1,7 +1,9 @@
 #include "eval.h"
 #include "printer.h"
+#include "except.h"
 
 #include <iostream>
+#include <spdlog/spdlog.h>
 
 namespace ast {
     using boost::apply_visitor;
@@ -64,10 +66,9 @@ namespace ast {
         auto ret = mEnv.find(_v.mName);
 
         if (ret == nullptr) {
-            std::cout << "Could not find " << _v.mName << std::endl;
+            auto x = fmt::format("Can't find symbol {}", _v.mName);
+            throw( glisp::cEvalError(x.c_str()) );
         }
-
-        assert(ret != nullptr);
 
         return *ret;
     }
