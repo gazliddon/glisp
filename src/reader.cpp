@@ -2,13 +2,18 @@
 
 #include "grammar.h"
 
-namespace glisp {
+#include <boost/spirit/home/x3/support/ast/position_tagged.hpp>
 
-    ast::program read(std::string const& _str) {
+namespace glisp {
+    using namespace boost::spirit;
+
+    reader_reslult_t read(std::string const& _str) {
         using namespace std;
-        namespace x3 = boost::spirit::x3;
+
+        reader_reslult_t ret(_str);
 
         using x3::ascii::space_type;
+
         ast::program ast;
 
         space_type space;
@@ -16,7 +21,7 @@ namespace glisp {
 
         using x3::error_handler_tag;
 
-        using iterator_type = std::string::const_iterator;
+        using iterator_type  = std::string::const_iterator;
 
         auto iter = _str.begin(), end = _str.end();
 
@@ -26,11 +31,11 @@ namespace glisp {
 
         parse_context ctx;
 
-        auto const parser
-            = with<parse_context>(std::ref(ctx))[with<error_handler_tag>(
-                std::ref(error_handler))[grammar::program]];
+        auto const parser = with<grammar::position_cache_tag>(std::ref(ret.mPositions))[
+            with<parse_context>(std::ref(ctx))[with<error_handler_tag>(
+                std::ref(error_handler))[grammar::program]]];
 
-        bool r = phrase_parse(iter, end, parser, space, ast);
+        bool r = phrase_parse(iter, end, parser, space, ret.mAst);
 
         if (r && iter == end) {
 
@@ -41,6 +46,6 @@ namespace glisp {
             cout << *iter << "\n";
         }
 
-        return ast;
+        return ret;
     }
 }

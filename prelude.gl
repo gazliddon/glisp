@@ -6,10 +6,6 @@
 
 (def nil? (fn [a] (= (type a) "nil")))
 
-(def include (fn [f]
-              (do 
-               (println (str "Loading " f))
-               (eval (read (slurp f))))))
                
 (def second (fn [a] (first (rest a))))
 

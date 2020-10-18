@@ -70,8 +70,8 @@ protected:
 
 namespace glisp {
 
-    ast::program expand(ast::Evaluator& _ev, ast::program const& _prg) {
-        return _prg;
+    glisp::reader_reslult_t expand(ast::Evaluator& _ev, glisp::reader_reslult_t r) {
+        return r;
     }
 
     std::string get_input(std::istream& _in = std::cin) {

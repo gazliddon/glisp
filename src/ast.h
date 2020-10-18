@@ -8,7 +8,6 @@
 
 #include <boost/mp11/mpl.hpp>
 #include <boost/mpl/copy.hpp>
-
 #include <boost/spirit/home/x3.hpp>
 #include <boost/spirit/home/x3/support/ast/position_tagged.hpp>
 #include <boost/spirit/home/x3/support/ast/variant.hpp>
@@ -156,17 +155,17 @@ namespace ast {
         }
     };
 
-    using env_t = immer::map<std::string, val>;
+    struct Evaluator;
 
     struct native_function {
-        std::function<val(env_t, std::vector<val> const&)> mFunc;
+        std::function<val(Evaluator &, std::vector<val> const&)> mFunc;
         int mNumOfArgs;
         friend bool operator==(
             native_function const& _lhs, native_function const& _rhs);
 
-        val call(env_t env, std::vector<val> const& args) const {
+        val call(Evaluator & _e, std::vector<val> const& args) const {
             assert(args.size() >= unsigned(mNumOfArgs));
-            return mFunc(env, args);
+            return mFunc(_e, args);
         }
     };
 
@@ -281,6 +280,13 @@ namespace ast {
         out << "nil";
         return out;
     }
+
+
 } // namespace ast
+
+namespace ast {
+    using env_t = immer::map<std::string, val>;
+    void dump(env_t const & _env, std::ostream & _out);
+}
 
 #endif /* end of include guard: AST_H_4GSXUIIF */

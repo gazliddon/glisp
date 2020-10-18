@@ -1,5 +1,21 @@
 #include "ast.h"
+#include "eval.h"
+#include "printer.h"
+
 namespace ast {
+
+    void dump(env_t const & _env, std::ostream& _out) {
+        _out << "Symbol table" << std::endl;
+        _out << "------------" << std::endl;
+
+        auto i = _env.begin();
+        auto  e = _env.end();
+
+        for (auto const& p : _env) {
+            _out << p.first << " = ";
+            print(p.second, _out);
+        }
+    }
 
     bool operator==(lambda const& _lhs, lambda const& _rhs) {
         assert(false);
@@ -37,3 +53,7 @@ namespace ast {
     }
 
 }
+
+
+
+

@@ -13,20 +13,9 @@ namespace ast {
 
     val Evaluator::operator()(ast::macro const& _macro) {
         auto macro_val = ast::val(_macro);
-        mEnv           = mEnv.set(_macro.mSym.mName, macro_val);
+        set(_macro.mSym.mName, macro_val);
         return macro_val;
     }
-
-    val Evaluator::eval(program const& _v) {
-        val ret;
-
-        for (auto const& form : _v.mForms) {
-            ret = eval(form);
-        }
-
-        return ret;
-    }
-
     val Evaluator::operator()(ast::let const& _let) {
 
         auto oldEnv = mEnv;
@@ -34,7 +23,7 @@ namespace ast {
         auto ret = val();
 
         for (auto const& arg : _let.mArgs) {
-            mEnv = mEnv.set(arg.mSymbol.mName, eval(arg.mVal));
+            set(arg.mSymbol.mName, eval(arg.mVal));
         }
 
         ret = eval(_let.mBody);
@@ -53,7 +42,7 @@ namespace ast {
             ret = eval(_v.mVal);
         }
 
-        mEnv = mEnv.set(sym, ret);
+        set(sym, ret);
 
         return val(_v.mSym);
     }
@@ -66,7 +55,10 @@ namespace ast {
         auto ret = mEnv.find(_v.mName);
 
         if (ret == nullptr) {
+            auto const & ctx = mReaderContext.top();
+
             auto x = fmt::format("Can't find symbol {}", _v.mName);
+
             throw( glisp::cEvalError(x.c_str()) );
         }
 
@@ -345,19 +337,19 @@ namespace ast {
             auto args  = eval_args();
 
             if (auto nf = first.get_val<native_function>()) {
-                return nf->call(mEnv, args);
+                return nf->call(*this, args);
             }
 
-            if (auto nf = first.get_val<lambda>()) {
+            if (auto fn = first.get_val<lambda>()) {
                 auto env = mEnv;
-                assert(args.size() == nf->mArgs.size());
+                assert(args.size() == fn->mArgs.size());
                 auto i = 0;
 
-                for (auto const& a : nf->mArgs) {
-                    mEnv = mEnv.set(a.mName, args[i++]);
+                for (auto const& a : fn->mArgs) {
+                    set(a.mName, args[i++]);
                 }
 
-                auto retVal = eval(nf->mBody);
+                auto retVal = eval(fn->mBody);
 
                 mEnv = env;
                 return retVal;

@@ -2,8 +2,7 @@
 #define EVAL_H_I8ZWFS1M
 
 #include "ast.h"
-#include "env.h"
-
+#include "reader.h"
 #include <stack>
 
 namespace ast {
@@ -12,7 +11,34 @@ namespace ast {
     struct Evaluator {
         env_t mEnv;
 
-        val eval(program const& _v);
+        std::stack<glisp::reader_reslult_t> mReaderContext;
+
+        std::stack<size_t> mLines;
+
+        val eval(glisp::reader_reslult_t _r) {
+            mReaderContext.push(_r);
+            val ret;
+            auto const& ctx = mReaderContext.top();
+
+            for (auto const& v : _r.mAst.mForms) {
+                /* mLines.push(ctx.getLine(v)); */
+                ret = eval(v);
+                /* mLines.pop(); */
+            }
+
+            mReaderContext.pop();
+            return ret;
+        }
+
+        val eval(ast::program const& _prog) {
+            val ret;
+            for (auto const& v : _prog.mForms) {
+                /* mLines.push(_r.getLine(v)); */
+                ret = eval(v);
+                /* mLines.pop(); */
+            }
+            return ret;
+        }
 
         val const& eval(val const& _v) const;
         val eval(val const& _v);
@@ -42,7 +68,6 @@ namespace ast {
 
         val operator()(ast::let const& _let);
 
-
         void testEval();
 
         template <typename T>
@@ -52,26 +77,36 @@ namespace ast {
             bool all_atoms = true;
         }
 
+        void set(std::string const & _name, ast::val const & _v) {
+            mEnv = mEnv.set(_name, _v);
+        }
+
         void add_native_function(std::string const& _name,
-            std::function<val(env_t, std::vector<val> const&)> && _func,
+            std::function<val(Evaluator& e, std::vector<val> const&)>&& _func,
             int _nargs) {
-            mEnv = ::ast::add_native_function(mEnv, _name, std::move(_func), _nargs);
+
+            native_function x {
+                .mFunc      = std::move(_func),
+                .mNumOfArgs = _nargs,
+            };
+
+            set(_name, val(x));
         }
 
         template <typename T, typename R = T>
         void add_twin_op(std::string const& _name,
-            std::function<R(T const&, T const&)> && _func) {
+            std::function<R(T const&, T const&)>&& _func) {
 
             auto f = std::move(_func);
 
-            auto func = [f](env_t, std::vector<val> const& _args) {
+            auto func = [f](Evaluator&, std::vector<val> const& _args) {
                 assert(_args.size() == 2);
                 auto a0 = _args[0].get_val<T>();
                 auto a1 = _args[1].get_val<T>();
                 return ast::val(f(*a0, *a1));
             };
 
-            mEnv = ::ast::add_native_function(mEnv, _name, func, 2);
+            add_native_function(_name, func, 2);
         }
 
         std::stack<ast::val> mCallStack;

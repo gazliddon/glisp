@@ -19,6 +19,18 @@ struct parse_context {
 
 namespace grammar {
     namespace x3 = boost::spirit::x3;
+    struct position_cache_tag;
+
+    struct annotate_position {
+        template <typename T, typename Iterator, typename Context>
+        inline void on_success(Iterator const& first,
+            Iterator const& last,
+            T& ast,
+            Context const& context) {
+            auto& position_cache = x3::get<position_cache_tag>(context).get();
+            position_cache.annotate(ast, first, last);
+        }
+    };
 
     using x3::alnum;
     using x3::alpha;
@@ -38,14 +50,14 @@ namespace grammar {
 
     struct error_handler {
         template <typename Iterator, typename Exception, typename Context>
-        boost::spirit::x3::error_handler_result on_error(Iterator& first,
+        x3::error_handler_result on_error(Iterator& first,
             Iterator const& last,
             Exception const& x,
             Context const& context) {
             auto& error_handler = x3::get<x3::error_handler_tag>(context).get();
             std::string message = "Error! Expecting: " + x.which() + " here:";
             error_handler(x.where(), message);
-            return boost::spirit::x3::error_handler_result::fail;
+            return x3::error_handler_result::fail;
         }
     };
 
@@ -53,27 +65,28 @@ namespace grammar {
     /* using x3::string; */
 
     // composite types
-    struct let_class { };
+    struct let_class : annotate_position { };
     rule<let_class, ast::let> const let = "let";
 
-    struct macro_class { };
+    struct macro_class : annotate_position { };
     rule<macro_class, ast::macro> const macro("macro");
 
-    struct lambda_class { };
+    struct lambda_class : annotate_position{  };
 
     struct arg_class { };
     rule<arg_class, ast::arg> const arg("arg");
 
     struct vector_class { };
-    struct map_entry_class : boost::spirit::x3::annotate_on_success { };
+    struct map_entry_class : x3::annotate_on_success { };
     ;
-    struct map_class : boost::spirit::x3::annotate_on_success { };
+
+    struct map_class : x3::annotate_on_success { };
     ;
-    struct meta_class : boost::spirit::x3::annotate_on_success { };
+    struct meta_class : x3::annotate_on_success { };
     ;
-    struct set_class : boost::spirit::x3::annotate_on_success { };
+    struct set_class : x3::annotate_on_success { };
     ;
-    struct val_class : boost::spirit::x3::annotate_on_success { };
+    struct val_class : x3::annotate_on_success { };
 
     auto const ws = no_skip[+lit(" ")];
 
@@ -127,7 +140,7 @@ namespace grammar {
     BOOST_SPIRIT_DEFINE(symbol);
 
     // nil
-    auto constexpr f = [](){};
+    auto constexpr f = []() {};
     struct nil_class;
     rule<nil_class, ast::nil> const nil("nil");
     // dummy semantic action to prevent
@@ -215,7 +228,7 @@ namespace grammar {
     struct tester_class;
     rule<tester_class, std::string> const tester("tester");
 
-    struct quoted_class{};
+    struct quoted_class { };
     rule<quoted_class, ast::sexp> const quoted = "quoted";
 
     // clang-format off

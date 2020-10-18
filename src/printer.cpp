@@ -16,6 +16,10 @@ namespace ast {
         }
     }
 
+    void print(glisp::reader_reslult_t const& _p, std::ostream& _out) {
+        print(_p.mAst, _out);
+    }
+
     /* void printer::operator()(ast::val const& _v) const { */
     /*     assert(false); */
 

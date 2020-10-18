@@ -5,6 +5,7 @@
 #include <assert.h>
 #include <iostream>
 #include <string>
+#include "reader.h"
 
 namespace ast {
 
@@ -208,6 +209,8 @@ void print(T const& _ast, std::ostream& _out = std::cout) {
     printIt.render(_ast);
     _out << std::endl;
 }
+
+void print(glisp::reader_reslult_t const& _p, std::ostream& _out = std::cout);
 
 void print(ast::program const& _p, std::ostream& _out = std::cout);
 

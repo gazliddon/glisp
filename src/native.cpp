@@ -38,14 +38,14 @@ namespace glisp {
         }
     }
 
-    double try_this(ast::env_t e, double a, double b) {
+    double try_this(Evaluator& _e, double a, double b) {
         return 1.0;
     }
 
-    ast::val get_symbols(ast::env_t e, std::vector<ast::val> const&) {
+    ast::val get_symbols(Evaluator& _e, std::vector<ast::val> const&) {
         ast::map ret;
 
-        for (auto& p : e) {
+        for (auto& p : _e.mEnv) {
             map_entry me;
             me.mKey   = p.first;
             me.mValue = p.second;
@@ -55,7 +55,7 @@ namespace glisp {
         return ast::val(ret);
     }
 
-    ast::val get(ast::env_t e, std::vector<ast::val> const& _args) {
+    ast::val get(Evaluator& _e, std::vector<ast::val> const& _args) {
 
         if (auto p = _args[0].get_val<map>()) {
             return p->get(_args[1]);
@@ -66,7 +66,7 @@ namespace glisp {
         return ast::val();
     }
 
-    ast::val str(ast::env_t e, std::vector<ast::val> const& _args) {
+    ast::val str(Evaluator& _e, std::vector<ast::val> const& _args) {
         std::stringstream ret;
 
         for (auto& a : _args) {
@@ -76,7 +76,7 @@ namespace glisp {
         return ast::val(ret.str());
     }
 
-    ast::val first(ast::env_t e, std::vector<ast::val> const& _args) {
+    ast::val first(Evaluator& _e, std::vector<ast::val> const& _args) {
 
         auto& arg = _args[0];
 
@@ -90,9 +90,9 @@ namespace glisp {
 
         if (auto p = arg.get_val<ast::map>()) {
             if (!p->mHashMap.empty()) {
-                auto const & e = p->mHashMap.front();
+                auto const& e = p->mHashMap.front();
                 ast::vector ret;
-                ret.mForms = {e.mKey, e.mValue};
+                ret.mForms = { e.mKey, e.mValue };
                 return ast::val(ret);
             }
         }
@@ -100,7 +100,7 @@ namespace glisp {
         return ast::val(ast::nil());
     }
 
-    ast::val rest(ast::env_t e, std::vector<ast::val> const& _args) {
+    ast::val rest(Evaluator& _e, std::vector<ast::val> const& _args) {
 
         auto& arg = _args[0];
 
@@ -115,7 +115,7 @@ namespace glisp {
         return ast::val(ast::nil());
     }
 
-    ast::val slurp(ast::env_t e, std::vector<ast::val> const& _args) {
+    ast::val slurp(Evaluator& _e, std::vector<ast::val> const& _args) {
 
         if (auto file_name = _args[0].get_val<std::string>()) {
             std::ifstream inFile;
@@ -130,7 +130,7 @@ namespace glisp {
         }
     }
 
-    ast::val conj(ast::env_t e, std::vector<ast::val> const& _args) {
+    ast::val conj(Evaluator& _e, std::vector<ast::val> const& _args) {
         auto ret = ast::val();
 
         sexp the_list;
@@ -151,21 +151,39 @@ namespace glisp {
         }
     }
 
-    ast::val puts(ast::env_t e, std::vector<ast::val> const& _args) {
+    ast::val puts(Evaluator& _e, std::vector<ast::val> const& _args) {
         glisp::output_string(std::cout, _args[0]);
         return ast::val();
     }
 
-    ast::val equal(ast::env_t e, std::vector<ast::val> const& _args) {
+    ast::val equal(Evaluator& _e, std::vector<ast::val> const& _args) {
         auto const& a = _args[0];
         auto const& b = _args[1];
         return ast::val(a.var == b.var);
     }
 
-    static constexpr auto double_add = [](auto a, auto b) { return a + b; };
+    auto read_fn = [](Evaluator& _e, std::vector<ast::val> const& _args) {
+        auto x   = _args[0].get_val<std::string>();
+        auto ret = glisp::read(*x);
+        return ast::val(ret.mAst);
+    };
 
-    ast::val do_inlude(ast::env_t e, std::vector<ast::val> const& _args) {
-        return ast::val();
+    auto eval_fn = [](Evaluator& _e, std::vector<ast::val> const& _args) {
+        ast::program p { .mForms = _args };
+        return _e.eval(p);
+    };
+
+    ast::val include_fn(Evaluator& _e, std::vector<ast::val> const& _args) {
+        if (auto pfn = _args[0].get_val<std::string>()) {
+            auto text = slurp(_e, { _args[0] });
+            auto ast  = read_fn(_e, { text });
+            return _e.eval(ast);
+        }
+        return val();
+    }
+
+    ast::val include(ast::Evaluator& _e, std::string const& _fileName) {
+        return include_fn(_e, {val(_fileName)});
     }
 
     void add_natives(ast::Evaluator& evaluator) {
@@ -194,18 +212,7 @@ namespace glisp {
         evaluator.add_twin_op<double, bool>(
             ">", [](auto a, auto b) { return a > b; });
 
-        auto read_fn = [](ast::env_t e, std::vector<ast::val> const& _args) {
-            auto x   = _args[0].get_val<std::string>();
-            auto ret = glisp::read(*x);
-            return ast::val(ret);
-        };
-
-        auto eval_fn
-            = [&evaluator](ast::env_t e, std::vector<ast::val> const& _args) {
-                  ast::program p { .mForms = _args };
-                  return evaluator.eval(p);
-              };
-
+        evaluator.add_native_function("include", include_fn, 1);
         evaluator.add_native_function("symbols", get_symbols, 0);
         evaluator.add_native_function("conj", conj, 2);
         evaluator.add_native_function("slurp", slurp, 1);
@@ -217,10 +224,5 @@ namespace glisp {
         evaluator.add_native_function("get", get, 2);
     }
 
-    ast::val include(ast::Evaluator& evaluator, std::string const& _fileName) {
-        auto cmd = fmt::format("(eval(read (slurp \"{}\")))", _fileName);
-        auto ast = read(cmd);
-        return evaluator.eval(ast);
-    }
 }
 

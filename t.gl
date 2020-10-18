@@ -17,12 +17,12 @@
 (def map-lo (fn [f coll res]
     (if coll
         (let [fst (first coll)
-              rst (rest coll)]
-              (map-lo f coll (conj res (f fst))))
+              rst (rest coll)
+              new (conj res (f fst)) ]
+              (map-lo f rst new))
         res)))
 
 (def map (fn 
           [f coll] (map-lo f coll (list))))
 
-{ :map map }
 
