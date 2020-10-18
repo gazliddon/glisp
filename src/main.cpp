@@ -20,7 +20,7 @@
 #include "reader.h"
 #include "tostring.h"
 
-static char const * banner = R"delim(
+static char const* banner = R"delim(
    _____ _ _
   / ____| (_)
  | |  __| |_ ___ _ __
@@ -31,7 +31,6 @@ static char const * banner = R"delim(
                 |_| For all you lisp parsing fun
 
 )delim";
-
 
 class seq_it {
 
@@ -70,6 +69,10 @@ protected:
 
 namespace glisp {
 
+    ast::program expand(ast::Evaluator & _ev, ast::program const & _prg) {
+        return _prg;
+    }
+
     std::string get_input(std::istream& _in = std::cin) {
         std::string ret;
         std::getline(_in, ret);
@@ -97,21 +100,25 @@ namespace glisp {
         while (true) {
             try {
                 _out << "=> ";
+
                 auto str = get_input(_in);
 
-                if (str == "q" || str == "Q") {
-                    break;
-                } else if (str == "s") {
-                    dump(evaluator.mEnv, _out);
-                } else {
-                    auto ast = read(str);
-                    auto res = evaluator.eval(ast);
+                if (!str.empty()) {
+                    if (str == "q" || str == "Q") {
+                        break;
+                    } else if (str == "s") {
+                        dump(evaluator.mEnv, _out);
+                    } else {
+                        auto ast = read(str);
+                        ast = expand(evaluator, ast);
+                        auto res = evaluator.eval(ast);
 
-                    glisp::output_string(_out, res);
-                    _out << "\n";
-
-                    evaluator.mEnv = evaluator.mEnv.set("*1", res);
+                        glisp::output_string(_out, res);
+                        _out << "\n";
+                        evaluator.mEnv = evaluator.mEnv.set("*1", res);
+                    }
                 }
+
             } catch (boost::spirit::x3::expectation_failure<char const*>& e) {
                 _out << "ERROR " << e.what();
             }
@@ -119,17 +126,18 @@ namespace glisp {
     }
 
 }; // namespace glisp
-    template<typename... Args>
-        std::vector<ast::val> f(Args... args) {
-            std::vector<ast::val> ret(sizeof...(Args));
-            ret = {ast::val(args)...};
-            return ret;
-        }
-template<typename... Args,std::size_t... Is>
-std::tuple<Args...> functo_low(std::vector<ast::val> const & arr, std::index_sequence<Is...>) {
-    return std::make_tuple(*arr[Is].get_val<Args>()...);
+template <typename... Args>
+std::vector<ast::val> f(Args... args) {
+    std::vector<ast::val> ret(sizeof...(Args));
+    ret = { ast::val(args)... };
+    return ret;
 }
 
+template <typename... Args, std::size_t... Is>
+std::tuple<Args...> functo_low(
+    std::vector<ast::val> const& arr, std::index_sequence<Is...>) {
+    return std::make_tuple(*arr[Is].get_val<Args>()...);
+}
 
 int main(int argc, char* argv[]) {
     using namespace std;
