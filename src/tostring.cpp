@@ -34,7 +34,7 @@ namespace glisp {
         }
 
         void operator()(ast::hint const& _hint) const {
-            mOut << "TBD HINT";
+            mOut << "^" << _hint.mSym.mName;
         }
 
         void operator()(ast::nil const&) const {
@@ -73,11 +73,16 @@ namespace glisp {
         }
 
         void operator()(ast::lambda const& _lambda) const {
-            mOut << "TBD LAMBDA";
+            mOut << "(fn ";
+            renderVector(_lambda.mArgs);
+            mOut << " ";
+            render(_lambda.mBody);
+            mOut << ")";
+
         }
 
         void operator()(ast::native_function const& _lambda) const {
-            mOut << "(fn [" << _lambda.mNumOfArgs << " args]";
+            mOut << "{:fn 0xfffff :args " << _lambda.mNumOfArgs << "}";
         }
 
         void operator()(ast::sexp const& _v) const {

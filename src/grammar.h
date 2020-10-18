@@ -235,7 +235,6 @@ namespace grammar {
 
     auto const special_def = 
           lambda
-        | macro
         | define
         | let
         | quote;

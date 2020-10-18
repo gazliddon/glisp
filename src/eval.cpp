@@ -11,9 +11,7 @@ namespace ast {
 
     val Evaluator::operator()(ast::macro const& _macro) {
         auto macro_val = ast::val(_macro);
-
-        mEnv  = mEnv.set(_macro.mSym.mName, macro_val);
-
+        mEnv           = mEnv.set(_macro.mSym.mName, macro_val);
         return macro_val;
     }
 
@@ -33,7 +31,7 @@ namespace ast {
 
         auto ret = val();
 
-        for (auto const & arg : _let.mArgs) {
+        for (auto const& arg : _let.mArgs) {
             mEnv = mEnv.set(arg.mSymbol.mName, eval(arg.mVal));
         }
 
@@ -122,8 +120,8 @@ namespace ast {
     val Evaluator::operator()(ast::map const& _map) {
         ast::map ret = _map;
 
-        for (auto & p : ret.mHashMap) {
-            p.mKey = eval(p.mKey);
+        for (auto& p : ret.mHashMap) {
+            p.mKey   = eval(p.mKey);
             p.mValue = eval(p.mValue);
         }
 
@@ -156,26 +154,26 @@ namespace ast {
     }
 
     template <class I>
-        ast::val get_first(I _begin, I _end) {
-            if (_end - _begin > 0) {
-                return *_begin;
-            } else {
-                return ast::val(ast::nil());
-            }
+    ast::val get_first(I _begin, I _end) {
+        if (_end - _begin > 0) {
+            return *_begin;
+        } else {
+            return ast::val(ast::nil());
         }
+    }
 
     template <class I>
-        std::vector<ast::val> get_rest(I _begin, I _end) {
-            std::vector<ast::val> ret;
-            if (_end - _begin > 1) {
+    std::vector<ast::val> get_rest(I _begin, I _end) {
+        std::vector<ast::val> ret;
+        if (_end - _begin > 1) {
+            _begin++;
+            while (_begin != _end) {
+                ret.push_back(*_begin);
                 _begin++;
-                while (_begin != _end) {
-                    ret.push_back(*_begin);
-                    _begin++;
-                }
             }
-            return ret;
         }
+        return ret;
+    }
 
     ast::val Evaluator::operator()(ast::program const& _program) {
         auto ret = ast::val(ast::nil());
@@ -233,12 +231,24 @@ namespace ast {
 
         auto map_args
             = [argsi, argse](std::function<bool(ast::val const&)> _func) {
-                for (auto i = argsi; i != argse; i++) {
-                    if (_func(*i)) {
-                        break;
-                    }
-                }
-            };
+                  for (auto i = argsi; i != argse; i++) {
+                      if (_func(*i)) {
+                          break;
+                      }
+                  }
+              };
+
+        if (auto nf = firsti->get_val<keyword>()) {
+
+            assert(nArgs == 1);
+            auto evaled_arg = eval(*argsi);
+
+            if (auto mp = evaled_arg.get_val<map>()) {
+                return mp->get(val(*nf));
+            } else {
+                return val();
+            }
+        }
 
         if (auto sym = firsti->get_val<symbol>()) {
 
@@ -249,12 +259,12 @@ namespace ast {
             auto& name = sym->mName;
 
             if (name == "cond") {
-                assert(( nArgs % 1 )  == 0);
+                assert((nArgs % 1) == 0);
 
-                for(auto i = argsi; i != argse; i+=2) {
+                for (auto i = argsi; i != argse; i += 2) {
                     auto v = eval(*i);
                     if (v.to_bool()) {
-                        return eval(*(i+1));
+                        return eval(*(i + 1));
                     }
                 }
 
@@ -276,7 +286,7 @@ namespace ast {
             }
 
             if (name == "list") {
-                sexp ret( eval_args() );
+                sexp ret(eval_args());
                 return val(ret);
             }
 
@@ -307,9 +317,9 @@ namespace ast {
                 auto ret = false;
 
                 map_args([this, &ret](auto const& v) {
-                        ret = eval(v).to_bool();
-                        return ret;
-                        });
+                    ret = eval(v).to_bool();
+                    return ret;
+                });
 
                 return val(ret);
             }
@@ -318,9 +328,9 @@ namespace ast {
                 auto ret = true;
 
                 map_args([this, &ret](auto const& v) {
-                        ret = eval(v).to_bool();
-                        return !ret;
-                        });
+                    ret = eval(v).to_bool();
+                    return !ret;
+                });
 
                 return val(ret);
             }
@@ -352,6 +362,7 @@ namespace ast {
                 return retVal;
             }
         }
+
 
         assert(!"can't eval");
         return ret;

@@ -191,6 +191,18 @@ namespace ast {
 
     struct map : x3::position_tagged {
         std::list<map_entry> mHashMap;
+
+        val get(ast::val const & _key) const {
+            auto& hmap = mHashMap;
+            for (auto i = hmap.begin(); i != hmap.end(); i++) {
+                auto this_key = i->mKey;
+                if (this_key == _key) {
+                    return i->mValue;
+                }
+            }
+            return val();
+        }
+
         friend bool operator==(map const& _lhs, map const& _rhs);
     };
 

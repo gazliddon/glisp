@@ -69,7 +69,7 @@ protected:
 
 namespace glisp {
 
-    ast::program expand(ast::Evaluator & _ev, ast::program const & _prg) {
+    ast::program expand(ast::Evaluator& _ev, ast::program const& _prg) {
         return _prg;
     }
 
@@ -97,20 +97,30 @@ namespace glisp {
         _out << "including prelude.gl" << endl;
         include(evaluator, "prelude.gl");
 
-        while (true) {
+        bool quit = false;
+
+        while (!quit) {
             try {
                 _out << "=> ";
 
                 auto str = get_input(_in);
 
                 if (!str.empty()) {
-                    if (str == "q" || str == "Q") {
-                        break;
-                    } else if (str == "s") {
-                        dump(evaluator.mEnv, _out);
+                    if (str.size() == 1) {
+                        switch (str[0]) {
+                            case 'q':
+                                quit = true;
+                                break;
+                            case 's':
+                                dump(evaluator.mEnv, _out);
+                                break;
+                            case 'v':
+                                evaluator.eval(read("(define *verbose* true)"));
+                                break;
+                        }
                     } else {
                         auto ast = read(str);
-                        ast = expand(evaluator, ast);
+                        /* ast      = expand(evaluator, ast); */
                         auto res = evaluator.eval(ast);
 
                         glisp::output_string(_out, res);
@@ -118,13 +128,11 @@ namespace glisp {
                         evaluator.mEnv = evaluator.mEnv.set("*1", res);
                     }
                 }
-
             } catch (boost::spirit::x3::expectation_failure<char const*>& e) {
                 _out << "ERROR " << e.what();
             }
         }
     }
-
 }; // namespace glisp
 template <typename... Args>
 std::vector<ast::val> f(Args... args) {
