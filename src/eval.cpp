@@ -119,9 +119,7 @@ namespace ast {
     }
 
     val Evaluator::operator()(ast::map const& _map) {
-        std::cout << "map" << std::endl;
-        assert(false);
-        return val(nil());
+        return val(_map);
     }
 
     val Evaluator::operator()(ast::meta const& _value) {
@@ -326,8 +324,8 @@ namespace ast {
             }
 
             if (name == "quote") {
-                sexp ret( std::vector<ast::val>(argsi, argse) );
-                return val(ret);
+                assert(nArgs == 1);
+                return *argsi;
             }
 
             auto first = eval(*firsti);

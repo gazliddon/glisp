@@ -4,9 +4,11 @@
 // converts string to ast
 //
 #include "ast.h"
+#include <iostream>
 
 namespace glisp {
     ast::program read(std::string const& _str);
+
 }
 
 #endif /* end of include guard: READER_H_RYMNY8TG */

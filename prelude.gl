@@ -8,14 +8,23 @@
 
 (def include (fn [f]
               (do 
-               (eval (read (slurp f)))
-               (println (str "Loaded " f)))))
-
+               (println (str "Loading " f))
+               (eval (read (slurp f))))))
+               
 (def second (fn [a] (first (rest a))))
 
 (def newline (fn[] (puts \newline)))
-
     (def println (fn [a] (do 
                           (puts a)
                           (newline))))
+
+{:dec dec
+ :inc inc
+ :not not
+ :neg neg
+ :nil? nil?
+ :include include
+ :second second
+ :newline newline
+ }
 

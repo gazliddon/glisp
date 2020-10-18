@@ -108,6 +108,9 @@ namespace ast {
     struct val : my_variant, x3::position_tagged {
         using base_type::base_type;
         using base_type::operator=;
+        friend bool operator==(val const& _lhs, val const& _rhs) {
+            return _lhs.var == _rhs.var;
+        }
 
         val() {
             *this = ast::nil();
@@ -212,7 +215,7 @@ namespace ast {
         friend bool operator==(lambda const& _lhs, lambda const& _rhs);
     };
 
-    struct sexp {
+    struct sexp : dummy_compare<sexp> {
         sexp() {
         }
 
@@ -221,14 +224,12 @@ namespace ast {
         }
         std::vector<val> mForms;
 
-        friend bool operator==(sexp const& _lhs, sexp const& _rhs);
-
         void conj(ast::val const& _val) {
             mForms.push_back(_val);
         }
     };
 
-    struct define : x3::position_tagged {
+    struct define : x3::position_tagged, dummy_compare<define> {
         define() {
         }
 
@@ -245,7 +246,6 @@ namespace ast {
 
         symbol mSym;
         val mVal;
-        friend bool operator==(define const& _lhs, define const& _rhs);
     };
 
     struct arg : x3::position_tagged, dummy_compare<arg> {

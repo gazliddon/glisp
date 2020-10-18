@@ -119,6 +119,17 @@ namespace glisp {
     }
 
 }; // namespace glisp
+    template<typename... Args>
+        std::vector<ast::val> f(Args... args) {
+            std::vector<ast::val> ret(sizeof...(Args));
+            ret = {ast::val(args)...};
+            return ret;
+        }
+template<typename... Args,std::size_t... Is>
+std::tuple<Args...> functo_low(std::vector<ast::val> const & arr, std::index_sequence<Is...>) {
+    return std::make_tuple(*arr[Is].get_val<Args>()...);
+}
+
 
 int main(int argc, char* argv[]) {
     using namespace std;

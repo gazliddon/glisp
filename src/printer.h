@@ -112,6 +112,11 @@ struct printer : boost::static_visitor<void>, printer_base {
     bool mPrintTypes;
     printer(std::ostream& _out = std::cout, bool print_types = false);
 
+    template<typename T>
+        void render(T const & _val) const {
+        (*this)(_val);
+        }
+
     void operator()(bool const&) const;
     void operator()(ast::symbol const& _v) const;
     void operator()(ast::keyword const& _keyword) const;
@@ -129,12 +134,16 @@ struct printer : boost::static_visitor<void>, printer_base {
     void operator()(ast::native_function const& _lambda) const;
     void operator()(ast::sexp const& _func) const;
     void operator()(ast::program const& _program) const;
+
     void operator()(ast::arg const& _val) const {
-        assert(false);
+        mOut << _val.mSymbol.mName << " ";
+        render(_val.mVal);
     }
 
     void operator()(ast::let const& _val) const {
-        assert(false);
+        mOut << "(let ";
+        renderVector(_val.mArgs);
+        mOut << _val.mBody << ")";
     }
 
     void operator()(ast::macro const& _mac) const {
@@ -147,7 +156,7 @@ struct printer : boost::static_visitor<void>, printer_base {
 
     void operator()(ast::define const& _def) const {
         mOut << "(define " << _def.mSym.mName << " ";
-        boost::apply_visitor(*this, _def.mVal);
+        render(_def.mVal);
         mOut << ")";
     }
 
@@ -196,7 +205,7 @@ struct printer : boost::static_visitor<void>, printer_base {
 template <typename T>
 void print(T const& _ast, std::ostream& _out = std::cout) {
     ast::printer printIt(_out);
-    boost::apply_visitor(printIt, _ast);
+    printIt.render(_ast);
     _out << std::endl;
 }
 

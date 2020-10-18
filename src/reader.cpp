@@ -3,6 +3,7 @@
 #include "grammar.h"
 
 namespace glisp {
+
     ast::program read(std::string const& _str) {
         using namespace std;
         namespace x3 = boost::spirit::x3;
@@ -23,8 +24,11 @@ namespace glisp {
 
         error_handler_type error_handler(iter, end, std::cerr);
 
-        auto const parser = with<error_handler_tag>(
-            std::ref(error_handler))[grammar::program];
+        parse_context ctx;
+
+        auto const parser
+            = with<parse_context>(std::ref(ctx))[with<error_handler_tag>(
+                std::ref(error_handler))[grammar::program]];
 
         bool r = phrase_parse(iter, end, parser, space, ast);
 

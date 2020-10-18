@@ -36,11 +36,10 @@ namespace ast {
     }
 
     void printer::operator()(ast::lambda const& _lambda) const {
-        mOut << "("
-             << "lambda";
-        renderVector(_lambda.mArgs, "args");
+        mOut << "(lambda ";
+        renderVector(_lambda.mArgs);
         mOut << " ";
-        (*this)(_lambda.mBody);
+        render(_lambda.mBody);
         mOut << ")";
     }
 
@@ -105,8 +104,8 @@ namespace ast {
     }
 
     void printer::operator()(ast::map_entry const& _map_entry) const {
-        (*this)(_map_entry.mKey);
+        render(_map_entry.mKey);
         mOut << " ";
-        (*this)(_map_entry.mValue);
+        render(_map_entry.mValue);
     }
 }

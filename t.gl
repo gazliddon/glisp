@@ -14,4 +14,15 @@
         (dump (rest m)))
        (println "done")))))
 
+(def map-lo (fn [f coll res]
+    (if coll
+        (let [fst (first coll)
+              rst (rest coll)]
+              (map-lo f coll (conj res (f fst))))
+        res)))
+
+(def map (fn 
+          [f coll] (map-lo f coll (list))))
+
+{ :map map }
 
