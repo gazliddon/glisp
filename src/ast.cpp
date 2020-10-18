@@ -4,6 +4,7 @@ namespace ast {
     bool operator==(lambda const& _lhs, lambda const& _rhs) {
         assert(false);
     }
+
     bool operator==(set const& _lhs, set const& _rhs) {
         assert(false);
     }
@@ -22,12 +23,13 @@ namespace ast {
     bool operator==(native_function const& _lhs, native_function const& _rhs) {
         assert(false);
     }
+
     bool operator==(keyword const& _lhs, keyword const& _rhs) {
-        assert(false);
+        return _lhs.mSym == _rhs.mSym;
     }
 
     bool operator==(symbol const& _lhs, symbol const& _rhs) {
-        assert(false);
+        return _lhs.mName == _rhs.mName;
     }
 
     bool operator==(program const& _lhs, program const& _rhs) {

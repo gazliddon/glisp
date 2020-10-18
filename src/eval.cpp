@@ -10,10 +10,11 @@ namespace ast {
     namespace x3 = boost::spirit::x3;
 
     val Evaluator::operator()(ast::macro const& _macro) {
+        auto macro_val = ast::val(_macro);
 
-        mEnv  = mEnv.set(_macro.mSym.mName, ast::val(_macro));
+        mEnv  = mEnv.set(_macro.mSym.mName, macro_val);
 
-        return ast::val(_macro.mSym);
+        return macro_val;
     }
 
     val Evaluator::eval(program const& _v) {
@@ -119,17 +120,18 @@ namespace ast {
     }
 
     val Evaluator::operator()(ast::map const& _map) {
-        return val(_map);
+        ast::map ret = _map;
+
+        for (auto & p : ret.mHashMap) {
+            p.mKey = eval(p.mKey);
+            p.mValue = eval(p.mValue);
+        }
+
+        return val(ret);
     }
 
     val Evaluator::operator()(ast::meta const& _value) {
         std::cout << "meta" << std::endl;
-        assert(false);
-        return val(nil());
-    }
-
-    val Evaluator::operator()(ast::map_entry const& _map_entry) {
-        std::cout << "map_entry" << std::endl;
         assert(false);
         return val(nil());
     }
@@ -348,11 +350,6 @@ namespace ast {
 
                 mEnv = env;
                 return retVal;
-            }
-
-            if (auto p = first.get_val<macro>()) {
-                cout << "unexpanded MACRO " << p->mSym.mName << endl;
-                return ast::val(*p);
             }
         }
 

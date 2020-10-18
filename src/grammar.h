@@ -235,8 +235,8 @@ namespace grammar {
 
     auto const special_def = 
           lambda
-        | define
         | macro
+        | define
         | let
         | quote;
 
@@ -304,7 +304,7 @@ namespace grammar {
     BOOST_SPIRIT_DEFINE(meta);
     
     // macro
-    auto const macro_def = '(' >> lit("defmacro") >> symbol >> vector >> sexp >> ')';
+    auto const macro_def = '(' >> lit("defmacro") > symbol > vector > base > ')';
     BOOST_SPIRIT_DEFINE(macro);
 
     auto constexpr to_typed_arg_string = [](auto & _ctx) {

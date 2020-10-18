@@ -261,7 +261,7 @@ namespace ast {
     struct macro : x3::position_tagged, dummy_compare<macro> {
         symbol mSym;
         vector mArgs;
-        sexp mForms;
+        val mVal;
     };
 
     // print function for debugging

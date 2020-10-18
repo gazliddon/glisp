@@ -30,7 +30,6 @@ namespace ast {
         val operator()(ast::vector const& _vector);
         val operator()(ast::map const& _map);
         val operator()(ast::meta const& _value);
-        val operator()(ast::map_entry const& _map_entry);
         val operator()(ast::lambda const& _lambda);
         val operator()(ast::native_function const& _lambda);
         val operator()(ast::sexp const& _sexp);

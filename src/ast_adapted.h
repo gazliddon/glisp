@@ -18,7 +18,7 @@ BOOST_FUSION_ADAPT_STRUCT( ast::define, mSym, mVal )
 BOOST_FUSION_ADAPT_STRUCT( ast::lambda, mArgs, mBody )
 BOOST_FUSION_ADAPT_STRUCT( ast::sexp, mForms )
 BOOST_FUSION_ADAPT_STRUCT( ast::nil )
-BOOST_FUSION_ADAPT_STRUCT( ast::macro, mSym, mArgs, mForms )
+BOOST_FUSION_ADAPT_STRUCT( ast::macro, mSym, mArgs, mVal )
 BOOST_FUSION_ADAPT_STRUCT( ast::arg, mSymbol, mVal)
 BOOST_FUSION_ADAPT_STRUCT( ast::let, mArgs, mBody)
 

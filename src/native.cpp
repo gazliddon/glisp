@@ -57,6 +57,9 @@ namespace glisp {
                     return i->mValue;
                 }
             }
+        } else {
+            cout << "Not a map!"<< endl;
+
         }
 
         return ast::val();

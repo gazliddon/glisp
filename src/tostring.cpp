@@ -101,7 +101,7 @@ namespace glisp {
             mOut << "(defmacro " << _mac.mSym << " ";
             renderVector(_mac.mArgs.mForms);
             mOut << " ";
-            renderList(_mac.mForms.mForms);
+            render(_mac.mVal);
             mOut << ")";
         }
 
