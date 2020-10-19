@@ -3,96 +3,55 @@
 
 #include "ast.h"
 #include "reader.h"
+#include "demangle.h"
 #include <stack>
 
 namespace ast {
 
     // Visitor to evaluate this expression
-    struct Evaluator {
+    struct Evaluator : public boost::static_visitor<val> {
         env_t mEnv;
         bool mCanRecur;
-
         std::stack<glisp::reader_reslult_t> mReaderContext;
-
         std::stack<size_t> mLines;
 
-        val eval(glisp::reader_reslult_t _r) {
-            mReaderContext.push(_r);
-            val ret;
-            auto const& ctx = mReaderContext.top();
-
-            for (auto const& v : _r.mAst.mForms) {
-                /* mLines.push(ctx.getLine(v)); */
-                ret = eval(v);
-                /* mLines.pop(); */
-            }
-
-            mReaderContext.pop();
-            return ret;
+        template <typename T>
+        val operator()(T const& _val) {
+            std::cout << "Can't eval!" << demangle(_val) << std::endl;
+            assert(false);
         }
 
-        val eval(ast::program const& _prog) {
-            val ret;
-            for (auto const& v : _prog.mForms) {
-                /* mLines.push(_r.getLine(v)); */
-                ret = eval(v);
-                /* mLines.pop(); */
-            }
-            return ret;
+        template <typename T>
+        val operator()(x3::forward_ast<T> const& _val) {
+            return (*this)(_val.get());
         }
+
+        val eval(glisp::reader_reslult_t _r);
+        val eval(ast::program const& _prog);
 
         val const& eval(val const& _v) const;
+
         val eval(val const& _v);
 
         val operator()(define const& _v);
-        val operator()(bool const&);
         val operator()(ast::symbol const& _v);
-        val operator()(ast::keyword const& _keyword);
-        val operator()(std::string const& _v);
-        val operator()(ast::hint const& _hint);
-        val operator()(ast::nil const&);
-        val operator()(double _v);
-        val operator()(char _v);
         val operator()(ast::set const& _set);
         val operator()(ast::vector const& _vector);
         val operator()(ast::map const& _map);
         val operator()(ast::meta const& _value);
-        val operator()(ast::lambda const& _lambda);
-        val operator()(ast::native_function const& _lambda);
         val operator()(ast::sexp const& _sexp);
         val operator()(ast::program const& _program);
         val operator()(ast::macro const& _macro);
-
-        val operator()(ast::arg const& _macro) {
-            return ast::val();
-        }
-
         val operator()(ast::let const& _let);
 
         void testEval();
 
-        template <typename T>
-        void eval_collection_in_place(T& _col) {
-            auto b         = _col.begin();
-            auto e         = _col.end();
-            bool all_atoms = true;
-        }
 
-        void set(std::string const & _name, ast::val const & _v) {
-            mEnv = mEnv.set(_name, _v);
-        }
+        void set(std::string const& _name, ast::val const& _v);
 
         void add_native_function(std::string const& _name,
             std::function<val(Evaluator& e, std::vector<val> const&)>&& _func,
-            int _nargs) {
-
-            native_function x {
-                .mFunc      = std::move(_func),
-                .mNumOfArgs = _nargs,
-            };
-
-            set(_name, val(x));
-        }
+            int _nargs);
 
         template <typename T, typename R = T>
         void add_twin_op(std::string const& _name,

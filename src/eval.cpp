@@ -1,6 +1,6 @@
 #include "eval.h"
-#include "printer.h"
 #include "except.h"
+#include "printer.h"
 
 #include <iostream>
 #include <spdlog/spdlog.h>
@@ -10,6 +10,47 @@ namespace ast {
     using namespace std;
 
     namespace x3 = boost::spirit::x3;
+
+    void Evaluator::set(std::string const& _name, ast::val const& _v) {
+        mEnv = mEnv.set(_name, _v);
+    }
+
+    void Evaluator::add_native_function(std::string const& _name,
+        std::function<val(Evaluator& e, std::vector<val> const&)>&& _func,
+        int _nargs) {
+
+        native_function x {
+            .mFunc      = std::move(_func),
+            .mNumOfArgs = _nargs,
+        };
+
+        set(_name, val(x));
+    }
+
+    val Evaluator::eval(ast::program const& _prog) {
+        val ret;
+        for (auto const& v : _prog.mForms) {
+            /* mLines.push(_r.getLine(v)); */
+            ret = eval(v);
+            /* mLines.pop(); */
+        }
+        return ret;
+    }
+
+    val Evaluator::eval(glisp::reader_reslult_t _r) {
+        mReaderContext.push(_r);
+        val ret;
+        auto const& ctx = mReaderContext.top();
+
+        for (auto const& v : _r.mAst.mForms) {
+            /* mLines.push(ctx.getLine(v)); */
+            ret = eval(v);
+            /* mLines.pop(); */
+        }
+
+        mReaderContext.pop();
+        return ret;
+    }
 
     val Evaluator::operator()(ast::macro const& _macro) {
         auto macro_val = ast::val(_macro);
@@ -47,55 +88,18 @@ namespace ast {
         return val(_v.mSym);
     }
 
-    val Evaluator::operator()(bool const& _val) {
-        assert(false);
-    }
-
     val Evaluator::operator()(ast::symbol const& _v) {
         auto ret = mEnv.find(_v.mName);
 
         if (ret == nullptr) {
-            auto const & ctx = mReaderContext.top();
+            auto const& ctx = mReaderContext.top();
 
             auto x = fmt::format("Can't find symbol {}", _v.mName);
 
-            throw( glisp::cEvalError(x.c_str()) );
+            throw(glisp::cEvalError(x.c_str()));
         }
 
         return *ret;
-    }
-
-    val Evaluator::operator()(ast::keyword const& _keyword) {
-        assert(false);
-        return val();
-    }
-
-    val Evaluator::operator()(std::string const& _v) {
-        assert(false);
-        return val();
-    }
-
-    val Evaluator::operator()(ast::hint const& _hint) {
-        assert(false);
-        return val(nil());
-    }
-
-    val Evaluator::operator()(ast::nil const&) {
-        assert(false);
-        return val(nil());
-    }
-    val Evaluator::operator()(double _v) {
-        assert(false);
-        return val(nil());
-    }
-    val Evaluator::operator()(char _v) {
-        assert(false);
-        return val(nil());
-    }
-
-    val Evaluator::operator()(ast::set const& _set) {
-        assert(false);
-        return val(nil());
     }
 
     val Evaluator::operator()(ast::vector const& _vector) {
@@ -121,29 +125,12 @@ namespace ast {
         return val(ret);
     }
 
-    val Evaluator::operator()(ast::meta const& _value) {
-        std::cout << "meta" << std::endl;
-        assert(false);
-        return val(nil());
-    }
-
-    val Evaluator::operator()(ast::lambda const& _lambda) {
-        std::cout << "lambda" << std::endl;
-        assert(false);
-        return val(nil());
-    }
-
     val const& Evaluator::eval(val const& _v) const {
         if (_v.is_atom()) {
             return _v;
         } else {
             return eval(_v);
         }
-    }
-
-    val Evaluator::operator()(ast::native_function const& _lambda) {
-        assert(false);
-        return val(nil());
     }
 
     template <class I>
@@ -362,7 +349,6 @@ namespace ast {
                 return retVal;
             }
         }
-
 
         assert(!"can't eval");
         return ret;

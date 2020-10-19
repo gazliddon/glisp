@@ -11,25 +11,35 @@ namespace glisp {
     struct compiler_t : public boost::static_visitor<void> {
 
         template <typename T>
-        void operator()(T const & _val) const {
+        void operator()(T & _val) {
             cout << "NO COMPILES " << demangle(_val) << endl;
         }
 
         template <typename T>
-        void operator()(boost::spirit::x3::forward_ast<T> const & _val) const {
+        void operator()(boost::spirit::x3::forward_ast<T> & _val) {
             ast::type_getter_t t;
             (*this)(_val.get());
         }
 
-        template <>
-        void operator()(ast::program const& _val) const {
+        void operator()(ast::program & _val) {
             cout << "block!" << endl;
-            for (auto const & v : _val.mForms) {
+            for (auto & v : _val.mForms) {
                 compile(v);
             }
         }
 
-        void compile(ast::val const & _v) const {
+        void operator()(ast::sexp & _val) {
+            cout << "sexp" << endl;
+            for (auto & v : _val.mForms) {
+                compile(v);
+            }
+        }
+
+        void operator()(bool & _val) {
+            cout << "bool" << endl;
+        }
+
+        void compile(ast::val & _v) {
             _v.apply_visitor(*this);
         }
     };
