@@ -20,6 +20,7 @@
 #include "native.h"
 #include "reader.h"
 #include "tostring.h"
+#include "compile.h"
 
 static char const* banner = R"delim(
    _____ _ _
@@ -100,6 +101,8 @@ namespace glisp {
 
         bool quit = false;
 
+        cCompiler compiler;
+
         while (!quit) {
             try {
                 _out << "=> ";
@@ -123,6 +126,7 @@ namespace glisp {
                         try {
                             auto ast = read(str);
                             ast      = expand(evaluator, ast);
+                            compiler.compile(ast.mAst);
                             auto res = evaluator.eval(ast);
                             auto str = glisp::to_string(res);
                             _out << str << "\n";

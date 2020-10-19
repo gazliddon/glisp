@@ -19,7 +19,7 @@ struct printer_base {
     }
 };
 
-struct type_getter_t : boost::static_visitor<std::string> {
+struct type_getter_t : public boost::static_visitor<std::string> {
     std::string operator()(bool const&) const {
         return "bool";
     }
@@ -86,7 +86,7 @@ struct type_getter_t : boost::static_visitor<std::string> {
     }
 
     std::string operator()(ast::program const& _program) const {
-        return "block";
+        return "program";
     }
 
     std::string operator()(ast::macro const& _mac) const {
