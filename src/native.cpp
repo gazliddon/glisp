@@ -23,8 +23,8 @@ namespace glisp {
     }
 
     template <class I>
-    ast::val low_rest(I _begin, I _end) {
-        if (_end - _begin > 1) {
+    ast::val low_rest(I _begin, I _end, size_t _size) {
+        if (_size > 1) {
             std::vector<ast::val> ret;
             _begin++;
             while (_begin != _end) {
@@ -67,13 +67,19 @@ namespace glisp {
     }
 
     ast::val str(Evaluator& _e, std::vector<ast::val> const& _args) {
-        std::stringstream ret;
+        std::string ret = "";
 
         for (auto& a : _args) {
-            glisp::output_string(ret, a);
+            ret += glisp::to_string(a);
         }
 
-        return ast::val(ret.str());
+        return ast::val(ret);
+    }
+
+    ast::val pair_to_vec(ast::val const& a, ast::val const& b) {
+        ast::vector ret;
+        ret.mForms = { a, b };
+        return ast::val(ret);
     }
 
     ast::val first(Evaluator& _e, std::vector<ast::val> const& _args) {
@@ -91,13 +97,11 @@ namespace glisp {
         if (auto p = arg.get_val<ast::map>()) {
             if (!p->mHashMap.empty()) {
                 auto const& e = p->mHashMap.front();
-                ast::vector ret;
-                ret.mForms = { e.mKey, e.mValue };
-                return ast::val(ret);
+                return pair_to_vec(e.mKey, e.mValue);
             }
         }
 
-        return ast::val(ast::nil());
+        return val();
     }
 
     ast::val rest(Evaluator& _e, std::vector<ast::val> const& _args) {
@@ -105,14 +109,43 @@ namespace glisp {
         auto& arg = _args[0];
 
         if (auto p = arg.get_val<ast::sexp>()) {
-            return low_rest(p->mForms.begin(), p->mForms.end());
+            return low_rest(
+                p->mForms.begin(), p->mForms.end(), p->mForms.size());
         }
 
         if (auto p = arg.get_val<ast::vector>()) {
-            return low_rest(p->mForms.begin(), p->mForms.end());
+            return low_rest(
+                p->mForms.begin(), p->mForms.end(), p->mForms.size());
         }
 
-        return ast::val(ast::nil());
+        if (auto p = arg.get_val<ast::map>()) {
+            if (p->mHashMap.size() > 1) {
+                sexp wrapped;
+                auto& ret = wrapped.mForms;
+
+                auto b = p->mHashMap.begin();
+                auto e = p->mHashMap.end();
+                b++;
+                while (b != e) {
+                    ret.push_back(pair_to_vec(b->mKey, b->mValue));
+                    b++;
+                }
+                return val(wrapped);
+            }
+        }
+
+        return val();
+    }
+    ast::val get_meta(Evaluator& _e, std::vector<ast::val> const& _args) {
+        if (auto p = _args[0].get_val<lambda>()) {
+            if (p->mDocString) {
+                ast::map map;
+                auto key = keyword { .mSym = symbol("doc") };
+                map.add(val(key), val(*(p->mDocString)));
+                return val(map);
+            }
+        }
+        return val();
     }
 
     ast::val slurp(Evaluator& _e, std::vector<ast::val> const& _args) {
@@ -129,30 +162,35 @@ namespace glisp {
             return ast::val(ast::nil());
         }
     }
-
-    ast::val conj(Evaluator& _e, std::vector<ast::val> const& _args) {
+    ast::val concat(Evaluator& _e, std::vector<ast::val> const& _args, size_t idx_val, size_t idx_seq ) {
         auto ret = ast::val();
 
         sexp the_list;
 
-        auto is_nil  = _args[0].get_val<ast::nil>();
-        auto is_sexp = _args[0].get_val<ast::sexp>();
+        auto is_nil  = _args[idx_seq].get_val<ast::nil>();
+        auto is_sexp = _args[idx_seq].get_val<ast::sexp>();
 
         if (is_nil || is_sexp) {
             if (is_sexp) {
                 the_list = *is_sexp;
             }
 
-            the_list.mForms.push_back(_args[1]);
+            the_list.mForms.push_back(_args[idx_val]);
             return ast::val(the_list);
         } else {
             // TBD is an error
             return ast::val();
         }
     }
+    ast::val conj(Evaluator& _e, std::vector<ast::val> const& _args) {
+        return concat(_e, _args, 1, 0);
+    }
+    ast::val cons(Evaluator& _e, std::vector<ast::val> const& _args) {
+        return concat(_e, _args, 0, 1);
+    }
 
     ast::val puts(Evaluator& _e, std::vector<ast::val> const& _args) {
-        glisp::output_string(std::cout, _args[0]);
+        std::cout << glisp::to_string(_args[0]);
         return ast::val();
     }
 
@@ -183,13 +221,10 @@ namespace glisp {
     }
 
     ast::val include(ast::Evaluator& _e, std::string const& _fileName) {
-        return include_fn(_e, {val(_fileName)});
+        return include_fn(_e, { val(_fileName) });
     }
 
     void add_natives(ast::Evaluator& evaluator) {
-
-        evaluator.add_native_function("puts", puts, 1);
-        evaluator.add_native_function("str", str, 1);
 
         evaluator.add_twin_op<double, double>(
             "+", [](auto a, auto b) { return a + b; });
@@ -212,9 +247,13 @@ namespace glisp {
         evaluator.add_twin_op<double, bool>(
             ">", [](auto a, auto b) { return a > b; });
 
+        evaluator.add_native_function("meta", get_meta, 1);
+        evaluator.add_native_function("puts", puts, 1);
+        evaluator.add_native_function("str", str, 1);
         evaluator.add_native_function("include", include_fn, 1);
         evaluator.add_native_function("symbols", get_symbols, 0);
         evaluator.add_native_function("conj", conj, 2);
+        evaluator.add_native_function("cons", cons, 2);
         evaluator.add_native_function("slurp", slurp, 1);
         evaluator.add_native_function("read", read_fn, 1);
         evaluator.add_native_function("eval", eval_fn, 1);
@@ -223,6 +262,5 @@ namespace glisp {
         evaluator.add_native_function("rest", rest, 1);
         evaluator.add_native_function("get", get, 2);
     }
-
 }
 

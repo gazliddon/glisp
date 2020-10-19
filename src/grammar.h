@@ -126,6 +126,14 @@ namespace grammar {
     auto const is_false_def = lit("false")[set_bool_false];
     BOOST_SPIRIT_DEFINE(is_false);
 
+    /* auto special_fn = [](auto & ctx) { */
+    /* }; */
+
+    /* struct special_sym_class {}; */
+    /* rule<special_sym_class, ast::val> const special_sym("special_sym"); */
+    /* auto const special_sym_def  = &(lit("nil")); */
+    /* BOOST_SPIRIT_DEFINE(special_sym); */
+    
     // --------------------------------------------------------------------------------
     // Symbol
 
@@ -135,7 +143,7 @@ namespace grammar {
 
     auto const echars = char_("?=_.!*+-/><$@");
     auto const symbol_def
-        = as<std::string>[lexeme[(alpha | echars) >> *(alnum | echars | '-')]];
+        = as<std::string>[lexeme[(alpha | echars) > *(alnum | echars | '-')]];
 
     BOOST_SPIRIT_DEFINE(symbol);
 
@@ -143,10 +151,6 @@ namespace grammar {
     auto constexpr f = []() {};
     struct nil_class;
     rule<nil_class, ast::nil> const nil("nil");
-    // dummy semantic action to prevent
-    // serializing to synthetict attribute
-    auto const nil_def = lexeme[lit("nil")][f];
-    BOOST_SPIRIT_DEFINE(nil);
 
     // Character
     // convert character code to char
@@ -200,7 +204,7 @@ namespace grammar {
 
     // Type hint
     struct hint_class;
-    rule<str_class, ast::hint> const hint("hint");
+    rule<hint_class, ast::hint> const hint("hint");
     auto const hint_def = lexeme['^' > symbol];
     BOOST_SPIRIT_DEFINE(hint);
 
@@ -211,10 +215,13 @@ namespace grammar {
     rule<val_class, ast::val> const val("value");
     rule<lambda_class, ast::lambda> const lambda = "lambda";
 
+    struct program_class : error_handler { };
+    rule<program_class, ast::program> const program = "program";
+
     // A Val
 
     auto const lambda_def
-        = '(' >> (lit("lambda") | lit("fn")) > '[' > *symbol > ']' > val > ')';
+        = '(' >> (lit("fn")) > -(str) > '[' > *symbol > -('&' > symbol) > ']' > program > ')';
     BOOST_SPIRIT_DEFINE(lambda);
 
     struct sexp_class { };
@@ -269,29 +276,34 @@ namespace grammar {
     auto constexpr quoted_fn =  [](auto & _ctx) {
         ast::val & val = _attr(_ctx);
         ast::sexp & ret = _val(_ctx);
-        auto sym = ast::symbol {.mName = "quote"};
+        auto sym = ast::symbol("quote");
         ret.mForms.push_back(ast::val(sym));
         ret.mForms.push_back(val);
     };
+
+    
+    // dummy semantic action to prevent
+    // serializing to synthetict attribute
+    auto const nil_def = lexeme[lit("nil")][f];
+    BOOST_SPIRIT_DEFINE(nil);
 
     auto const quoted_def = '\'' >> base[quoted_fn];
     BOOST_SPIRIT_DEFINE(quoted);
 
     BOOST_SPIRIT_DEFINE(val);
 
-    auto const let_def = '(' >> lit("let") > '[' > *arg > ']' > val > ')';
+    auto const let_def = '(' >> lit("let") > '[' > *arg > ']' > program > ')';
     BOOST_SPIRIT_DEFINE(let);
 
     auto const arg_def = symbol >> val;
     BOOST_SPIRIT_DEFINE(arg);
 
-    struct program_class : error_handler { };
-    rule<program_class, ast::program> const program = "program";
     auto const program_def                          = *val;
     BOOST_SPIRIT_DEFINE(program);
 
+    auto const space_skip = +( lit(" ") | '\t' | '\r' | '\n');
     // a define
-    auto const define_def = '(' >> lit("def") > symbol > val > ')';
+    auto const define_def = '(' >> lexeme[lit("def") > space_skip > symbol > space_skip ] > val > ')' ;
     BOOST_SPIRIT_DEFINE(define);
 
     // A vector

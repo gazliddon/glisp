@@ -30,19 +30,29 @@ namespace ast {
     struct v4 { };
 
     struct nil {
-
         friend bool operator==(nil const& _lhs, nil const& _rhs) {
             return true;
         }
     };
 
     struct symbol : x3::position_tagged {
+        symbol() {
+        }
+        symbol(char const* _name)
+            : mName(_name) {
+        }
+        symbol(std::string const& _name)
+            : mName(_name) {
+        }
+
         std::string mName;
         friend bool operator==(symbol const& _lhs, symbol const& _rhs);
     };
 
     struct keyword : x3::position_tagged {
+
         symbol mSym;
+
         friend bool operator==(keyword const& _lhs, keyword const& _rhs);
     };
 
@@ -158,17 +168,16 @@ namespace ast {
     struct Evaluator;
 
     struct native_function {
-        std::function<val(Evaluator &, std::vector<val> const&)> mFunc;
+        std::function<val(Evaluator&, std::vector<val> const&)> mFunc;
         int mNumOfArgs;
         friend bool operator==(
             native_function const& _lhs, native_function const& _rhs);
 
-        val call(Evaluator & _e, std::vector<val> const& args) const {
+        val call(Evaluator& _e, std::vector<val> const& args) const {
             assert(args.size() >= unsigned(mNumOfArgs));
             return mFunc(_e, args);
         }
     };
-
 
     struct vector : x3::position_tagged {
         vector() {
@@ -191,7 +200,7 @@ namespace ast {
     struct map : x3::position_tagged {
         std::list<map_entry> mHashMap;
 
-        val get(ast::val const & _key) const {
+        val get(ast::val const& _key) const {
             auto& hmap = mHashMap;
             for (auto i = hmap.begin(); i != hmap.end(); i++) {
                 auto this_key = i->mKey;
@@ -200,6 +209,11 @@ namespace ast {
                 }
             }
             return val();
+        }
+
+        void add(val const& _key, val const& _val) {
+            auto m = map_entry{ .mKey = _key, .mValue = _val };
+            mHashMap.push_back(m);
         }
 
         friend bool operator==(map const& _lhs, map const& _rhs);
@@ -222,8 +236,14 @@ namespace ast {
 
     struct lambda {
         std::vector<symbol> mArgs;
-        val mBody;
+        boost::optional<symbol> mFinalArg;
+        boost::optional<std::string> mDocString;
+        program mBody;
         friend bool operator==(lambda const& _lhs, lambda const& _rhs);
+    };
+
+    struct recur :dummy_compare<recur> {
+        std::vector<val> mArgs;
     };
 
     struct sexp : dummy_compare<sexp> {
@@ -244,7 +264,7 @@ namespace ast {
         define() {
         }
 
-        define(sexp const & exp) {
+        define(sexp const& exp) {
             assert(exp.mForms.size() == 3);
             auto define_id = exp.mForms[0].get_val<symbol>();
             assert(define_id);
@@ -266,7 +286,7 @@ namespace ast {
 
     struct let : x3::position_tagged, dummy_compare<let> {
         std::vector<arg> mArgs;
-        val mBody;
+        program mBody;
     };
 
     struct macro : x3::position_tagged, dummy_compare<macro> {
@@ -281,12 +301,11 @@ namespace ast {
         return out;
     }
 
-
 } // namespace ast
 
 namespace ast {
     using env_t = immer::map<std::string, val>;
-    void dump(env_t const & _env, std::ostream & _out);
+    void dump(env_t const& _env, std::ostream& _out);
 }
 
 #endif /* end of include guard: AST_H_4GSXUIIF */

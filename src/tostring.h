@@ -9,7 +9,6 @@
 #include <strstream>
 
 namespace glisp {
-    void output_string(std::ostream & _out, ast::val const & _val);
     std::string to_string(ast::val const & _val);
 }
 

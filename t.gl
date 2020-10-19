@@ -1,28 +1,22 @@
 (def fib
- (fn [n]
-  (if (<= n 2)
-   1
-   (+ (fib (- n 1)) (fib (- n 2)))))
- )
+  (fn [n]
+    (if (<= n 2)
+      1
+      (+ (fib (- n 1)) (fib (- n 2))))))
 
-(def
- dump (fn [m]
-     (let [f (first m)]
-      (if f
-       (do 
-        (println f)
-        (dump (rest m)))
-       (println "done")))))
+(def doc 
+  (fn "get the docstring for object o"
+    [o]
+    (let [m (meta o)]
+      (println "Getting docs")
+      (if m
+        (:docstring m)
+        nil))))
 
-(def map-lo (fn [f coll res]
-    (if coll
-        (let [fst (first coll)
-              rst (rest coll)
-              new (conj res (f fst)) ]
-              (map-lo f rst new))
-        res)))
-
-(def map (fn 
-          [f coll] (map-lo f coll (list))))
-
-
+(def loop-test 
+  (fn "test the loops"
+    [o]
+    (println o)
+    (if o
+      (loop-test (rest o))
+      "done")))

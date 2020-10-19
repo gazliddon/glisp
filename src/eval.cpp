@@ -244,7 +244,6 @@ namespace ast {
         }
 
         if (auto sym = firsti->get_val<symbol>()) {
-
             if (verbose) {
                 cout << "first sexp arg is sybol " << sym->mName << endl;
             }
@@ -306,6 +305,10 @@ namespace ast {
                 }
             }
 
+            if (name == "recur") {
+                return val();
+            }
+
             if (name == "or") {
                 auto ret = false;
 
@@ -341,8 +344,11 @@ namespace ast {
             }
 
             if (auto fn = first.get_val<lambda>()) {
+
                 auto env = mEnv;
+
                 assert(args.size() == fn->mArgs.size());
+
                 auto i = 0;
 
                 for (auto const& a : fn->mArgs) {
@@ -352,6 +358,7 @@ namespace ast {
                 auto retVal = eval(fn->mBody);
 
                 mEnv = env;
+
                 return retVal;
             }
         }

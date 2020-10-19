@@ -10,6 +10,7 @@ namespace ast {
     // Visitor to evaluate this expression
     struct Evaluator {
         env_t mEnv;
+        bool mCanRecur;
 
         std::stack<glisp::reader_reslult_t> mReaderContext;
 

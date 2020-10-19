@@ -1,170 +1,161 @@
 #include "tostring.h"
+#include <spdlog/spdlog.h>
 
 namespace glisp {
 
-    class cToString : public boost::static_visitor<void> {
-        public:
-            typedef void result_type;
+    class cToString : public boost::static_visitor<std::string> {
+    public:
+        typedef std::string result_type;
 
-        std::ostream& mOut;
 
-        cToString(std::ostream& _out, ast::val const& _val)
-            : mOut(_out) {
-            boost::apply_visitor(*this, _val);
+        cToString()
+            {
         }
 
-        void operator()(bool const& _val) const {
+        std::string operator()(bool const& _val) const {
             if (_val) {
-                mOut << "true";
+                return "true";
             } else {
-                mOut << "false";
+                return "false";
             }
         }
 
-        void operator()(ast::symbol const& _v) const {
-            mOut << _v.mName;
+        std::string operator()(ast::symbol const& _v) const {
+            return _v.mName;
         }
 
-        void operator()(ast::keyword const& _v) const {
-            mOut << ':' << _v.mSym.mName;
+        std::string operator()(ast::keyword const& _v) const {
+            return fmt::format(":{}", _v.mSym.mName);
         }
 
-        void operator()(std::string const& _v) const {
-            mOut << _v;
+        std::string operator()(std::string const& _v) const {
+            return _v;
         }
 
-        void operator()(ast::hint const& _hint) const {
-            mOut << "^" << _hint.mSym.mName;
+        std::string operator()(ast::hint const& _v) const {
+            return fmt::format("^{}", _v.mSym.mName);
         }
 
-        void operator()(ast::nil const&) const {
-            mOut << "nil";
+        std::string operator()(ast::nil const&) const {
+            return "nil";
         }
 
-        void operator()(double _v) const {
-            mOut << _v;
+        std::string operator()(double _v) const {
+            return fmt::format("{}", _v);
         }
 
-        void operator()(char _v) const {
-            mOut << _v;
+        std::string operator()(char _v) const {
+            return fmt::format("{}", _v);
         }
 
-        void operator()(ast::set const& _set) const {
-            mOut<<"#";
-            renderBraced(_set.mForms);
+        std::string operator()(ast::set const& _set) const {
+            return fmt::format("#{}", renderBraced(_set.mForms));
         }
 
-        void operator()(ast::vector const& _vector) const {
-            renderVector(_vector.mForms);
+        std::string operator()(ast::vector const& _vector) const {
+            return renderVector(_vector.mForms);
         }
 
-        void operator()(ast::map const& _map) const {
-            renderBraced(_map.mHashMap);
+        std::string operator()(ast::map const& _map) const {
+            return renderBraced(_map.mHashMap);
         }
 
-        void operator()(ast::meta const& _value) const {
-            mOut << "TBD META";
+        std::string operator()(ast::meta const& _value) const {
+            return "^{:meta \"TBD\"}";
         }
 
-        void operator()(ast::map_entry const& _map_entry) const {
-            render(_map_entry.mKey);
-            mOut << " : ";
-            render(_map_entry.mValue);
+        std::string operator()(ast::map_entry const& _v) const {
+            return fmt::format("{} : {}" , render(_v.mKey), render(_v.mValue));
         }
 
-        void operator()(ast::lambda const& _lambda) const {
-            mOut << "(fn ";
-            renderVector(_lambda.mArgs);
-            mOut << " ";
-            render(_lambda.mBody);
-            mOut << ")";
+        std::string renderArgs(ast::lambda const & _v) const {
+            std::string finalArg;
 
+            if (_v.mFinalArg) {
+                finalArg = fmt::format(" & {}", _v.mFinalArg->mName);
+            }
+
+            return fmt::format("[{}{}]",  renderCollection(_v.mArgs), finalArg);
         }
 
-        void operator()(ast::native_function const& _lambda) const {
-            mOut << "{:fn 0xfffff :args " << _lambda.mNumOfArgs << "}";
+        std::string operator()(ast::lambda const&_v) const {
+            return fmt::format("(fn {} {})" , renderArgs(_v), render(_v.mBody));
         }
 
-        void operator()(ast::sexp const& _v) const {
-            renderList(_v.mForms);
+        std::string operator()(ast::native_function const& _lambda) const {
+            return fmt::format("{ :fn {} :args {} }" , 0xabcdef, _lambda.mNumOfArgs);
         }
 
-        void operator()(ast::program const& _program) const {
+        std::string operator()(ast::sexp const& _v) const {
+            return renderList(_v.mForms);
         }
 
-        void operator()(ast::arg const& _val) const {
-            render(_val.mSymbol);
-            mOut << " ";
-            render(_val.mVal);
+        std::string operator()(ast::program const& _program) const {
+            return "PRG";
         }
 
-        void operator()(ast::let const& _val) const {
-            assert(false);
+        std::string operator()(ast::arg const& _v) const {
+            return fmt::format("{} {}" , _v.mSymbol.mName, render(_v.mVal));
         }
 
-        void operator()(ast::macro const& _mac) const {
-            mOut << "(defmacro " << _mac.mSym << " ";
-            renderVector(_mac.mArgs.mForms);
-            mOut << " ";
-            render(_mac.mVal);
-            mOut << ")";
+        std::string operator()(ast::let const& _v) const {
+            return fmt::format("(let {} {})", renderVector(_v.mArgs), render(_v.mBody));
+        }
+
+        std::string operator()(ast::macro const& _v) const {
+            return fmt::format("(defmacro {} {} {})", render(_v.mSym), renderVector(_v.mArgs.mForms), render( _v.mVal ));
         }
 
         template <typename T>
-        void render(T const& _val) const {
-            operator()(_val);
+        std::string render(T const& _val) const {
+            return operator()(_val);
         }
 
-        void operator()(ast::define const& _def) const {
-            mOut << "(define " << _def.mSym.mName << " ";
-            render(_def.mVal);
-            mOut << ")";
+        std::string operator()(ast::define const& _v) const {
+            return fmt::format("(define {} {})", _v.mSym.mName, render(_v.mVal));
         }
 
-        void operator()(ast::val const& _val) const {
-            boost::apply_visitor(*this, _val);
+        std::string operator()(ast::val const& _val) const {
+            return boost::apply_visitor(*this, _val);
         }
 
         template <typename T>
-        void renderCollection(T const& _col,
+        std::string renderCollection(T const& _col,
             char const* _pre         = "",
             char const* _post        = "",
             char const* _intersperse = " ") const {
+
+            std::string str;
+
             auto b = _col.begin();
             auto e = _col.end();
-            mOut << _pre;
             while (b != e) {
-                (*this)(*b++);
+                str+= render(*b++);
                 if (b != e) {
-                    mOut << _intersperse;
+                    str += _intersperse;
                 }
             }
-            mOut << _post;
+            return fmt::format("{}{}{}", _pre, str,_post);
         }
 
         template <typename T>
-        void renderList(T const& _col) const {
-            renderCollection(_col, "(", ")");
+        std::string renderList(T const& _col) const {
+            return renderCollection(_col, "(", ")");
         }
 
         template <typename T>
-        void renderBraced(T const& _col) const {
-            renderCollection(_col, "{", "}");
+        std::string renderBraced(T const& _col) const {
+            return renderCollection(_col, "{", "}");
         }
 
         template <typename T>
-        void renderVector(T const& _col) const {
-            renderCollection(_col, "[", "]");
+        std::string renderVector(T const& _col) const {
+            return renderCollection(_col, "[", "]");
         }
     };
 
-    std::string to_string(ast::val const & _val) {
-        std::strstream ret;
-        output_string(ret, _val);
-        return ret.str();
-    }
-
-    void output_string(std::ostream & _out, ast::val const & _val) {
-        cToString to_string(_out, _val);
+    std::string to_string(ast::val const& _val) {
+        cToString to_str;
+        return to_str.render(_val);
     }
 }

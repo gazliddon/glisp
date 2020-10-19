@@ -124,8 +124,8 @@ namespace glisp {
                             auto ast = read(str);
                             ast      = expand(evaluator, ast);
                             auto res = evaluator.eval(ast);
-                            glisp::output_string(_out, res);
-                            _out << "\n";
+                            auto str = glisp::to_string(res);
+                            _out << str << "\n";
                             evaluator.mEnv = evaluator.mEnv.set("*1", res);
 
                         } catch (cEvalError e) {
