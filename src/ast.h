@@ -6,12 +6,14 @@
 #include <set>
 #include <string>
 
+#include "except.h"
 #include <boost/mp11/mpl.hpp>
 #include <boost/mpl/copy.hpp>
 #include <boost/spirit/home/x3.hpp>
 #include <boost/spirit/home/x3/support/ast/position_tagged.hpp>
 #include <boost/spirit/home/x3/support/ast/variant.hpp>
 #include <immer/map.hpp>
+#include <spdlog/spdlog.h>
 
 namespace ast {
     template <typename T>
@@ -49,6 +51,13 @@ namespace ast {
         friend bool operator==(symbol const& _lhs, symbol const& _rhs);
     };
 
+    struct resolved_symbol_t : dummy_compare<resolved_symbol_t> {
+        resolved_symbol_t() {}
+        resolved_symbol_t(uint64_t _v) : mSymbolId(_v) {
+        }
+        uint64_t mSymbolId;
+    };
+
     struct keyword : x3::position_tagged {
 
         symbol mSym;
@@ -60,7 +69,7 @@ namespace ast {
         symbol mSym;
     };
 
-    using atoms = mp_list<bool, std::string, double, char, keyword, nil>;
+    using atoms = mp_list<bool, std::string, double, char, keyword, nil, resolved_symbol_t>;
 
     template <typename T>
     constexpr bool is_atom() {
@@ -152,6 +161,19 @@ namespace ast {
         }
 
         template <typename T>
+        T * get_val() {
+
+            if (is<T>()) {
+                if constexpr (mp_count<atoms, T>() != 0) {
+                    return boost::get<T>(this);
+                } else {
+                    return boost::get<forward_ast<T>>(this)->get_pointer();
+                }
+            }
+            return nullptr;
+        }
+
+        template <typename T>
         T const* get_val() const {
 
             if (is<T>()) {
@@ -173,8 +195,18 @@ namespace ast {
         friend bool operator==(
             native_function const& _lhs, native_function const& _rhs);
 
-        val call(Evaluator& _e, std::vector<val> const& args) const {
-            assert(args.size() >= unsigned(mNumOfArgs));
+        val call(Evaluator& _e,
+            std::string const& _binding,
+            std::vector<val> const& args) const {
+            if (args.size() < unsigned(mNumOfArgs)) {
+                auto x = fmt::format("Too many args for native function "
+                                     "{}\nExpected at least {}, got {}",
+                    _binding,
+                    mNumOfArgs,
+                    args.size());
+
+                throw(glisp::cEvalError(x.c_str()));
+            }
             return mFunc(_e, args);
         }
     };
@@ -212,7 +244,7 @@ namespace ast {
         }
 
         void add(val const& _key, val const& _val) {
-            auto m = map_entry{ .mKey = _key, .mValue = _val };
+            auto m = map_entry { .mKey = _key, .mValue = _val };
             mHashMap.push_back(m);
         }
 
@@ -242,7 +274,8 @@ namespace ast {
         friend bool operator==(lambda const& _lhs, lambda const& _rhs);
     };
 
-    struct recur :dummy_compare<recur> {
+
+    struct recur : dummy_compare<recur> {
         std::vector<val> mArgs;
     };
 
@@ -257,6 +290,10 @@ namespace ast {
 
         void conj(ast::val const& _val) {
             mForms.push_back(_val);
+        }
+
+        bool is(char const* _symName) {
+            return false;
         }
     };
 
@@ -302,10 +339,5 @@ namespace ast {
     }
 
 } // namespace ast
-
-namespace ast {
-    using env_t = immer::map<std::string, val>;
-    void dump(env_t const& _env, std::ostream& _out);
-}
 
 #endif /* end of include guard: AST_H_4GSXUIIF */

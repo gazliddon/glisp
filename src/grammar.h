@@ -242,7 +242,6 @@ namespace grammar {
     auto const base_def = 
           is_true
         | is_false
-        | tester
         | symbol 
         | nil
         | keyword
@@ -253,11 +252,12 @@ namespace grammar {
         | vector
         | map;
 
-    auto const special_def = 
-          lambda
-        | define
-        | let
-        | quote;
+    /* auto const special_def = */ 
+    /*       lambda */
+    /*     | define */
+    /*     | let */
+    /*     | quote; */
+    auto const special_def =  quote;
 
     auto const val_def =
           quoted
@@ -280,7 +280,6 @@ namespace grammar {
         ret.mForms.push_back(ast::val(sym));
         ret.mForms.push_back(val);
     };
-
     
     // dummy semantic action to prevent
     // serializing to synthetict attribute

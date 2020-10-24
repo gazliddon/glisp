@@ -3,7 +3,6 @@
 
 #include <exception>
 #include <string>
-#include "ast.h"
 
 namespace glisp {
 

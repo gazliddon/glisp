@@ -9,7 +9,8 @@
 #include <strstream>
 
 namespace glisp {
-    std::string to_string(ast::val const & _val);
+    std::string to_type_string(ast::val const & _val);
+    std::string to_string(ast::val const & _val, bool _withTypes= false);
 }
 
 

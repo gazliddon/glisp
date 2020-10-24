@@ -6,6 +6,7 @@
 #include <boost/tuple/tuple.hpp>
 #include <spdlog/spdlog.h>
 
+#include "compile.h"
 #include <tuple>
 
 namespace glisp {
@@ -45,17 +46,28 @@ namespace glisp {
     ast::val get_symbols(Evaluator& _e, std::vector<ast::val> const&) {
         ast::map ret;
 
-        for (auto& p : _e.mEnv) {
-            map_entry me;
-            me.mKey   = p.first;
-            me.mValue = p.second;
-            ret.mHashMap.push_front(me);
-        }
+        /* for (auto& p : _e.mEnv) { */
+        /*     map_entry me; */
+        /*     me.mKey   = p.first; */
+        /*     me.mValue = p.second; */
+        /*     ret.mHashMap.push_front(me); */
+        /* } */
 
         return ast::val(ret);
     }
 
     ast::val get(Evaluator& _e, std::vector<ast::val> const& _args) {
+
+        if (auto p = _args[0].get_val<map>()) {
+            return p->get(_args[1]);
+        } else {
+            cout << "Not a map!" << endl;
+        }
+
+        return ast::val();
+    }
+
+    ast::val set(Evaluator& _e, std::vector<ast::val> const& _args) {
 
         if (auto p = _args[0].get_val<map>()) {
             return p->get(_args[1]);
@@ -162,7 +174,10 @@ namespace glisp {
             return ast::val(ast::nil());
         }
     }
-    ast::val concat(Evaluator& _e, std::vector<ast::val> const& _args, size_t idx_val, size_t idx_seq ) {
+    ast::val concat(Evaluator& _e,
+        std::vector<ast::val> const& _args,
+        size_t idx_val,
+        size_t idx_seq) {
         auto ret = ast::val();
 
         sexp the_list;
@@ -208,6 +223,8 @@ namespace glisp {
 
     auto eval_fn = [](Evaluator& _e, std::vector<ast::val> const& _args) {
         ast::program p { .mForms = _args };
+        /* cCompiler compiler; */
+        /* compiler.compile(p); */
         return _e.eval(p);
     };
 
@@ -215,6 +232,8 @@ namespace glisp {
         if (auto pfn = _args[0].get_val<std::string>()) {
             auto text = slurp(_e, { _args[0] });
             auto ast  = read_fn(_e, { text });
+            /* cCompiler compiler; */
+            /* compiler.compile(*ast.get_val<ast::program>()); */
             return _e.eval(ast);
         }
         return val();

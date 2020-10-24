@@ -8,12 +8,13 @@
 #include <iostream>
 
 namespace glisp {
+    namespace x3 = boost::spirit::x3;
 
     class reader_reslult_t {
     public:
         using iterator_type = std::string::const_iterator;
         using position_cache
-            = boost::spirit::x3::position_cache<std::vector<iterator_type>>;
+            = x3::position_cache<std::vector<iterator_type>>;
         using position_t = boost::iterator_range<iterator_type>;
 
         reader_reslult_t(
@@ -62,6 +63,7 @@ namespace glisp {
     };
 
     reader_reslult_t read(std::string const& _str);
+    ast::val simple_read(std::string const & _str);
 
 }
 

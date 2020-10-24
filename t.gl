@@ -20,3 +20,29 @@
     (if o
       (loop-test (rest o))
       "done")))
+
+(def assert (fn [v]
+              (if v 
+                v
+                (throw "fucked" ))))
+
+(def ff 
+  (fn [sym res]
+    (let [cnt (first res)
+          data (second res)
+          elem (list sym (list  'nth 'ARG0 cnt) )
+          ret [ (inc cnt) (conj data elem)]]
+      ret)))
+
+(def d
+  (fn
+    [args v]
+    (assert (= (type args) "vector"))
+    (let [res (reduce ff args [0 '() ])]
+      (second res))))
+
+(def test (fn [] (d '[x y] 'a)))
+
+(test)
+
+

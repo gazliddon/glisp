@@ -8,7 +8,7 @@
 #include <string>
 
 #include "grammar.h"
-#include "printer.h"
+#include "tostring.h"
 
 #include "env.h"
 #include "eval.h"
@@ -96,8 +96,8 @@ namespace glisp {
         ast::Evaluator evaluator;
         add_natives(evaluator);
 
-        _out << "including prelude.gl" << endl;
-        include(evaluator, "prelude.gl");
+        /* _out << "including prelude.gl" << endl; */
+        /* include(evaluator, "prelude.gl"); */
 
         bool quit = false;
 
@@ -116,7 +116,7 @@ namespace glisp {
                                 quit = true;
                                 break;
                             case 's':
-                                dump(evaluator.mEnv, _out);
+                                /* dump(evaluator.mEnv, _out); */
                                 break;
                             case 'v':
                                 evaluator.eval(read("(define *verbose* true)"));
@@ -125,12 +125,16 @@ namespace glisp {
                     } else {
                         try {
                             auto ast = read(str);
-                            ast      = expand(evaluator, ast);
-                            compiler.compile(ast.mAst);
-                            auto res = evaluator.eval(ast);
-                            auto str = glisp::to_string(res);
-                            _out << str << "\n";
-                            evaluator.mEnv = evaluator.mEnv.set("*1", res);
+
+                            _out << glisp::to_string(ast::val( ast.mAst ), true) << std::endl;
+
+
+                            /* ast  = expand(evaluator, ast); */
+                            /* /1* compiler.compile(ast.mAst); *1/ */
+                            /* auto res = evaluator.eval(ast); */
+                            /* auto str = glisp::to_string(res); */
+                            /* _out << str << "\n"; */
+                            /* evaluator.set("*1", res); */
 
                         } catch (cEvalError e) {
                             _out << "Eval Error : " << e.what() << endl;
@@ -171,7 +175,8 @@ int main(int argc, char* argv[]) {
                 (istreambuf_iterator<char>(t)), istreambuf_iterator<char>());
 
             auto ast = glisp::read(str);
-            ast::print(ast, cout);
+            auto as_str = glisp::to_string(val( ast.mAst ));
+            cout << as_str << std::endl;
 
         } else {
             glisp::repl();

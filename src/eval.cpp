@@ -1,6 +1,6 @@
 #include "eval.h"
 #include "except.h"
-#include "printer.h"
+#include "tostring.h"
 
 #include <iostream>
 #include <spdlog/spdlog.h>
@@ -11,10 +11,6 @@ namespace ast {
 
     namespace x3 = boost::spirit::x3;
 
-    void Evaluator::set(std::string const& _name, ast::val const& _v) {
-        mEnv = mEnv.set(_name, _v);
-    }
-
     void Evaluator::add_native_function(std::string const& _name,
         std::function<val(Evaluator& e, std::vector<val> const&)>&& _func,
         int _nargs) {
@@ -24,12 +20,14 @@ namespace ast {
             .mNumOfArgs = _nargs,
         };
 
-        set(_name, val(x));
+        ast::symbol sym(_name);
+
+        mEnvironment.addAndSetSymbol(sym, val(x));
     }
 
-    val Evaluator::eval(ast::program const& _prog) {
+    val Evaluator::eval(ast::program& _prog) {
         val ret;
-        for (auto const& v : _prog.mForms) {
+        for (auto& v : _prog.mForms) {
             /* mLines.push(_r.getLine(v)); */
             ret = eval(v);
             /* mLines.pop(); */
@@ -42,7 +40,7 @@ namespace ast {
         val ret;
         auto const& ctx = mReaderContext.top();
 
-        for (auto const& v : _r.mAst.mForms) {
+        for (auto& v : _r.mAst.mForms) {
             /* mLines.push(ctx.getLine(v)); */
             ret = eval(v);
             /* mLines.pop(); */
@@ -52,29 +50,33 @@ namespace ast {
         return ret;
     }
 
-    val Evaluator::operator()(ast::macro const& _macro) {
+    void Evaluator::set(std::string const& _name, ast::val const& _v) {
+        assert(false);
+    }
+
+    val Evaluator::operator()(ast::macro& _macro) {
         auto macro_val = ast::val(_macro);
         set(_macro.mSym.mName, macro_val);
         return macro_val;
     }
-    val Evaluator::operator()(ast::let const& _let) {
+    val Evaluator::operator()(ast::let& _let) {
 
-        auto oldEnv = mEnv;
+        auto oldEnv = mEnvironment;
 
         auto ret = val();
 
-        for (auto const& arg : _let.mArgs) {
-            set(arg.mSymbol.mName, eval(arg.mVal));
+        for (auto& arg : _let.mArgs) {
+            /* set(arg.mSymbol.mName, eval(arg.mVal)); */
         }
 
         ret = eval(_let.mBody);
 
-        mEnv = oldEnv;
+        mEnvironment = oldEnv;
 
         return ret;
     }
 
-    val Evaluator::operator()(define const& _v) {
+    val Evaluator::operator()(define& _v) {
         auto& sym = _v.mSym.mName;
 
         auto ret = _v.mVal;
@@ -88,21 +90,27 @@ namespace ast {
         return val(_v.mSym);
     }
 
-    val Evaluator::operator()(ast::symbol const& _v) {
-        auto ret = mEnv.find(_v.mName);
+    val Evaluator::operator()(ast::resolved_symbol_t& _v) {
+        assert(false);
+        /* if (ret == nullptr) { */
+        /*     auto const& ctx = mReaderContext.top(); */
 
-        if (ret == nullptr) {
-            auto const& ctx = mReaderContext.top();
+        /*     auto x = fmt::format("Can't find symbol {}", _v.mName); */
 
-            auto x = fmt::format("Can't find symbol {}", _v.mName);
+        /*     throw(glisp::cEvalError(x.c_str())); */
+        /* } */
 
-            throw(glisp::cEvalError(x.c_str()));
-        }
-
-        return *ret;
+        /* return *ret; */
     }
 
-    val Evaluator::operator()(ast::vector const& _vector) {
+    val Evaluator::operator()(ast::symbol& _v) {
+        auto newSym = mEnvironment.addSymbol(_v);
+        replaceNode(val(newSym));
+
+        return eval(currentNode());
+    }
+
+    val Evaluator::operator()(ast::vector& _vector) {
         auto args = _vector;
 
         for (auto& v : args.mForms) {
@@ -114,7 +122,7 @@ namespace ast {
         return val(args);
     }
 
-    val Evaluator::operator()(ast::map const& _map) {
+    val Evaluator::operator()(ast::map& _map) {
         ast::map ret = _map;
 
         for (auto& p : ret.mHashMap) {
@@ -123,14 +131,6 @@ namespace ast {
         }
 
         return val(ret);
-    }
-
-    val const& Evaluator::eval(val const& _v) const {
-        if (_v.is_atom()) {
-            return _v;
-        } else {
-            return eval(_v);
-        }
     }
 
     template <class I>
@@ -155,10 +155,10 @@ namespace ast {
         return ret;
     }
 
-    ast::val Evaluator::operator()(ast::program const& _program) {
+    ast::val Evaluator::operator()(ast::program& _program) {
         auto ret = ast::val(ast::nil());
 
-        for (auto const& f : _program.mForms) {
+        for (auto& f : _program.mForms) {
             ret = eval(f);
         }
 
@@ -173,19 +173,19 @@ namespace ast {
         return get_first(_args.begin(), _args.end());
     }
 
-    val Evaluator::operator()(ast::sexp const& _func) {
+    val Evaluator::operator()(ast::sexp& _func) {
 
         auto verbose = false;
 
-        if (auto p = mEnv.find("*verbose*")) {
-            if (auto b = p->get_val<bool>()) {
-                verbose = *b;
-            }
-        }
+        /* if (auto p = mEnv.find("*verbose*")) { */
+        /*     if (auto b = p->get_val<bool>()) { */
+        /*         verbose = *b; */
+        /*     } */
+        /* } */
 
         val ret;
 
-        auto const& exps = _func.mForms;
+        auto& exps = _func.mForms;
 
         auto const firsti = exps.begin();
         auto const argsi  = firsti + 1;
@@ -209,14 +209,13 @@ namespace ast {
             return ret;
         };
 
-        auto map_args
-            = [argsi, argse](std::function<bool(ast::val const&)> _func) {
-                  for (auto i = argsi; i != argse; i++) {
-                      if (_func(*i)) {
-                          break;
-                      }
-                  }
-              };
+        auto map_args = [argsi, argse](std::function<bool(ast::val&)> _func) {
+            for (auto i = argsi; i != argse; i++) {
+                if (_func(*i)) {
+                    break;
+                }
+            }
+        };
 
         if (auto nf = firsti->get_val<keyword>()) {
 
@@ -255,9 +254,8 @@ namespace ast {
                     cout << "nargs " << nArgs << endl;
                     /* assert(nArgs == 1); */
                 }
-                ast::type_getter_t t;
-                auto x = t(eval(*argsi));
-                return ast::val(x);
+                auto type_str = glisp::to_type_string(eval(*argsi));
+                return ast::val(type_str);
             }
 
             if (name == "do") {
@@ -299,7 +297,7 @@ namespace ast {
             if (name == "or") {
                 auto ret = false;
 
-                map_args([this, &ret](auto const& v) {
+                map_args([this, &ret](auto& v) {
                     ret = eval(v).to_bool();
                     return ret;
                 });
@@ -310,7 +308,7 @@ namespace ast {
             if (name == "and") {
                 auto ret = true;
 
-                map_args([this, &ret](auto const& v) {
+                map_args([this, &ret](auto& v) {
                     ret = eval(v).to_bool();
                     return !ret;
                 });
@@ -327,24 +325,24 @@ namespace ast {
             auto args  = eval_args();
 
             if (auto nf = first.get_val<native_function>()) {
-                return nf->call(*this, args);
+                return nf->call(*this, name, args);
             }
 
             if (auto fn = first.get_val<lambda>()) {
 
-                auto env = mEnv;
+                auto env = mEnvironment;
 
                 assert(args.size() == fn->mArgs.size());
 
                 auto i = 0;
 
-                for (auto const& a : fn->mArgs) {
+                for (auto& a : fn->mArgs) {
                     set(a.mName, args[i++]);
                 }
 
                 auto retVal = eval(fn->mBody);
 
-                mEnv = env;
+                mEnvironment = env;
 
                 return retVal;
             }
@@ -354,7 +352,14 @@ namespace ast {
         return ret;
     }
 
-    val Evaluator::eval(val const& _v) {
+    void Evaluator::replaceNode(ast::val const& _val) {
+        assert(false);
+    }
+    ast::val& Evaluator::currentNode() {
+        assert(false);
+    }
+
+    val Evaluator::eval(val& _v) {
         using namespace ast;
         val ret;
 

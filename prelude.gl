@@ -27,14 +27,19 @@
                      res))]
       (map-fn f xs '()))))
 
+
 (def reduce
   (fn 
     "reduce
     ([f coll init])
     Returns a sequence consisting of the result of applying f to
     items of coll"
-    [f coll init] (if col 
-                    (reduce f (rest coll) (f (first coll) init))
-                    init)))
+
+    [f col res]
+    (if col 
+      (let [x (first col)
+            xs (rest col) ]
+        (reduce f xs (f x res)))
+        res)))
 
 
