@@ -16,11 +16,11 @@
 
 #include "errors.h"
 
+#include "compile.h"
 #include "except.h"
 #include "native.h"
 #include "reader.h"
 #include "tostring.h"
-#include "compile.h"
 
 static char const* banner = R"delim(
    _____ _ _
@@ -71,7 +71,8 @@ protected:
 
 namespace glisp {
 
-    glisp::reader_reslult_t expand(ast::Evaluator& _ev, glisp::reader_reslult_t r) {
+    glisp::reader_reslult_t expand(
+        ast::Evaluator& _ev, glisp::reader_reslult_t r) {
         return r;
     }
 
@@ -109,56 +110,36 @@ namespace glisp {
 
                 auto str = get_input(_in);
 
-                if (!str.empty()) {
-                    if (str.size() == 1) {
-                        switch (str[0]) {
-                            case 'q':
-                                quit = true;
-                                break;
-                            case 's':
-                                /* dump(evaluator.mEnv, _out); */
-                                break;
-                            case 'v':
-                                evaluator.eval(read("(define *verbose* true)"));
-                                break;
-                        }
-                    } else {
-                        try {
-                            auto ast = read(str);
+                if (str == "q") {
+                    quit = true;
+                } else if (str == "s") {
+                    /* dump(evaluator.mEnv, _out); */
+                } else if (str == "v") {
+                    evaluator.eval(read("(define *verbose* true)"));
+                } else {
+                    using namespace glisp;
+                    auto ast = read(str);
 
-                            _out << glisp::to_string(ast::val( ast.mAst ), true) << std::endl;
+                    _out << to_string(ast::val(ast.mAst), true)
+                         << std::endl;
 
-
-                            /* ast  = expand(evaluator, ast); */
-                            /* /1* compiler.compile(ast.mAst); *1/ */
-                            /* auto res = evaluator.eval(ast); */
-                            /* auto str = glisp::to_string(res); */
-                            /* _out << str << "\n"; */
-                            /* evaluator.set("*1", res); */
-
-                        } catch (cEvalError e) {
-                            _out << "Eval Error : " << e.what() << endl;
-                        }
-                    }
+                    /* ast  = expand(evaluator, ast); */
+                    /* /1* compiler.compile(ast.mAst); *1/ */
+                    /* auto res = evaluator.eval(ast); */
+                    /* auto str = glisp::to_string(res); */
+                    /* _out << str << "\n"; */
+                    /* evaluator.set("*1", res); */
                 }
-            } catch (boost::spirit::x3::expectation_failure<char const*>& e) {
-                _out << "ERROR " << e.what();
+
+            } catch (cEvalError e) {
+                _out << "Eval Error : " << e.what() << endl;
+            }
+            catch (boost::spirit::x3::expectation_failure<char const*>& e) {
+                _out << "Parse Error : " << e.what();
             }
         }
     }
 }; // namespace glisp
-template <typename... Args>
-std::vector<ast::val> f(Args... args) {
-    std::vector<ast::val> ret(sizeof...(Args));
-    ret = { ast::val(args)... };
-    return ret;
-}
-
-template <typename... Args, std::size_t... Is>
-std::tuple<Args...> functo_low(
-    std::vector<ast::val> const& arr, std::index_sequence<Is...>) {
-    return std::make_tuple(*arr[Is].get_val<Args>()...);
-}
 
 int main(int argc, char* argv[]) {
     using namespace std;
@@ -170,12 +151,11 @@ int main(int argc, char* argv[]) {
 
         if (argc > 1) {
             ifstream t(argv[1]);
-
             string str(
                 (istreambuf_iterator<char>(t)), istreambuf_iterator<char>());
 
-            auto ast = glisp::read(str);
-            auto as_str = glisp::to_string(val( ast.mAst ));
+            auto ast    = glisp::read(str);
+            auto as_str = glisp::to_string(val(ast.mAst));
             cout << as_str << std::endl;
 
         } else {
