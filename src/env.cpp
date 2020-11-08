@@ -1,5 +1,4 @@
 #include "env.h"
-#include "tostring.h"
 
 namespace ast {
 
@@ -11,7 +10,7 @@ namespace ast {
         auto  e = _env.end();
 
         for (auto const& p : _env) {
-            _out << p.first << " = " << glisp::to_string(p.second, true);
+            /* _out << p.first << " = " << glisp::to_string(p.second, true); */
         }
     }
 

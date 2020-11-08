@@ -3,7 +3,6 @@
 #include <stack>
 #include <iostream>
 
-#include "tostring.h"
 #include "demangle.h"
 
 namespace glisp {
@@ -23,9 +22,9 @@ namespace glisp {
 
 
         void operator()(ast::program & _val) {
-            for (auto & v : _val.mForms) {
-                compile(v);
-            }
+            /* for (auto & v : _val.mForms) { */
+            /*     compile(v); */
+            /* } */
         }
 
         void operator()(ast::define & _val) {
@@ -34,10 +33,10 @@ namespace glisp {
         }
 
         void operator()(ast::symbol & _val) {
-            if(hasSymbol(_val)) {
-            } else {
-                mUndefinedSyms[_val.mName] = &_val;
-            }
+            /* if(hasSymbol(_val)) { */
+            /* } else { */
+            /*     mUndefinedSyms[_val.mName] = &_val; */
+            /* } */
         }
 
         void operator()(ast::sexp & _val) {
@@ -82,12 +81,13 @@ namespace glisp {
         }
 
         bool hasSymbol(ast::symbol & _sym) const {
-            auto it = mInternalSyms.find(_sym.mName);
-            return it != mInternalSyms.end();
+            /* auto it = mInternalSyms.find(_sym.mName); */
+            /* return it != mInternalSyms.end(); */
+            return false;
         }
 
         void addSymbol(ast::symbol & _sym) {
-            mInternalSyms[_sym.mName]=&_sym;
+            /* mInternalSyms[_sym.mName]=&_sym; */
         }
 
         std::stack<ast::val *> mValStack;
@@ -101,9 +101,9 @@ namespace glisp {
     compiled_t cCompiler::compile(ast::program const& _ast) {
         compiler_t comp;
 
-        auto p = ast::val(_ast);
+        /* auto p = ast::val(_ast); */
 
-        comp.start_compile(p);
+        /* comp.start_compile(p); */
 
         return {};
     }

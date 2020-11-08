@@ -19,6 +19,9 @@ namespace glisp {
         cEvalError(char const* _error)
             : mError(_error) {
         }
+        cEvalError(std::string _error)
+            : mError(_error) {
+        }
 
         virtual char const* what() const throw() {
             return mError.c_str();

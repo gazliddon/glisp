@@ -6,82 +6,83 @@
 #include <set>
 #include <string>
 
+#include "demangle.h"
 #include "except.h"
+#include "seq.h"
 #include <boost/mp11/mpl.hpp>
 #include <boost/mpl/copy.hpp>
 #include <boost/spirit/home/x3.hpp>
 #include <boost/spirit/home/x3/support/ast/position_tagged.hpp>
 #include <boost/spirit/home/x3/support/ast/variant.hpp>
 #include <immer/map.hpp>
+#include <iostream>
 #include <spdlog/spdlog.h>
+#include "variant.h"
 
 namespace ast {
+
+    namespace x3 = boost::spirit::x3;
+    using namespace boost::mp11;
+    using x3::forward_ast;
+
+    struct position_tagged : public x3::position_tagged {
+        uint64_t mResultId;
+    };
+
     template <typename T>
     struct dummy_compare {
         using type = T;
         friend bool operator==(T const& _lhs, T const& _rhs) {
+            std::cout << demangle(_lhs) << std::endl;
             assert(false);
         }
     };
-}
 
-namespace ast {
-    namespace x3 = boost::spirit::x3;
-    using namespace boost::mp11;
+    struct nil : dummy_compare<nil> { };
 
-    struct v4 { };
+    struct symbol : position_tagged {
+        symbol() = default;
 
-    struct nil {
-        friend bool operator==(nil const& _lhs, nil const& _rhs) {
-            return true;
+        symbol(uint64_t _v, uint64_t _scope = 0)
+            : mId(_v)
+            , mScope(_scope) {
         }
+
+        friend bool operator==(symbol const& _lhs, symbol const& _rhs) {
+            return _lhs.mId == _rhs.mId && _lhs.mScope == _rhs.mScope;
+        }
+
+        uint64_t mId;
+        uint64_t mScope;
     };
 
-    struct symbol : x3::position_tagged {
-        symbol() {
-        }
-        symbol(char const* _name)
-            : mName(_name) {
-        }
-        symbol(std::string const& _name)
-            : mName(_name) {
-        }
-
-        std::string mName;
-        friend bool operator==(symbol const& _lhs, symbol const& _rhs);
-    };
-
-    struct resolved_symbol_t : dummy_compare<resolved_symbol_t> {
-        resolved_symbol_t() {}
-        resolved_symbol_t(uint64_t _v) : mSymbolId(_v) {
-        }
-        uint64_t mSymbolId;
-    };
-
-    struct keyword : x3::position_tagged {
-
+    struct keyword : position_tagged {
         symbol mSym;
-
-        friend bool operator==(keyword const& _lhs, keyword const& _rhs);
+        friend bool operator==(keyword const& _lhs, keyword const& _rhs) {
+            return _lhs.mSym == _rhs.mSym;
+        }
     };
 
-    struct hint : x3::position_tagged {
+    struct hint : position_tagged, dummy_compare<hint> {
         symbol mSym;
     };
 
-    using atoms = mp_list<bool, std::string, double, char, keyword, nil, resolved_symbol_t>;
+    // clang-format off
+    using atoms
+        = mp_list< bool
+                 , std::string
+                 , double
+                 , char
+                 , keyword
+                 , nil
+                 >;
+
+    // clang-format on
 
     template <typename T>
     constexpr bool is_atom() {
         return mp_count<atoms, T>() != 0;
     }
-
-}
-
-namespace ast {
-    using namespace boost::mp11;
-    namespace x3 = boost::spirit::x3;
-    using x3::forward_ast;
 
     struct val;
     struct vector;
@@ -94,9 +95,10 @@ namespace ast {
     struct native_function;
     struct program;
     struct macro;
-    struct arg;
+    struct bindings;
+    struct args;
     struct let;
-    /* struct fn; */
+    struct pair;
 
     // clang-format off
 
@@ -110,225 +112,153 @@ namespace ast {
         , sexp
         , program
         , macro
-        , arg
+        , bindings
+        , args
         , let
+        , pair
         >;
 
-    // clang-format on
+    using all_types
+        = mp_append<atoms, mp_transform<add_forward_ast, composites>>;
 
-    template <typename T>
-    using add_forward_ast = forward_ast<T>;
+    using val_base_t = mp_rename<all_types, variant_base_t>;
 
-    using my_variant
-        = mp_rename<mp_append<atoms, mp_transform<add_forward_ast, composites>>,
-            x3::variant>;
+    struct val : val_base_t, position_tagged {
 
-    struct val : my_variant, x3::position_tagged {
-        using base_type::base_type;
-        using base_type::operator=;
+        template <typename T>
+        val(T&& rhs)
+            : val_base_t(std::forward<T>(rhs)) {
+        }
+
         friend bool operator==(val const& _lhs, val const& _rhs) {
             return _lhs.var == _rhs.var;
         }
 
-        val() {
-            *this = ast::nil();
+        val();
+
+        val(val const& _v) = default;
+
+        val& operator=(val const& _rhs) {
+            this->var = _rhs.var;
+            return *this;
         }
 
-        val(val const&) = default;
-
-        val& operator=(val const&) = default;
-
-        bool to_bool() const {
-            if (is<nil>()) {
-                return false;
-            }
-
-            if (is<bool>()) {
-                return *get_val<bool>();
-            }
-
-            return true;
-        }
-
-        template <typename T>
-        bool is() const {
-            auto id = var.which();
-            return id == mp_find<types, T>();
-        }
-        bool is_atom() const {
-            auto i = var.which();
-            return i < int(mp_size<atoms>());
-        }
-
-        template <typename T>
-        T * get_val() {
-
-            if (is<T>()) {
-                if constexpr (mp_count<atoms, T>() != 0) {
-                    return boost::get<T>(this);
-                } else {
-                    return boost::get<forward_ast<T>>(this)->get_pointer();
-                }
-            }
-            return nullptr;
-        }
-
-        template <typename T>
-        T const* get_val() const {
-
-            if (is<T>()) {
-                if constexpr (mp_count<atoms, T>() != 0) {
-                    return boost::get<T>(this);
-                } else {
-                    return boost::get<forward_ast<T>>(this)->get_pointer();
-                }
-            }
-            return nullptr;
-        }
+        bool to_bool() const;
+        bool is_atom() const;
     };
 
-    struct Evaluator;
 
-    struct native_function {
-        std::function<val(Evaluator&, std::vector<val> const&)> mFunc;
+    struct native_function : val::callable_t {
+
+        using native_f_t
+            = std::function<val(Evaluator&, iterator_base_t& _args)>;
+
+        native_f_t mFunc;
+
         int mNumOfArgs;
+
         friend bool operator==(
             native_function const& _lhs, native_function const& _rhs);
 
-        val call(Evaluator& _e,
-            std::string const& _binding,
-            std::vector<val> const& args) const {
-            if (args.size() < unsigned(mNumOfArgs)) {
-                auto x = fmt::format("Too many args for native function "
-                                     "{}\nExpected at least {}, got {}",
-                    _binding,
-                    mNumOfArgs,
-                    args.size());
-
-                throw(glisp::cEvalError(x.c_str()));
-            }
-            return mFunc(_e, args);
-        }
+        val call(Evaluator& _e, iterator_base_t& _args) const;
     };
-
-    struct vector : x3::position_tagged {
-        vector() {
-        }
-
-        vector(std::vector<val> const& _init)
-            : mForms(_init) {
-        }
-
-        std::vector<val> mForms;
-        friend bool operator==(vector const& _lhs, vector const& _rhs);
-    };
-
-    struct map_entry : x3::position_tagged {
-        val mKey;
-        val mValue;
-        friend bool operator==(map_entry const& _lhs, map_entry const& _rhs);
-    };
-
-    struct map : x3::position_tagged {
-        std::list<map_entry> mHashMap;
-
-        val get(ast::val const& _key) const {
-            auto& hmap = mHashMap;
-            for (auto i = hmap.begin(); i != hmap.end(); i++) {
-                auto this_key = i->mKey;
-                if (this_key == _key) {
-                    return i->mValue;
-                }
-            }
-            return val();
-        }
-
-        void add(val const& _key, val const& _val) {
-            auto m = map_entry { .mKey = _key, .mValue = _val };
-            mHashMap.push_back(m);
-        }
-
-        friend bool operator==(map const& _lhs, map const& _rhs);
-    };
-
-    struct meta : x3::position_tagged {
-        std::list<map_entry> mHashMap;
-        friend bool operator==(meta const& _lhs, meta const& _rhs);
-    };
-
-    struct set : x3::position_tagged {
-        std::vector<val> mForms;
-        friend bool operator==(set const& _lhs, set const& _rhs);
-    };
-
-    struct program : x3::position_tagged {
-        std::vector<val> mForms;
-        friend bool operator==(program const& _lhs, program const& _rhs);
-    };
-
-    struct lambda {
-        std::vector<symbol> mArgs;
-        boost::optional<symbol> mFinalArg;
-        boost::optional<std::string> mDocString;
-        program mBody;
-        friend bool operator==(lambda const& _lhs, lambda const& _rhs);
-    };
-
 
     struct recur : dummy_compare<recur> {
         std::vector<val> mArgs;
     };
 
-    struct sexp : dummy_compare<sexp> {
-        sexp() {
-        }
+}
 
-        sexp(std::vector<val> const& _init)
-            : mForms(_init) {
-        }
-        std::vector<val> mForms;
-
-        void conj(ast::val const& _val) {
-            mForms.push_back(_val);
-        }
-
-        bool is(char const* _symName) {
-            return false;
-        }
+namespace ast {
+    struct map_entry : position_tagged {
+        val mKey;
+        val mValue;
+        friend bool operator==(map_entry const& _lhs, map_entry const& _rhs);
     };
 
-    struct define : x3::position_tagged, dummy_compare<define> {
-        define() {
+    struct map : position_tagged {
+        std::list<map_entry> mHashMap;
+        val get(ast::val const& _key) const;
+        void add(val const& _key, val const& _val);
+
+        friend bool operator==(map const& _lhs, map const& _rhs);
+    };
+
+    struct set : position_tagged, dummy_compare<set> {
+        std::vector<val> mForms;
+        friend bool operator==(set const& _lhs, set const& _rhs);
+    };
+
+    struct vector : position_tagged, seq_t {
+        vector() = default;
+        virtual std::unique_ptr<iterator_base_t> iterator() const;
+        vector(std::vector<val> const& _init);
+
+        std::vector<val> mForms;
+        friend bool operator==(vector const& _lhs, vector const& _rhs);
+    };
+
+    struct sexp : position_tagged, dummy_compare<sexp>, seq_t {
+        sexp() = default;
+
+        sexp(std::vector<val> const& _init);
+
+        sexp(std::unique_ptr<iterator_base_t>& _ptr) {
+            while (auto e = _ptr->next()) {
+                mForms.push_back(*e);
+            }
         }
 
-        define(sexp const& exp) {
-            assert(exp.mForms.size() == 3);
-            auto define_id = exp.mForms[0].get_val<symbol>();
-            assert(define_id);
-            assert(define_id->mName == std::string("define"));
-            auto sym_id = exp.mForms[1].get_val<symbol>();
-            assert(sym_id);
-            mSym = *sym_id;
-            mVal = exp.mForms[2];
-        }
+        virtual std::unique_ptr<iterator_base_t> iterator() const;
+        void conj(ast::val const& _val);
+        bool is(char const* _symName);
+
+        std::vector<val> mForms;
+    };
+
+    struct program : position_tagged, seq_t, dummy_compare<program> {
+        std::vector<val> mForms;
+        virtual std::unique_ptr<iterator_base_t> iterator() const;
+    };
+}
+
+namespace ast {
+
+    struct meta : position_tagged {
+        std::list<map_entry> mHashMap;
+        friend bool operator==(meta const& _lhs, meta const& _rhs);
+    };
+
+    struct args : position_tagged, dummy_compare<args> {
+        vector mArgs;
+        std::optional<symbol> mExtra;
+    };
+
+    struct define : position_tagged, dummy_compare<define> {
+        define() = default;
+        define(sexp const& exp);
 
         symbol mSym;
         val mVal;
     };
 
-    struct arg : x3::position_tagged, dummy_compare<arg> {
-        symbol mSymbol;
-        val mVal;
+    struct pair : position_tagged, dummy_compare<pair> {
+        val mFirst;
+        val mSecond;
     };
 
-    struct let : x3::position_tagged, dummy_compare<let> {
-        std::vector<arg> mArgs;
+    struct bindings : position_tagged, dummy_compare<bindings> {
+        std::vector<pair> mBindings;
+    };
+
+    struct let : position_tagged, dummy_compare<let> {
+        bindings mBindings;
         program mBody;
     };
 
-    struct macro : x3::position_tagged, dummy_compare<macro> {
+    struct macro : position_tagged, dummy_compare<macro> {
         symbol mSym;
-        vector mArgs;
+        args mArgs;
         val mVal;
     };
 
@@ -337,6 +267,17 @@ namespace ast {
         out << "nil";
         return out;
     }
+
+    struct lambda : position_tagged, dummy_compare<lambda>, val::callable_t {
+        args mArgs;
+        boost::optional<std::string> mDocString;
+        program mBody;
+        /* friend bool operator==(lambda const& _lhs, lambda const& _rhs); */
+
+        virtual val call(Evaluator& _e, iterator_base_t&) const {
+            assert(false);
+        }
+    };
 
 } // namespace ast
 

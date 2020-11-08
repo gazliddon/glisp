@@ -2,6 +2,8 @@
 #define GRAMMAR_H_SLEB5MGA
 
 #include "ast_adapted.h"
+#include "symtab.h"
+
 /* #include "grammar_atoms.h" */
 #include <boost/spirit/home/x3/support/utility/annotate_on_success.hpp>
 
@@ -11,15 +13,9 @@
 
 #include <boost/spirit/home/x3/string/detail/string_parse.hpp>
 
-struct parse_context {
-    void hello() {
-        std::cout << "Hello" << std::endl;
-    }
-};
-
 namespace grammar {
     namespace x3 = boost::spirit::x3;
-    struct position_cache_tag;
+    struct position_cache_tag { };
 
     struct annotate_position {
         template <typename T, typename Iterator, typename Context>
@@ -65,28 +61,21 @@ namespace grammar {
     /* using x3::string; */
 
     // composite types
-    struct let_class : annotate_position { };
+    struct let_class : x3::annotate_on_success { };
     rule<let_class, ast::let> const let = "let";
 
-    struct macro_class : annotate_position { };
+    struct macro_class : x3::annotate_on_success { };
     rule<macro_class, ast::macro> const macro("macro");
 
-    struct lambda_class : annotate_position{  };
+    struct lambda_class : x3::annotate_on_success { };
 
-    struct arg_class { };
-    rule<arg_class, ast::arg> const arg("arg");
-
-    struct vector_class { };
+    struct vector_class : x3::annotate_on_success { };
     struct map_entry_class : x3::annotate_on_success { };
-    ;
-
     struct map_class : x3::annotate_on_success { };
-    ;
     struct meta_class : x3::annotate_on_success { };
-    ;
     struct set_class : x3::annotate_on_success { };
-    ;
     struct val_class : x3::annotate_on_success { };
+    struct args_class : x3::annotate_on_success { };
 
     auto const ws = no_skip[+lit(" ")];
 
@@ -107,7 +96,7 @@ namespace grammar {
     struct as_type {
         template <typename E>
         constexpr auto operator[](E e) const {
-            return x3::rule<struct _, T> {} = e;
+            return x3::rule<struct _, T, true> {} = e;
         }
     };
 
@@ -133,25 +122,46 @@ namespace grammar {
     /* rule<special_sym_class, ast::val> const special_sym("special_sym"); */
     /* auto const special_sym_def  = &(lit("nil")); */
     /* BOOST_SPIRIT_DEFINE(special_sym); */
-    
+
+    auto ctx_info = [](auto & ctx) {
+        auto& attr   = _attr(ctx);
+        auto& val    = _val(ctx);
+
+        using namespace std;
+        cout <<"attr type: " << demangle(attr) << endl;
+        cout <<"val type: " << demangle(val) << endl;
+    };
+
     // --------------------------------------------------------------------------------
     // Symbol
 
     struct symbol_class : x3::annotate_on_success { };
+    rule<symbol_class, ast::symbol> const symbol = "symbol";
 
-    rule<symbol_class, ast::symbol, true> const symbol = "symbol";
+    auto get_symbol = [](auto & ctx, std::string const & _name) -> ast::symbol {
+        auto& symtab = x3::get<ast::cSymTab>(ctx).get();
+        auto id = symtab.getIdOrRegister(_name);
+        return {id};
+    };
 
-    auto const echars = char_("?=_.!*+-/><$@");
-    auto const symbol_def
-        = as<std::string>[lexeme[(alpha | echars) > *(alnum | echars | '-')]];
+
+    auto process_symbol = [](auto& ctx) {
+         _val(ctx) = get_symbol(ctx, _attr(ctx));
+    };
+
+    auto const echars     = char_("?=_.!*+-/><$@");
+    auto const get_def    = as<std::string>[lexeme[(alpha | echars) >> *(alnum | echars | '-') ]];
+    auto const symbol_def =  get_def[process_symbol];
 
     BOOST_SPIRIT_DEFINE(symbol);
 
+    // --------------------------------------------------------------------------------
     // nil
     auto constexpr f = []() {};
     struct nil_class;
     rule<nil_class, ast::nil> const nil("nil");
 
+    // --------------------------------------------------------------------------------
     // Character
     // convert character code to char
     auto constexpr to_char = [](auto& _ctx) {
@@ -195,7 +205,7 @@ namespace grammar {
     BOOST_SPIRIT_DEFINE(character);
 
     // keyord
-    struct keyword_class;
+    struct keyword_class : x3::annotate_on_success { };
     rule<keyword_class, ast::keyword> const keyword("keyword");
     auto const keyword_def = lexeme[':' > symbol];
     BOOST_SPIRIT_DEFINE(keyword);
@@ -203,7 +213,7 @@ namespace grammar {
     // keyord
 
     // Type hint
-    struct hint_class;
+    struct hint_class : x3::annotate_on_success { };
     rule<hint_class, ast::hint> const hint("hint");
     auto const hint_def = lexeme['^' > symbol];
     BOOST_SPIRIT_DEFINE(hint);
@@ -211,6 +221,7 @@ namespace grammar {
     rule<vector_class, ast::vector> const vector("vector");
     rule<map_class, ast::map> const map("map");
     rule<map_class, ast::meta> const meta("meta");
+    rule<args_class, ast::args> const args("args");
     rule<set_class, ast::set> const set("set");
     rule<val_class, ast::val> const val("value");
     rule<lambda_class, ast::lambda> const lambda = "lambda";
@@ -219,23 +230,21 @@ namespace grammar {
     rule<program_class, ast::program> const program = "program";
 
     // A Val
-
-    auto const lambda_def
-        = '(' >> (lit("fn")) > -(str) > '[' > *symbol > -('&' > symbol) > ']' > program > ')';
+    auto const lambda_def = '(' >> (lit("fn")) > -(str) > args > program > ')';
     BOOST_SPIRIT_DEFINE(lambda);
 
-    struct sexp_class { };
+    struct sexp_class : x3::annotate_on_success { };
     rule<sexp_class, ast::sexp> const sexp = "sexp";
     auto const sexp_def                    = '(' > *val > ')';
     BOOST_SPIRIT_DEFINE(sexp);
 
-    struct quote_class { };
+    struct quote_class : x3::annotate_on_success { };
     rule<quote_class, ast::sexp> const quote = "quote";
 
     struct tester_class;
     rule<tester_class, std::string> const tester("tester");
 
-    struct quoted_class { };
+    struct quoted_class : x3::annotate_on_success { };
     rule<quoted_class, ast::sexp> const quoted = "quoted";
 
     // clang-format off
@@ -252,12 +261,11 @@ namespace grammar {
         | vector
         | map;
 
-    /* auto const special_def = */ 
-    /*       lambda */
-    /*     | define */
-    /*     | let */
-    /*     | quote; */
-    auto const special_def =  quote;
+    auto const special_def = 
+          quote
+        /* | define */
+        | let
+        | lambda;
 
     auto const val_def =
           quoted
@@ -274,11 +282,18 @@ namespace grammar {
     BOOST_SPIRIT_DEFINE(quote);
 
     auto constexpr quoted_fn =  [](auto & _ctx) {
+
+        auto& symtab = x3::get<ast::cSymTab>(_ctx).get();
+
         ast::val & val = _attr(_ctx);
         ast::sexp & ret = _val(_ctx);
-        auto sym = ast::symbol("quote");
+
+        auto sym = ast::symbol(symtab.getIdOrRegister("quote"));
+
         ret.mForms.push_back(ast::val(sym));
         ret.mForms.push_back(val);
+        ret.id_first = val.id_first;
+        ret.id_last = val.id_last;
     };
     
     // dummy semantic action to prevent
@@ -288,16 +303,9 @@ namespace grammar {
 
     auto const quoted_def = '\'' >> base[quoted_fn];
     BOOST_SPIRIT_DEFINE(quoted);
-
     BOOST_SPIRIT_DEFINE(val);
 
-    auto const let_def = '(' >> lit("let") > '[' > *arg > ']' > program > ')';
-    BOOST_SPIRIT_DEFINE(let);
-
-    auto const arg_def = symbol >> val;
-    BOOST_SPIRIT_DEFINE(arg);
-
-    auto const program_def                          = *val;
+    auto const program_def = *val;
     BOOST_SPIRIT_DEFINE(program);
 
     auto const space_skip = +( lit(" ") | '\t' | '\r' | '\n');
@@ -306,8 +314,32 @@ namespace grammar {
     BOOST_SPIRIT_DEFINE(define);
 
     // A vector
-    auto const vector_def = '[' > *val > ']';
+    auto const vector_def = '[' > program_def > ']';
     BOOST_SPIRIT_DEFINE(vector);
+
+    // A pair
+    struct pair_class : x3::annotate_on_success { };
+    rule<pair_class, ast::pair> const pair("pair");
+    auto const pair_def = val >> val;
+    BOOST_SPIRIT_DEFINE(pair);
+
+    // A binding pair
+    rule<pair_class, ast::pair> const binding("binding");
+    auto const binding_def = as<ast::pair>[as<ast::val>[symbol] >> val];
+
+    // Bindings
+    struct bindings_class : x3::annotate_on_success { };
+    rule<bindings_class, ast::bindings> const bindings("bindings");
+    auto const bindings_def = '[' > *binding > ']';
+    BOOST_SPIRIT_DEFINE(bindings);
+
+    // A let
+    auto const let_def = '(' >> lit("let") > bindings > program > ')';
+    BOOST_SPIRIT_DEFINE(let);
+
+    // Args
+    auto const args_def = '[' >> *as<ast::val>[symbol] > -('&' > symbol) > ']';
+    BOOST_SPIRIT_DEFINE(args);
 
     // A set
     auto const set_def = "#{" > *val > '}';
@@ -327,7 +359,7 @@ namespace grammar {
     BOOST_SPIRIT_DEFINE(meta);
     
     // macro
-    auto const macro_def = '(' >> lit("defmacro") > symbol > vector > base > ')';
+    auto const macro_def = '(' >> lit("defmacro") > symbol > args > base > ')';
     BOOST_SPIRIT_DEFINE(macro);
 
     auto constexpr to_typed_arg_string = [](auto & _ctx) {
@@ -348,10 +380,6 @@ namespace grammar {
         }
 
         _val(_ctx) = ret;
-
-        auto& parse_ctx = x3::get<parse_context>( _ctx) .get();
-
-        parse_ctx.hello();
     };
 
     struct typed_arg_class { };

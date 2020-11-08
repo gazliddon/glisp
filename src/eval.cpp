@@ -1,52 +1,97 @@
 #include "eval.h"
 #include "except.h"
+#include "native.h"
 #include "tostring.h"
 
 #include <iostream>
 #include <spdlog/spdlog.h>
 
 namespace ast {
-    using boost::apply_visitor;
+    namespace x3 = boost::spirit::x3;
     using namespace std;
 
-    namespace x3 = boost::spirit::x3;
+    val eval_next(Evaluator& _e, iterator_base_t& _it) {
+        val ret;
 
-    void Evaluator::add_native_function(std::string const& _name,
-        std::function<val(Evaluator& e, std::vector<val> const&)>&& _func,
-        int _nargs) {
+        auto nx = _it.next();
 
-        native_function x {
-            .mFunc      = std::move(_func),
-            .mNumOfArgs = _nargs,
-        };
+        if (nx) {
+            ret = _e.eval(*nx);
+        }
 
-        ast::symbol sym(_name);
-
-        mEnvironment.addAndSetSymbol(sym, val(x));
+        return ret;
     }
 
-    val Evaluator::eval(ast::program& _prog) {
-        val ret;
-        for (auto& v : _prog.mForms) {
-            /* mLines.push(_r.getLine(v)); */
-            ret = eval(v);
-            /* mLines.pop(); */
+    static std::vector<val> eval_seq_to_vec(
+        Evaluator& _e, iterator_base_t& _it) {
+        std::vector<val> ret;
+        ret.reserve(_it.remaining());
+        while (auto v = _it.next()) {
+            ret.push_back(_e.eval(*v));
         }
         return ret;
     }
 
-    val Evaluator::eval(glisp::reader_reslult_t _r) {
-        mReaderContext.push(_r);
+    static sexp eval_to_exp(Evaluator& _e, iterator_base_t& _ptr) {
+        sexp ret;
+        ret.mForms = eval_seq_to_vec(_e, _ptr);
+        return ret;
+    }
+
+    static val eval_seq(Evaluator& _e, std::unique_ptr<iterator_base_t>& _it) {
         val ret;
-        auto const& ctx = mReaderContext.top();
 
-        for (auto& v : _r.mAst.mForms) {
-            /* mLines.push(ctx.getLine(v)); */
-            ret = eval(v);
-            /* mLines.pop(); */
+        while (auto v = _it->next()) {
+            ret = _e.eval(*v);
         }
+        return ret;
+    }
 
-        mReaderContext.pop();
+    template <typename T>
+    static val eval_seq(Evaluator& _e, T& _seq) {
+        auto it = _seq.iterator();
+        return eval_seq(_e, it);
+    }
+    template <typename T>
+    static val eval_rest(Evaluator& _e, T& _seq) {
+        auto it = _seq.iterator();
+        return eval_seq(_e, it->rest());
+    }
+
+    template <typename T>
+    void eval_seq_inplace(Evaluator& _e, T& _seq) {
+        auto it = _seq.iterator();
+        while (auto v = it->next()) {
+            *v = _e.eval(*v);
+        }
+    }
+
+    val Evaluator::readAndEval(std::string const& _str) {
+        auto ast = read(_str);
+        return eval(ast);
+    }
+
+    glisp::cReader::reader_reslult_t Evaluator::read(std::string const& _str) {
+        return mReader.read(_str);
+    }
+
+    void Evaluator::add_native_function(std::string const& _name,
+        std::function<val(Evaluator& e, iterator_base_t&)>&& _func,
+        int _nargs) {
+
+        native_function x;
+        x.mFunc      = std::move(_func);
+        x.mNumOfArgs = _nargs;
+
+        auto id = mSymTab.getIdOrRegister(_name);
+
+        ast::symbol sym(id);
+
+        mEnvironment.addAndSetSymbol(sym, val(x));
+    }
+
+    val Evaluator::eval(glisp::cReader::reader_reslult_t& ast) {
+        auto ret = eval(ast.mAst);
         return ret;
     }
 
@@ -54,30 +99,33 @@ namespace ast {
         assert(false);
     }
 
-    val Evaluator::operator()(ast::macro& _macro) {
+    val Evaluator::operator()(ast::macro const& _macro) {
+        assert(false);
         auto macro_val = ast::val(_macro);
-        set(_macro.mSym.mName, macro_val);
+        /* set(_macro.mSym.mName, macro_val); */
         return macro_val;
     }
-    val Evaluator::operator()(ast::let& _let) {
+
+    val Evaluator::operator()(ast::let const& _let) {
 
         auto oldEnv = mEnvironment;
 
         auto ret = val();
 
-        for (auto& arg : _let.mArgs) {
+        for (auto& binding : _let.mBindings.mBindings) {
             /* set(arg.mSymbol.mName, eval(arg.mVal)); */
         }
 
-        ret = eval(_let.mBody);
+        ret = eval_seq(*this, _let.mBody);
 
         mEnvironment = oldEnv;
 
         return ret;
     }
 
-    val Evaluator::operator()(define& _v) {
-        auto& sym = _v.mSym.mName;
+    val Evaluator::operator()(define const& _v) {
+        assert(false);
+        /* auto& sym = _v.mSym.mName; */
 
         auto ret = _v.mVal;
 
@@ -85,32 +133,24 @@ namespace ast {
             ret = eval(_v.mVal);
         }
 
-        set(sym, ret);
+        /* set(sym, ret); */
 
         return val(_v.mSym);
     }
 
-    val Evaluator::operator()(ast::resolved_symbol_t& _v) {
-        assert(false);
-        /* if (ret == nullptr) { */
-        /*     auto const& ctx = mReaderContext.top(); */
+    val Evaluator::operator()(ast::symbol const& _v) {
+        auto val_p = mEnvironment.getSymbol(_v);
 
-        /*     auto x = fmt::format("Can't find symbol {}", _v.mName); */
+        if (!val_p) {
+            auto error = fmt::format(
+                "Unable to resolve symbol {}", symbolToString(_v));
+            throw glisp::cEvalError(error);
+        }
 
-        /*     throw(glisp::cEvalError(x.c_str())); */
-        /* } */
-
-        /* return *ret; */
+        return *val_p;
     }
 
-    val Evaluator::operator()(ast::symbol& _v) {
-        auto newSym = mEnvironment.addSymbol(_v);
-        replaceNode(val(newSym));
-
-        return eval(currentNode());
-    }
-
-    val Evaluator::operator()(ast::vector& _vector) {
+    val Evaluator::operator()(ast::vector const& _vector) {
         auto args = _vector;
 
         for (auto& v : args.mForms) {
@@ -122,7 +162,7 @@ namespace ast {
         return val(args);
     }
 
-    val Evaluator::operator()(ast::map& _map) {
+    val Evaluator::operator()(ast::map const& _map) {
         ast::map ret = _map;
 
         for (auto& p : ret.mHashMap) {
@@ -155,14 +195,8 @@ namespace ast {
         return ret;
     }
 
-    ast::val Evaluator::operator()(ast::program& _program) {
-        auto ret = ast::val(ast::nil());
-
-        for (auto& f : _program.mForms) {
-            ret = eval(f);
-        }
-
-        return ret;
+    ast::val Evaluator::operator()(ast::program const& _program) {
+        return eval_seq(*this, _program);
     }
 
     std::vector<ast::val> get_rest(std::vector<ast::val> const& _args) {
@@ -173,195 +207,207 @@ namespace ast {
         return get_first(_args.begin(), _args.end());
     }
 
-    val Evaluator::operator()(ast::sexp& _func) {
+    template <typename T>
+    T* as(val* ptr) {
+        if (ptr) {
+            return ptr->get<T>();
+        } else {
+            return nullptr;
+        }
+    }
 
-        auto verbose = false;
+    template <typename T>
+    T const* as(val const* ptr) {
+        if (ptr) {
+            return ptr->get<T>();
+        } else {
+            return nullptr;
+        }
+    }
 
-        /* if (auto p = mEnv.find("*verbose*")) { */
-        /*     if (auto b = p->get_val<bool>()) { */
-        /*         verbose = *b; */
-        /*     } */
-        /* } */
+    void print(Evaluator& e, std::unique_ptr<iterator_base_t> const& _it) {
+        auto it = _it->clone();
+        while (auto p = it->next()) {
+            std::cout << e.to_string(*p, true) << std::endl;
+        }
+    }
 
-        val ret;
+    val Evaluator::apply(iterator_base_t& _exp, cEnv localEnv) {
+        return apply(*_exp.first(), *_exp.rest().get(), localEnv);
+    }
 
-        auto& exps = _func.mForms;
+    val Evaluator::apply(
+        val const& _first, iterator_base_t& _rest, cEnv localEnv) {
 
-        auto const firsti = exps.begin();
-        auto const argsi  = firsti + 1;
-        auto const argse  = exps.end();
-        auto const nArgs  = exps.size() - 1;
+        if (!_first.is_callable()) {
+            auto error
+                = fmt::format("Unable to call {}", to_string(val(_first)));
+            error += "\n" + to_string(val(_first));
 
-        auto eval_args = [this, argsi, argse]() {
-            std::vector<ast::val> ret(argsi, argse);
+            error += fmt::format("\n callable {}", std::is_base_of<val::callable_t, native_function>::value);
+            error += fmt::format("\n var type {}", _first.var.which());
+            error += fmt::format("\n var type name {}", _first.get_name());
 
-            for (auto& v : ret) {
-                v = eval(v);
-            }
-            return ret;
-        };
-
-        auto reduce_args = [this, argsi, argse]() {
-            auto ret = ast::val(ast::nil());
-            for (auto i = argsi; i != argse; i++) {
-                ret = eval(*i);
-            }
-            return ret;
-        };
-
-        auto map_args = [argsi, argse](std::function<bool(ast::val&)> _func) {
-            for (auto i = argsi; i != argse; i++) {
-                if (_func(*i)) {
-                    break;
-                }
-            }
-        };
-
-        if (auto nf = firsti->get_val<keyword>()) {
-
-            assert(nArgs == 1);
-            auto evaled_arg = eval(*argsi);
-
-            if (auto mp = evaled_arg.get_val<map>()) {
-                return mp->get(val(*nf));
-            } else {
-                return val();
-            }
+            throw glisp::cEvalError(error);
         }
 
-        if (auto sym = firsti->get_val<symbol>()) {
-            if (verbose) {
-                cout << "first sexp arg is sybol " << sym->mName << endl;
+        if (auto l = _first.get<lambda>()) {
+            auto syms_it = l->mArgs.mArgs.iterator();
+
+            auto args_passed = _rest.size();
+            auto args_needed = syms_it->size();
+
+            assert(args_passed >= args_needed);
+
+            auto oldEnv = mEnvironment;
+
+            mCallDepth++;
+
+            while(auto sym_p = syms_it->next()) {
+                auto sym = sym_p->get<symbol>();
+                assert(sym);
+                mEnvironment.addAndSetSymbol(*sym, *_rest.next());
             }
 
-            auto& name = sym->mName;
+            // Now evaluate the body
+            auto ret = (*this)(l->mBody);
 
-            if (name == "cond") {
-                assert((nArgs % 1) == 0);
+            mEnvironment = oldEnv;
 
-                for (auto i = argsi; i != argse; i += 2) {
-                    auto v = eval(*i);
-                    if (v.to_bool()) {
-                        return eval(*(i + 1));
+            mCallDepth--;
+
+            to_string(ret);
+
+            return ret;
+        }
+
+        if (auto l = _first.get<native_function>()) {
+            auto args    = eval_to_exp(*this, _rest);
+            auto args_it = args.iterator();
+
+            mCallDepth++;
+
+            auto ret = l->call(*this, *args_it.get());
+
+            mCallDepth--;
+
+            return ret;
+        }
+
+        throw glisp::cEvalError("This is odd");
+        assert(false);
+    }
+
+    val Evaluator::operator()(ast::sexp const& _func) {
+
+        // Empty list evaluates to nil
+        if (_func.mForms.empty()) {
+            return val();
+        }
+
+        auto sexp_it = _func.iterator();
+        auto seq     = _func.iterator();
+
+        if (auto symptr = as<symbol>(seq->next())) {
+            auto sym = *symptr;
+
+            if (sym == mSf_define) {
+                auto id    = as<symbol>(seq->next());
+                auto value = seq->next();
+
+                if (id && value) {
+                    mEnvironment.addAndSetSymbol(*id, *value);
+                } else {
+                    assert("FUCKED");
+                }
+                return val();
+            }
+
+            if (sym == mSf_quote) {
+                return val(sexp(seq));
+            }
+
+            if (sym == mSf_do) {
+                val ret;
+
+                while (auto v = seq->next()) {
+                    ret = eval(*v);
+                }
+                return ret;
+            }
+
+            if (sym == mSf_comment) {
+                return val();
+            }
+
+            if (sym == mSf_if) {
+                assert(seq->remaining() >= 2);
+                val ret;
+                auto pred     = seq->next();
+                auto is_true  = seq->next();
+                auto is_false = seq->next();
+
+                assert(pred && is_true);
+
+                if (eval(*pred).to_bool()) {
+                    ret = eval(*is_true);
+                } else {
+                    if (is_false) {
+                        ret = eval(*is_false);
                     }
                 }
 
-                return val();
+                return ret;
             }
 
-            if (name == "type") {
-                if (nArgs != 1) {
-                    cout << "nargs " << nArgs << endl;
-                    /* assert(nArgs == 1); */
-                }
-                auto type_str = glisp::to_type_string(eval(*argsi));
-                return ast::val(type_str);
-            }
-
-            if (name == "do") {
-                return reduce_args();
-            }
-
-            if (name == "list") {
-                sexp ret(eval_args());
-                return val(ret);
-            }
-
-            if (name == "vec") {
-                vector ret(eval_args());
-                return val(ret);
-            }
-
-            if (name == "apply") {
-                assert(nArgs == 2);
-                assert(!"TBD");
-                return val(nil());
-            }
-
-            if (name == "if") {
-                assert(nArgs == 3);
-
-                auto predicate = eval(*argsi);
-
-                if (predicate.to_bool()) {
-                    return eval(*(argsi + 1));
-                } else {
-                    return eval(*(argsi + 2));
-                }
-            }
-
-            if (name == "recur") {
-                return val();
-            }
-
-            if (name == "or") {
-                auto ret = false;
-
-                map_args([this, &ret](auto& v) {
-                    ret = eval(v).to_bool();
-                    return ret;
-                });
-
-                return val(ret);
-            }
-
-            if (name == "and") {
-                auto ret = true;
-
-                map_args([this, &ret](auto& v) {
-                    ret = eval(v).to_bool();
-                    return !ret;
-                });
-
-                return val(ret);
-            }
-
-            if (name == "quote") {
-                assert(nArgs == 1);
-                return *argsi;
-            }
-
-            auto first = eval(*firsti);
-            auto args  = eval_args();
-
-            if (auto nf = first.get_val<native_function>()) {
-                return nf->call(*this, name, args);
-            }
-
-            if (auto fn = first.get_val<lambda>()) {
-
-                auto env = mEnvironment;
-
-                assert(args.size() == fn->mArgs.size());
-
-                auto i = 0;
-
-                for (auto& a : fn->mArgs) {
-                    set(a.mName, args[i++]);
-                }
-
-                auto retVal = eval(fn->mBody);
-
-                mEnvironment = env;
-
-                return retVal;
+            if (sym == mSf_apply) {
+                // Skip the APPLY symbol
+                // and drop through to the genric apply
+                sexp_it->next();
             }
         }
 
-        assert(!"can't eval");
-        return ret;
+        // Okay!
+        // It's not a special form if we're here so lets eval!
+
+        auto evaled = eval_to_exp(*this, *sexp_it.get());
+        auto it     = evaled.iterator();
+
+        return apply(*it, mEnvironment);
     }
 
     void Evaluator::replaceNode(ast::val const& _val) {
         assert(false);
     }
-    ast::val& Evaluator::currentNode() {
+
+    ast::val const & Evaluator::currentNode() const {
         assert(false);
     }
 
-    val Evaluator::eval(val& _v) {
+    void Evaluator::enumerateBindings(
+        std::function<void(ast::symbol const&, ast::val const&)> _func) const {
+        mEnvironment.enumerate([_func](uint64_t id, ast::val const& _val) {
+            ast::symbol sym { id };
+            _func(sym, _val);
+        });
+    }
+
+    void Evaluator::enumerateBindings(
+        std::function<void(std::string const&, ast::val const&)> _func) const {
+
+        enumerateBindings(
+            [this, &_func](ast::symbol const& sym, ast::val const& _val) {
+                _func(symbolToString(sym), _val);
+            });
+    }
+
+    val Evaluator::eval(val const& _v) {
         using namespace ast;
+
         val ret;
+
+        if (_v.is<symbol>())
+            return boost::apply_visitor(*this, _v);
 
         if (_v.is_atom() || _v.is<lambda>())
             return _v;
@@ -369,6 +415,39 @@ namespace ast {
             return boost::apply_visitor(*this, _v);
     }
 
-    ////////////////////////////////////////////////////////////////////////////////
+    std::string Evaluator::to_type_string(ast::val const& _val) const {
+        return glisp::to_type_string(_val);
+    }
+
+    std::string Evaluator::to_string(
+        ast::val const& _val, bool _add_types) const {
+        return glisp::to_string(*this, _val, _add_types);
+    }
+
+    std::string Evaluator::to_string(
+        iterator_base_t& _it, char const* intersperse, bool _add_types) const {
+        return glisp::to_string(*this, _it, intersperse, _add_types);
+    }
+
+    std::string Evaluator::symbolToString(ast::symbol const& _sym) const {
+        auto ret = mSymTab.getString(_sym.mId);
+        assert(ret);
+        return **ret;
+    }
+    Evaluator::Evaluator()
+        : mCallDepth(0)
+        , mReader(mSymTab) {
+
+        mSf_if      = mSymTab.getIdOrRegister("if");
+        mSf_and     = mSymTab.getIdOrRegister("and");
+        mSf_or      = mSymTab.getIdOrRegister("or");
+        mSf_apply   = mSymTab.getIdOrRegister("apply");
+        mSf_define  = mSymTab.getIdOrRegister("define");
+        mSf_quote   = mSymTab.getIdOrRegister("quote");
+        mSf_do      = mSymTab.getIdOrRegister("do");
+        mSf_comment = mSymTab.getIdOrRegister("comment");
+
+        glisp::add_natives(*this);
+    }
 
 }

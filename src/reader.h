@@ -4,67 +4,109 @@
 // converts string to ast
 //
 #include "ast.h"
-
+#include "symtab.h"
+#include <boost/spirit/home/x3/support/utility/annotate_on_success.hpp>
 #include <iostream>
+#include <stack>
 
 namespace glisp {
+
+
     namespace x3 = boost::spirit::x3;
+    /* using iterator_type  = std::string::const_iterator; */
+    /* using error_handler_type = x3::error_handler<iterator_type>; */
 
-    class reader_reslult_t {
+
+    /* class cErrorHandler { */
+    /*     public: */
+    /*         cErrorHandler(); */
+
+    /*         void start(std::string const & _file); */
+    /*         void stop(); */
+    /*     protected: */
+    /* }; */
+
+    class cReaderSymTab : public ast::cSymTab {
+        public:
+            cReaderSymTab() {
+            }
+
+            ast::symbol getSymbolRef(std::string const & _name) {
+                auto id = getIdOrRegister(_name.c_str());
+                return {id};
+            }
+    };
+
+
+    class cReader {
     public:
-        using iterator_type = std::string::const_iterator;
-        using position_cache
-            = x3::position_cache<std::vector<iterator_type>>;
-        using position_t = boost::iterator_range<iterator_type>;
+        using iterator_type  = std::string::const_iterator;
+        using position_cache = x3::position_cache<std::vector<iterator_type>>;
+        using position_t     = boost::iterator_range<iterator_type>;
+        using error_handler_type = x3::error_handler<iterator_type>;
 
-        reader_reslult_t(
-            std::string const& _text, std::string const& _file = "")
-            : mFileName(_file)
-            , mText(_text)
-            , mBegin(mText.cbegin())
-            , mEnd(mText.cend())
-            , mPositions(position_cache { mBegin, mEnd }) {
-        }
+        struct reader_reslult_t {
+            reader_reslult_t(std::string const& _text)
+                : mText(_text)
+                , mErrors(mText.begin(), mText.end(), std::cerr) {
+            }
+
+            reader_reslult_t() : reader_reslult_t("") {
+            }
+
+            ast::val mAst;
+            std::string mFileName;
+            std::string mText;
+            error_handler_type mErrors;
+
+            std::string getText(x3::position_tagged const& _tag) {
+                if (_tag.id_first >= 0 && _tag.id_last >= 0) {
+                    auto x = mErrors.position_of(_tag);
+                    std::string ret(x.begin(), x.end());
+                    return ret;
+                } else {
+                    return "CAN'T FIND TEXT";
+                }
+            }
+        };
+
+        cReader(cReaderSymTab & symTab);
+
+        reader_reslult_t read(std::string const& _str);
 
         void print_file_line(std::size_t line) const {
         }
 
-        std::string mFileName;
-        std::string mText;
-        iterator_type mBegin;
-        iterator_type mEnd;
-        position_cache mPositions;
-
-        ast::program mAst;
-
         position_t getPos(ast::val const& a) const {
-            return mPositions.position_of(a);
+            assert(false);
         }
 
-        size_t getLine(ast::val const & a) const {
+        size_t getLine(ast::val const& a) const {
             auto p = getPos(a);
             return getLine(p.begin());
         }
 
+        void dump();
+
         size_t getLine(iterator_type i) const {
             size_t ret = 0;
-
-            while (i < mEnd) {
-                switch (*i) {
-                    case '\r':
-                    case '\n':
-                        ret++;
-                        break;
-                }
-                i++;
-            }
+            /* while (i < mEnd) { */
+            /*     switch (*i) { */
+            /*         case '\r': */
+            /*         case '\n': */
+            /*             ret++; */
+            /*             break; */
+            /*     } */
+            /*     i++; */
+            /* } */
             return ret;
         }
+
+        std::stack<reader_reslult_t> mResults;
+
+
+        cReaderSymTab  & mSymTab;
     };
-
-    reader_reslult_t read(std::string const& _str);
-    ast::val simple_read(std::string const & _str);
-
 }
 
 #endif /* end of include guard: READER_H_RYMNY8TG */

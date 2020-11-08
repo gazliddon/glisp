@@ -8,19 +8,18 @@
 #include <string>
 
 #include "grammar.h"
-#include "tostring.h"
 
 #include "env.h"
 #include "eval.h"
+#include "native.h"
 #include "run.h"
 
 #include "errors.h"
 
+#include "ccommand.h"
 #include "compile.h"
 #include "except.h"
-#include "native.h"
 #include "reader.h"
-#include "tostring.h"
 
 static char const* banner = R"delim(
    _____ _ _
@@ -71,19 +70,48 @@ protected:
 
 namespace glisp {
 
-    glisp::reader_reslult_t expand(
-        ast::Evaluator& _ev, glisp::reader_reslult_t r) {
-        return r;
-    }
+    class cGlispReplCommands : public cCommand {
+
+    public:
+        cGlispReplCommands(ast::Evaluator& _ev)
+            : mEval(_ev) {
+
+            using std::cout;
+            using std::endl;
+
+            addCommand("^read\\s+(.+)$",
+                [](std::vector<std::string> const& _matches) {
+                    auto& fileName = _matches[1];
+                    assert(false);
+                    /* auto text = glisp::slurp(mEval, { ast::val(fileName) }); */
+                    /* auto ast  = glisp::read_fn(mEval, { text }); */
+                    /* cout << mEval.to_string(ast) << endl; */
+                });
+
+            addCommand("^v$",
+                [this]() { mEval.readAndEval("define *verbose* true)"); });
+
+            addCommand("^s$", [this]() {
+                cout << "Enumerating bindinsg" << endl;
+                mEval.enumerateBindings(
+                    [this](std::string const& _str, ast::val const& _v) {
+                        cout << _str << " : " << mEval.to_string(_v) << endl;
+                    });
+            });
+        }
+
+    protected:
+        ast::Evaluator& mEval;
+    };
+
+    using std::cout;
+    using std::endl;
 
     std::string get_input(std::istream& _in = std::cin) {
         std::string ret;
         std::getline(_in, ret);
         return ret;
     }
-
-    using std::cout;
-    using std::endl;
 
     void repl() {
         auto& _in  = std::cin;
@@ -95,7 +123,6 @@ namespace glisp {
         _out << "Type an expression...or [q or Q] to quit\n\n";
 
         ast::Evaluator evaluator;
-        add_natives(evaluator);
 
         /* _out << "including prelude.gl" << endl; */
         /* include(evaluator, "prelude.gl"); */
@@ -104,37 +131,31 @@ namespace glisp {
 
         cCompiler compiler;
 
+        cGlispReplCommands commands(evaluator);
+
+        commands.addCommand("^q$", [&quit]() { quit = true; });
+
         while (!quit) {
             try {
                 _out << "=> ";
 
                 auto str = get_input(_in);
 
-                if (str == "q") {
-                    quit = true;
-                } else if (str == "s") {
-                    /* dump(evaluator.mEnv, _out); */
-                } else if (str == "v") {
-                    evaluator.eval(read("(define *verbose* true)"));
-                } else {
+                auto wasProcessed = commands.processCommand(str);
+
+                if (!wasProcessed) {
                     using namespace glisp;
-                    auto ast = read(str);
+                    auto ast    = evaluator.read(str);
+                    auto result = evaluator.readAndEval(str);
+                    auto str    = evaluator.to_string(result);
+                    _out << str << "\n";
 
-                    _out << to_string(ast::val(ast.mAst), true)
-                         << std::endl;
-
-                    /* ast  = expand(evaluator, ast); */
-                    /* /1* compiler.compile(ast.mAst); *1/ */
-                    /* auto res = evaluator.eval(ast); */
-                    /* auto str = glisp::to_string(res); */
-                    /* _out << str << "\n"; */
-                    /* evaluator.set("*1", res); */
+                    /* evaluator.set("*1", result); */
                 }
 
             } catch (cEvalError e) {
                 _out << "Eval Error : " << e.what() << endl;
-            }
-            catch (boost::spirit::x3::expectation_failure<char const*>& e) {
+            } catch (boost::spirit::x3::expectation_failure<char const*>& e) {
                 _out << "Parse Error : " << e.what();
             }
         }
@@ -154,9 +175,11 @@ int main(int argc, char* argv[]) {
             string str(
                 (istreambuf_iterator<char>(t)), istreambuf_iterator<char>());
 
-            auto ast    = glisp::read(str);
-            auto as_str = glisp::to_string(val(ast.mAst));
-            cout << as_str << std::endl;
+            ast::Evaluator evaluator;
+
+            auto ast = evaluator.readAndEval(str);
+
+            cout << evaluator.to_string(ast) << std::endl;
 
         } else {
             glisp::repl();
