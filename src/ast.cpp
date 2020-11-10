@@ -89,6 +89,11 @@ namespace ast {
             mHashMap.push_back(m);
         }
 
+        std::unique_ptr<iterator_base_t> bindings::iterator() const {
+
+            return std::make_unique<vector_iterator>(mBindings);
+        }
+
         std::unique_ptr<iterator_base_t> program::iterator() const {
             return std::make_unique<vector_iterator>(mForms);
         }

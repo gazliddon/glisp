@@ -1,6 +1,7 @@
 #ifndef SEQ_H_OAAPT8MJ
 #define SEQ_H_OAAPT8MJ
 
+#include <algorithm>
 #include <list>
 #include <stddef.h>
 #include <vector>
@@ -29,11 +30,10 @@ namespace ast {
     struct val;
 
     struct iterator_base_t {
-        virtual size_t size() = 0;
-        virtual val const * first()  = 0;
-        virtual val const * next()   = 0;
-        virtual ~iterator_base_t() {
-        }
+        virtual size_t size()      = 0;
+        virtual val const* first() = 0;
+        virtual val const* next()  = 0;
+        virtual ~iterator_base_t() { }
         virtual std::unique_ptr<iterator_base_t> clone() const = 0;
         virtual size_t remaining()                             = 0;
         virtual std::unique_ptr<iterator_base_t> rest() const {
@@ -48,6 +48,48 @@ namespace ast {
 
         virtual bool at_end() {
             return remaining() != 0;
+        }
+
+        template<typename T>
+            void into(T & col) {
+                assert(false);
+            }
+
+    };
+
+    template <typename A, typename B>
+    struct twin_iterator {
+        A mA;
+        B mB;
+
+        twin_iterator(A&& a, B&& b)
+            : mA(std::move(a))
+            , mB(std::move(b)) {
+        }
+
+        virtual size_t size() {
+            return std::min(mA.size(), mB.size());
+        }
+
+        virtual val const* first() {
+            assert(false);
+        }
+
+        virtual val const* next() {
+            if (mA.at_end() || mB.at_end()) {
+                return nullptr;
+            } else {
+                // TBD
+            }
+            assert(false);
+        }
+
+        virtual std::unique_ptr<iterator_base_t> rest() const {
+            assert(false);
+        }
+
+        virtual std::unique_ptr<iterator_base_t> clone() const {
+            assert(false);
         }
     };
 
@@ -76,8 +118,8 @@ namespace ast {
     template <typename coll>
     struct stl_iterator : public iterator_base_t {
 
-        using it     = typename coll::const_iterator;
-        using c_it   = typename coll::const_iterator;
+        using it   = typename coll::const_iterator;
+        using c_it = typename coll::const_iterator;
 
         using this_t = stl_iterator<coll>;
 
@@ -95,7 +137,7 @@ namespace ast {
             : stl_iterator(_begin, _end, _begin) {
         }
 
-        stl_iterator(coll const & _vec)
+        stl_iterator(coll const& _vec)
             : stl_iterator(_vec.cbegin(), _vec.cend()) {
         }
 
@@ -103,7 +145,7 @@ namespace ast {
             return mEnd - mBegin;
         }
 
-        virtual val const * first() {
+        virtual val const* first() {
             if (size() > 0) {
                 return &*mBegin;
             } else {
@@ -115,7 +157,7 @@ namespace ast {
             return mEnd - mIt;
         }
 
-        virtual val const * next() {
+        virtual val const* next() {
             if (mIt == mEnd) {
                 return nullptr;
             } else {
@@ -129,7 +171,29 @@ namespace ast {
             auto ret = std::make_unique<this_t>(mBegin, mEnd);
             return ret;
         }
+    };
 
+    struct filter_t : iterator_base_t {
+        filter_t(iterator_base_t const & _base) : mI(_base.clone()) {
+        }
+
+        virtual size_t size() {
+            assert(false);
+        }
+
+        virtual val const* first() {
+            assert(false);
+        }
+
+        virtual val const* next() {
+            assert(false);
+        }
+
+        virtual std::unique_ptr<iterator_base_t> clone() const {
+            assert(false);
+        }
+
+        std::unique_ptr<iterator_base_t> mI;
     };
 
     using vector_iterator = stl_iterator<std::vector<val>>;
@@ -137,7 +201,7 @@ namespace ast {
 
     struct seq_t {
         virtual std::unique_ptr<iterator_base_t> iterator() const = 0;
-        virtual ~seq_t()                                    = default;
+        virtual ~seq_t()                                          = default;
     };
 
     template <typename T>

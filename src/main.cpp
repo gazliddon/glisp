@@ -165,6 +165,17 @@ namespace glisp {
 int main(int argc, char* argv[]) {
     using namespace std;
     using namespace ast;
+    using namespace glisp;
+
+    cHierachicalSymTab syms("user");
+
+    auto k = syms.getIdOrRegister("gaz");
+
+    auto v = syms.getName(k);
+
+    cout << "v is " << *v << endl;
+
+
 
     if (false) {
 

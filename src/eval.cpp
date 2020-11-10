@@ -143,7 +143,7 @@ namespace ast {
 
         if (!val_p) {
             auto error = fmt::format(
-                "Unable to resolve symbol {}", symbolToString(_v));
+                "Unable to resolve symbol {}", symbolToName(_v));
             throw glisp::cEvalError(error);
         }
 
@@ -397,7 +397,7 @@ namespace ast {
 
         enumerateBindings(
             [this, &_func](ast::symbol const& sym, ast::val const& _val) {
-                _func(symbolToString(sym), _val);
+                _func(symbolToName(sym), _val);
             });
     }
 
@@ -429,11 +429,12 @@ namespace ast {
         return glisp::to_string(*this, _it, intersperse, _add_types);
     }
 
-    std::string Evaluator::symbolToString(ast::symbol const& _sym) const {
-        auto ret = mSymTab.getString(_sym.mId);
+    std::string Evaluator::symbolToName(ast::symbol const& _sym) const {
+        auto ret = mSymTab.getName(_sym.mId);
         assert(ret);
-        return **ret;
+        return *ret;
     }
+
     Evaluator::Evaluator()
         : mCallDepth(0)
         , mReader(mSymTab) {

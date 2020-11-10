@@ -191,7 +191,7 @@ namespace glisp {
         }
 
         std::string operator()(ast::symbol const& _v) const {
-            return format(_v, mEval.symbolToString(_v ));
+            return format(_v, mEval.symbolToName(_v ));
         }
 
         std::string operator()(ast::keyword const& _v) const {

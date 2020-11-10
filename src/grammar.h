@@ -62,7 +62,7 @@ namespace grammar {
 
     // composite types
     struct let_class : x3::annotate_on_success { };
-    rule<let_class, ast::let> const let = "let";
+    rule<let_class, ast::let, true> const let = "let";
 
     struct macro_class : x3::annotate_on_success { };
     rule<macro_class, ast::macro> const macro("macro");
@@ -115,21 +115,13 @@ namespace grammar {
     auto const is_false_def = lit("false")[set_bool_false];
     BOOST_SPIRIT_DEFINE(is_false);
 
-    /* auto special_fn = [](auto & ctx) { */
-    /* }; */
-
-    /* struct special_sym_class {}; */
-    /* rule<special_sym_class, ast::val> const special_sym("special_sym"); */
-    /* auto const special_sym_def  = &(lit("nil")); */
-    /* BOOST_SPIRIT_DEFINE(special_sym); */
-
-    auto ctx_info = [](auto & ctx) {
-        auto& attr   = _attr(ctx);
-        auto& val    = _val(ctx);
+    auto ctx_info = [](auto& ctx) {
+        auto& attr = _attr(ctx);
+        auto& val  = _val(ctx);
 
         using namespace std;
-        cout <<"attr type: " << demangle(attr) << endl;
-        cout <<"val type: " << demangle(val) << endl;
+        cout << "attr type: " << demangle(attr) << endl;
+        cout << "val type: " << demangle(val) << endl;
     };
 
     // --------------------------------------------------------------------------------
@@ -138,20 +130,19 @@ namespace grammar {
     struct symbol_class : x3::annotate_on_success { };
     rule<symbol_class, ast::symbol> const symbol = "symbol";
 
-    auto get_symbol = [](auto & ctx, std::string const & _name) -> ast::symbol {
+    auto get_symbol = [](auto& ctx, std::string const& _name) -> ast::symbol {
         auto& symtab = x3::get<ast::cSymTab>(ctx).get();
-        auto id = symtab.getIdOrRegister(_name);
-        return {id};
+        auto id      = symtab.getIdOrRegister(_name);
+        return { id };
     };
 
+    auto process_symbol
+        = [](auto& ctx) { _val(ctx) = get_symbol(ctx, _attr(ctx)); };
 
-    auto process_symbol = [](auto& ctx) {
-         _val(ctx) = get_symbol(ctx, _attr(ctx));
-    };
-
-    auto const echars     = char_("?=_.!*+-/><$@");
-    auto const get_def    = as<std::string>[lexeme[(alpha | echars) >> *(alnum | echars | '-') ]];
-    auto const symbol_def =  get_def[process_symbol];
+    auto const echars = char_("?=_.!*+-/><$@");
+    auto const get_def
+        = as<std::string>[lexeme[(alpha | echars) >> *(alnum | echars | '-')]];
+    auto const symbol_def = get_def[process_symbol];
 
     BOOST_SPIRIT_DEFINE(symbol);
 
@@ -334,7 +325,17 @@ namespace grammar {
     BOOST_SPIRIT_DEFINE(bindings);
 
     // A let
-    auto const let_def = '(' >> lit("let") > bindings > program > ')';
+    auto constexpr let_bindings = [](auto& _ctx) { 
+
+        auto it = _attr(_ctx).mBindings.iterator();
+
+        while( auto p = it->next() ) {
+
+        }
+
+        ctx_info(_ctx); 
+    };
+    auto const let_def = ('(' >> lit("let") > bindings > program > ')')[let_bindings];
     BOOST_SPIRIT_DEFINE(let);
 
     // Args

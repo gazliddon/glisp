@@ -247,8 +247,9 @@ namespace ast {
         val mSecond;
     };
 
-    struct bindings : position_tagged, dummy_compare<bindings> {
-        std::vector<pair> mBindings;
+    struct bindings : position_tagged, seq_t, dummy_compare<bindings> {
+        virtual std::unique_ptr<iterator_base_t> iterator() const;
+        std::vector<val> mBindings;
     };
 
     struct let : position_tagged, dummy_compare<let> {

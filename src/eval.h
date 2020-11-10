@@ -140,7 +140,7 @@ namespace ast {
             add_native_function(_name, func, 2);
         }
 
-        std::string symbolToString(ast::symbol const& _sym) const;
+        std::string symbolToName(ast::symbol const& _sym) const;
 
         Evaluator();
 
