@@ -67,6 +67,9 @@ namespace ast {
         symbol mSym;
     };
 
+    struct unbound : dummy_compare<unbound> {
+    };
+
     // clang-format off
     using atoms
         = mp_list< bool
@@ -75,6 +78,7 @@ namespace ast {
                  , char
                  , keyword
                  , nil
+                 , unbound
                  >;
 
     // clang-format on
