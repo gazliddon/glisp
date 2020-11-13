@@ -124,16 +124,10 @@ namespace ast {
     }
 
     val Evaluator::operator()(define const& _v) {
-        assert(false);
-        /* auto& sym = _v.mSym.mName; */
-
         auto ret = _v.mVal;
 
-        if (!_v.mVal.is_atom()) {
-            ret = eval(_v.mVal);
-        }
-
-        /* set(sym, ret); */
+        ret = eval(_v.mVal);
+        mEnvironment.addAndSetSymbol(_v.mSym, ret);
 
         return val(_v.mSym);
     }
@@ -311,18 +305,6 @@ namespace ast {
         if (auto symptr = as<symbol>(seq->next())) {
             auto sym = *symptr;
 
-            if (sym == mSf_define) {
-                auto id    = as<symbol>(seq->next());
-                auto value = seq->next();
-
-                if (id && value) {
-                    mEnvironment.addAndSetSymbol(*id, *value);
-                } else {
-                    assert("FUCKED");
-                }
-                return val();
-            }
-
             if (sym == mSf_quote) {
                 return val(sexp(seq));
             }
@@ -443,7 +425,6 @@ namespace ast {
         mSf_and     = mSymTab.getIdOrRegister("and");
         mSf_or      = mSymTab.getIdOrRegister("or");
         mSf_apply   = mSymTab.getIdOrRegister("apply");
-        mSf_define  = mSymTab.getIdOrRegister("define");
         mSf_quote   = mSymTab.getIdOrRegister("quote");
         mSf_do      = mSymTab.getIdOrRegister("do");
         mSf_comment = mSymTab.getIdOrRegister("comment");

@@ -303,6 +303,9 @@ namespace glisp {
                 fmt::format(
                     "(define {} {})", render(_val.mSym), render(_val.mVal)));
         }
+        std::string operator()(ast::unbound const& ) const {
+            return "[UNBOUND]";
+        }
 
         template <typename X>
         std::string operator()(X const& _val) const {

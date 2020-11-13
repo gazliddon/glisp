@@ -135,6 +135,7 @@ namespace grammar {
     auto get_symbol = [](auto& ctx, std::string const& _name) -> ast::symbol {
         auto& symtab = x3::get<ast::cSymTab>(ctx).get();
         auto id      = symtab.getIdOrRegister(_name);
+        /* std::cout << "Added symbol " << _name << " " << id<< std::endl; */
         return { id };
     };
 
@@ -305,15 +306,16 @@ namespace grammar {
     // a define
     
     auto constexpr optional_to_unbound = [](auto& _ctx) {
-        ctx_info(_ctx);
+        auto & sym = boost::fusion::at_c<0>(_attr(_ctx));
+        auto & val = boost::fusion::at_c<1>(_attr(_ctx));
+        auto & dest = _val(_ctx);
 
-        auto & attr = _attr(_ctx);
-        auto & val = _val(_ctx);
+        dest.mSym = sym;
+        dest.mVal = val ? *val : ast::unbound();
 
-        val.mVal = attr ? *attr : ast::unbound();
     };
 
-    auto const define_def = '(' >> lexeme[lit("def") > space_skip > symbol ] > (-val)[optional_to_unbound] > ')' ;
+    auto const define_def = '(' >> (lexeme[lit("def") > space_skip > symbol ] > (-val))[optional_to_unbound] > ')' ;
     BOOST_SPIRIT_DEFINE(define);
 
     // A vector

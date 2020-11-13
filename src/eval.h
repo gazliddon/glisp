@@ -184,7 +184,6 @@ namespace ast {
         ast::symbol mSf_and;
         ast::symbol mSf_or;
         ast::symbol mSf_apply;
-        ast::symbol mSf_define;
         ast::symbol mSf_quote;
         ast::symbol mSf_do;
         ast::symbol mSf_comment;
