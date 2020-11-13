@@ -61,12 +61,12 @@ namespace glisp {
     }
 
     template <typename T>
-    T const * get_next(iterator_base_t& _t) {
+    boost::optional<T const &> get_next(iterator_base_t& _t) {
         auto p = _t.next();
         if (p) {
             return p->get<T>();
         }
-        return nullptr;
+        return {};
     }
 
     val get(Evaluator& _e, iterator_base_t& _args) {
@@ -183,7 +183,6 @@ namespace glisp {
     }
 
     val slurp(Evaluator& _e, iterator_base_t& _args) {
-
         if (auto file_name = get_next<std::string>(_args)) {
             std::ifstream inFile;
             inFile.open(file_name->c_str()); // open the input file

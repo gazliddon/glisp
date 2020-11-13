@@ -208,11 +208,11 @@ namespace ast {
     }
 
     template <typename T>
-    T* as(val* ptr) {
+    boost::optional<T const &> as(boost::optional<val const &> ptr) {
         if (ptr) {
             return ptr->get<T>();
         } else {
-            return nullptr;
+            return {};
         }
     }
 

@@ -326,15 +326,23 @@ namespace grammar {
 
     // A let
     auto constexpr let_bindings = [](auto& _ctx) { 
+#ifdef PLANNING
 
-        auto it = _attr(_ctx).mBindings.iterator();
+        auto scope_id = syms.generateNewScope("LET");
+        syms.push_scope(scope_id);
 
-        while( auto p = it->next() ) {
-
+        // Add all fo the symbols from let bindin
+        for(auto & p : args) {
+            syms.addSym(p.first);
         }
 
-        ctx_info(_ctx); 
+        // now walk the body for syms
+        
+        // pop this scope
+        syms.pop_scope();
+#endif
     };
+
     auto const let_def = ('(' >> lit("let") > bindings > program > ')')[let_bindings];
     BOOST_SPIRIT_DEFINE(let);
 

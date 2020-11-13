@@ -4,6 +4,7 @@
 #include "seq.h"
 #include <boost/mp11/mpl.hpp>
 #include <boost/mpl/copy.hpp>
+#include <boost/optional.hpp>
 #include <boost/spirit/home/x3.hpp>
 #include <boost/spirit/home/x3/support/ast/position_tagged.hpp>
 #include <boost/spirit/home/x3/support/ast/variant.hpp>
@@ -26,11 +27,11 @@ namespace ast {
 
     template <typename T>
     using add_forward_ast = x3::forward_ast<T>;
-        template <typename T>
-        struct remove_forward : mp_identity<T> { };
+    template <typename T>
+    struct remove_forward : mp_identity<T> { };
 
-        template <typename T>
-        struct remove_forward<x3::forward_ast<T>> : mp_identity<T> { };
+    template <typename T>
+    struct remove_forward<x3::forward_ast<T>> : mp_identity<T> { };
 
     template <typename... A>
     struct variant_base_t : x3::variant<A...> {
@@ -94,9 +95,9 @@ namespace ast {
         }
 
         template <typename T>
-        T* get() {
+        T* get_ptr() {
+            using namespace std;
             using fwd = x3::forward_ast<T>;
-
             if (is<T>()) {
                 if constexpr (mp_contains<raw_types, fwd>::value) {
                     return boost::get<fwd>(this)->get_pointer();
@@ -108,7 +109,7 @@ namespace ast {
         }
 
         template <typename T>
-        T const* get() const {
+        T const* get_ptr() const {
             using namespace std;
             using fwd = x3::forward_ast<T>;
             if (is<T>()) {
@@ -119,8 +120,24 @@ namespace ast {
                     return boost::get<T>(this);
                 }
             }
-
             return nullptr;
+        }
+
+        template <typename T>
+        boost::optional<T&> get() {
+            auto ret = get_ptr<T>();
+            if (ret) {
+                return { *ret };
+            } else
+                return {};
+        }
+        template <typename T>
+        boost::optional<T const&> get() const {
+            auto ret = get_ptr<T>();
+            if (ret) {
+                return { *ret };
+            } else
+                return {};
         }
 
     protected:
@@ -129,7 +146,6 @@ namespace ast {
     template <typename... A>
     std::array<std::string, sizeof...(A)> variant_base_t<A...>::mTypeNames
         = { demangle<A>()... };
-
 
 }
 

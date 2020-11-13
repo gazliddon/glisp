@@ -5,6 +5,7 @@
 #include <list>
 #include <stddef.h>
 #include <vector>
+#include <boost/optional.hpp>
 
 // TBD: Rafactor
 // change raw ptrs to std::optional<ast::val&>
@@ -29,10 +30,12 @@
 namespace ast {
     struct val;
 
+    using val_cref_opt = boost::optional<val const&>;
+
     struct iterator_base_t {
         virtual size_t size()      = 0;
-        virtual val const* first() = 0;
-        virtual val const* next()  = 0;
+        virtual val_cref_opt first() = 0;
+        virtual val_cref_opt next()  = 0;
         virtual ~iterator_base_t() { }
         virtual std::unique_ptr<iterator_base_t> clone() const = 0;
         virtual size_t remaining()                             = 0;
@@ -93,28 +96,6 @@ namespace ast {
         }
     };
 
-    struct invalid_iterator : public iterator_base_t {
-        virtual size_t size() {
-            return 0;
-        }
-        virtual val* first() {
-            return nullptr;
-        }
-        virtual val* next() {
-            return nullptr;
-        }
-        virtual std::unique_ptr<iterator_base_t> clone() const {
-            return std::make_unique<invalid_iterator>();
-        }
-        virtual size_t remaining() {
-            return 0;
-        }
-
-        virtual bool at_end() {
-            return true;
-        }
-    };
-
     template <typename coll>
     struct stl_iterator : public iterator_base_t {
 
@@ -145,11 +126,11 @@ namespace ast {
             return mEnd - mBegin;
         }
 
-        virtual val const* first() {
+        virtual val_cref_opt first() {
             if (size() > 0) {
-                return &*mBegin;
+                return { *mBegin };
             } else {
-                return nullptr;
+                return {};
             }
         }
 
@@ -157,13 +138,13 @@ namespace ast {
             return mEnd - mIt;
         }
 
-        virtual val const* next() {
+        virtual val_cref_opt next() {
             if (mIt == mEnd) {
-                return nullptr;
+                return {};
             } else {
-                auto ret = &*mIt;
+                auto & ret = *mIt;
                 mIt++;
-                return ret;
+                return { ret };
             }
         }
 
@@ -171,29 +152,6 @@ namespace ast {
             auto ret = std::make_unique<this_t>(mBegin, mEnd);
             return ret;
         }
-    };
-
-    struct filter_t : iterator_base_t {
-        filter_t(iterator_base_t const & _base) : mI(_base.clone()) {
-        }
-
-        virtual size_t size() {
-            assert(false);
-        }
-
-        virtual val const* first() {
-            assert(false);
-        }
-
-        virtual val const* next() {
-            assert(false);
-        }
-
-        virtual std::unique_ptr<iterator_base_t> clone() const {
-            assert(false);
-        }
-
-        std::unique_ptr<iterator_base_t> mI;
     };
 
     using vector_iterator = stl_iterator<std::vector<val>>;

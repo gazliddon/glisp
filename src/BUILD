@@ -5,6 +5,7 @@ cc_binary(
 
     deps = [
             "@boost//:spirit",
+            "@boost//:optional",
             "@boost//:system",
             "@immer//:immer",
             "@spdlog//:spdlog"

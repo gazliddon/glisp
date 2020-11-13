@@ -7,6 +7,7 @@
 #include <string>
 #include <unordered_map>
 #include <vector>
+#include <boost/optional.hpp>
 
 namespace ast {
 
@@ -20,7 +21,7 @@ namespace ast {
         virtual ~cSymTabBase() {
         }
 
-        virtual std::optional<K> registerSymbol(V const& _str) = 0;
+        virtual boost::optional<K> registerSymbol(V const& _str) = 0;
 
         virtual K getIdOrRegister(V const& _str) {
             auto id = getId(_str);
@@ -32,12 +33,12 @@ namespace ast {
             }
         }
 
-        virtual std::optional<V> const getName(K _id) const = 0;
-        virtual std::optional<K> getId(V const& _str) const = 0;
+        virtual boost::optional<V> const getName(K _id) const = 0;
+        virtual boost::optional<K> getId(V const& _str) const = 0;
     };
 
     template <typename coll>
-    std::optional<typename coll::mapped_type> findMap(
+    boost::optional<typename coll::mapped_type> findMap(
         coll const& _map, typename coll::key_type const& _k) {
         auto it = _map.find(_k);
         if (it == _map.end()) {
@@ -57,7 +58,7 @@ namespace ast {
             : cSymTab("") {
         }
 
-        virtual std::optional<uint64_t> registerSymbol(
+        virtual boost::optional<uint64_t> registerSymbol(
             std::string const& _str) {
             auto it = mSymToId.find(_str);
 
@@ -71,11 +72,11 @@ namespace ast {
             }
         }
 
-        virtual std::optional<uint64_t> getId(std::string const& _str) const {
+        virtual boost::optional<uint64_t> getId(std::string const& _str) const {
             return findMap(mSymToId, _str);
         }
 
-        virtual std::optional<std::string> const getName(uint64_t _id) const {
+        virtual boost::optional<std::string> const getName(uint64_t _id) const {
             if (_id >= mSyms.size()) {
                 return {};
             } else {
@@ -83,7 +84,7 @@ namespace ast {
             }
         }
 
-        virtual std::optional<std::string> getScopedName(uint64_t _id) const {
+        virtual boost::optional<std::string> getScopedName(uint64_t _id) const {
             auto name = getName(_id);
             if (name) {
                 return { fmt::format("{}/{}", mScopeName, *name) };
@@ -134,7 +135,7 @@ namespace ast {
             mLocal.pop_front();
         }
 
-        virtual std::optional<scoped_symbol> registerSymbol(
+        virtual boost::optional<scoped_symbol> registerSymbol(
             std::string const& _str) {
             auto id =  mAllSymTabs[mCurrentScopeId].registerSymbol(_str);
 
@@ -151,7 +152,7 @@ namespace ast {
             assert(false);
         }
 
-        virtual std::optional<std::string> const getName(
+        virtual boost::optional<std::string> const getName(
             scoped_symbol _id) const {
 
             // is this a local scope?
@@ -174,7 +175,7 @@ namespace ast {
             return {};
         }
 
-        virtual std::optional<scoped_symbol> getId(
+        virtual boost::optional<scoped_symbol> getId(
             std::string const& _str) const {
             auto scopeId = -1;
 
