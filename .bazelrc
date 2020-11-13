@@ -2,9 +2,9 @@ build --spawn_strategy=standalone
 build --cxxopt "-Werror"
 build --cxxopt "-Wno-unused-variable" 
 build --cxxopt "-Wno-macro-redefined" 
-build --cxxopt "-std=c++2a" 
-build --show_progress_rate_limit -1
+build --cxxopt "-std=c++2a"
+build --cxxopt "-fdiagnostics-absolute-paths" 
 build --jobs 10
-build --cxxopt "-U_FORTIFY_SOURCE"
 build --verbose_failures
-build --apple_generate_dsym
+
+

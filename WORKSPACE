@@ -2,9 +2,9 @@ load("@bazel_tools//tools/build_defs/repo:http.bzl", "http_archive")
 
 http_archive(
     name = "immer",
-    url = "https://github.com/arximboldi/immer/archive/2076affd9d814afc019ba8cd8c2b18a6c79c9589.zip",
-    sha256 = "13c926c3c9d83d8b67b0e83f3ec244aaa1c9e0b16023f299b674d5a23b637929",
-    strip_prefix = "immer-2076affd9d814afc019ba8cd8c2b18a6c79c9589",
+    url = "https://github.com/arximboldi/immer/archive/800ddb04e528a3e83e69e8021d7e872e7c34cbcd.zip",
+    sha256 = "c5e382c7fa2fef1d7766be293ccbb4ecefb1cb2f9372d1b15c3e4893470ee370",
+    strip_prefix = "immer-800ddb04e528a3e83e69e8021d7e872e7c34cbcd",
     build_file = "@//:third_party/immer.BUILD",
 )
 

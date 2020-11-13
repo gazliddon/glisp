@@ -4,6 +4,7 @@
 #include "demangle.h"
 #include "env.h"
 #include "reader.h"
+#include <immer/algorithm.hpp>
 #include <immer/map_transient.hpp>
 #include <stack>
 
@@ -64,9 +65,9 @@ namespace ast {
         }
 
         void enumerate(std::function<void(uint64_t, val const&)> _func) const {
-            for (auto const& p : mEnv.mMap) {
+            immer::for_each(mEnv.mMap, [&_func](auto const& p) {
                 _func(p.first, p.second);
-            }
+            });
         }
 
     protected:

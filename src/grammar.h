@@ -363,38 +363,38 @@ namespace grammar {
     auto const macro_def = '(' >> lit("defmacro") > symbol > args > base > ')';
     BOOST_SPIRIT_DEFINE(macro);
 
-    auto constexpr to_typed_arg_string = [](auto & _ctx) {
-        using namespace std;
-        std::string ret;
+    /* auto constexpr to_typed_arg_string = [](auto & _ctx) { */
+    /*     using namespace std; */
+    /*     std::string ret; */
 
-        auto & a =_attr(_ctx);
-        auto sym  = at_c<0>(a);
-        auto type = at_c<1>(a);
+    /*     auto & a =_attr(_ctx); */
+    /*     auto sym  = at_c<0>(a); */
+    /*     auto type = at_c<1>(a); */
 
-        ret += sym.mName + ":";
+    /*     ret += sym.mName + ":"; */
 
-        if (type) {
-            ret += type->mName;
-        } else {
-            ret += "no type";
-            _pass(_ctx) = false;
-        }
+    /*     if (type) { */
+    /*         ret += type->mName; */
+    /*     } else { */
+    /*         ret += "no type"; */
+    /*         _pass(_ctx) = false; */
+    /*     } */
 
-        _val(_ctx) = ret;
-    };
+    /*     _val(_ctx) = ret; */
+    /* }; */
 
-    struct typed_arg_class { };
-    rule<typed_arg_class, std::string> const typed_arg = "typed_arg";
-    auto const typed_arg_def = lexeme[symbol >> -(':' >> symbol)][to_typed_arg_string];
-    BOOST_SPIRIT_DEFINE(typed_arg);
+    /* struct typed_arg_class { }; */
+    /* rule<typed_arg_class, std::string> const typed_arg = "typed_arg"; */
+    /* auto const typed_arg_def = lexeme[symbol >> -(':' >> symbol)][to_typed_arg_string]; */
+    /* BOOST_SPIRIT_DEFINE(typed_arg); */
 
-    struct typed_args_class { };
-    rule<typed_args_class, std::string> const typed_args = "typed_args";
-    auto const typed_args_def = as<std::string>['[' >> *typed_arg >> ']'];
-    BOOST_SPIRIT_DEFINE(typed_args);
+    /* struct typed_args_class { }; */
+    /* rule<typed_args_class, std::string> const typed_args = "typed_args"; */
+    /* auto const typed_args_def = as<std::string>['[' >> *typed_arg >> ']']; */
+    /* BOOST_SPIRIT_DEFINE(typed_args); */
 
-    auto const tester_def = '|' >> typed_args >> '|';
-    BOOST_SPIRIT_DEFINE(tester);
+    /* auto const tester_def = '|' >> typed_args >> '|'; */
+    /* BOOST_SPIRIT_DEFINE(tester); */
 }
 
 #endif /* end of include guard: GRAMMAR_H_SLEB5MGA */
