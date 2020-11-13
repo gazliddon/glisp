@@ -57,6 +57,16 @@ namespace grammar {
         }
     };
 
+
+    auto ctx_info = [](auto& _ctx) {
+        auto& attr = _attr(_ctx);
+        auto& val  = _val(_ctx);
+
+        using namespace std;
+        cout << "attr type: " << demangle(attr) << endl;
+        cout << "val type: " << demangle(val) << endl;
+    };
+
     /* using x3::space; */
     /* using x3::string; */
 
@@ -115,14 +125,6 @@ namespace grammar {
     auto const is_false_def = lit("false")[set_bool_false];
     BOOST_SPIRIT_DEFINE(is_false);
 
-    auto ctx_info = [](auto& ctx) {
-        auto& attr = _attr(ctx);
-        auto& val  = _val(ctx);
-
-        using namespace std;
-        cout << "attr type: " << demangle(attr) << endl;
-        cout << "val type: " << demangle(val) << endl;
-    };
 
     // --------------------------------------------------------------------------------
     // Symbol
@@ -254,7 +256,7 @@ namespace grammar {
 
     auto const special_def = 
           quote
-        /* | define */
+        | define
         | let
         | lambda;
 
@@ -301,7 +303,17 @@ namespace grammar {
 
     auto const space_skip = +( lit(" ") | '\t' | '\r' | '\n');
     // a define
-    auto const define_def = '(' >> lexeme[lit("def") > space_skip > symbol > space_skip ] > val > ')' ;
+    
+    auto constexpr optional_to_unbound = [](auto& _ctx) {
+        ctx_info(_ctx);
+
+        auto & attr = _attr(_ctx);
+        auto & val = _val(_ctx);
+
+        val.mVal = attr ? *attr : ast::unbound();
+    };
+
+    auto const define_def = '(' >> lexeme[lit("def") > space_skip > symbol ] > (-val)[optional_to_unbound] > ')' ;
     BOOST_SPIRIT_DEFINE(define);
 
     // A vector
