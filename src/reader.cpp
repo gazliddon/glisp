@@ -5,6 +5,7 @@
 #include "symtab.h"
 
 #include <boost/spirit/home/x3/support/ast/position_tagged.hpp>
+#include <spdlog/spdlog.h>
 
 namespace glisp {
     using namespace boost::spirit;
@@ -88,13 +89,24 @@ namespace glisp {
         using x3::with;
         dummy_pos pos;
 
+        cScoper scopes(0);
+
+        parse_ctx_t context {
+            .mSyms   = mSymTab,
+            .mScopes = scopes,
+        };
+
         auto const parser = //
             with<grammar::position_cache_tag>(ref(pos))[with<ast::cSymTab>(
                 ref(mSymTab))[with<x3::error_handler_tag>(
                 ref(ret.mErrors))[grammar::program]]];
 
+        auto const parser2 = with<parse_ctx_t>(ref(context))[
+            parser
+        ];
+
         bool r = phrase_parse(
-            iter, end, parser, x3::ascii::space_type(), ret.mAst);
+            iter, end, parser2, x3::ascii::space_type(), ret.mAst);
 
         if (auto p_ptr = ret.mAst.get<ast::program>()) {
             if (p_ptr->mForms.size() == 1) {
@@ -113,9 +125,26 @@ namespace glisp {
         return ret;
     }
 
-    
-
-    cReader::cReader(cReaderSymTab & _symTab) : mSymTab(_symTab){
+    cReader::cReader(cReaderSymTab& _symTab)
+        : mSymTab(_symTab) {
     }
 
+    uint64_t cScoper::pop() {
+        mScopeStack.pop();
+        return mScopeStack.top();
+    }
+
+    cScoper::cScoper(uint64_t _initScopeId) : mTempScopeId(0) {
+        push(_initScopeId);
+    }
+
+    void cScoper::push(uint64_t _scopeId) {
+        mScopeStack.push(_scopeId);
+    }
+
+    uint64_t cScoper::genScope(std::string const & _base ) {
+        auto name = fmt::format("{}_{}", _base, mTempScopeId);
+        std::cout << "GENERATED SCOPE " << name << std::endl;
+        return mTempScopeId++;
+    }
 }

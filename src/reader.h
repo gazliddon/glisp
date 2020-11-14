@@ -11,32 +11,41 @@
 
 namespace glisp {
 
+    class cScoper {
+    public:
+        cScoper(uint64_t _scopeId);
+         void push(uint64_t _scopeId);
 
-    namespace x3 = boost::spirit::x3;
-    /* using iterator_type  = std::string::const_iterator; */
-    /* using error_handler_type = x3::error_handler<iterator_type>; */
+        uint64_t genScope(std::string const & _base = "");
 
+        uint64_t pop();
 
-    /* class cErrorHandler { */
-    /*     public: */
-    /*         cErrorHandler(); */
+        uint64_t currentScope() {
+            return mScopeStack.top();
+        }
 
-    /*         void start(std::string const & _file); */
-    /*         void stop(); */
-    /*     protected: */
-    /* }; */
-
-    class cReaderSymTab : public ast::cSymTab {
-        public:
-            cReaderSymTab() {
-            }
-
-            ast::symbol getSymbolRef(std::string const & _name) {
-                auto id = getIdOrRegister(_name.c_str());
-                return {id};
-            }
+    protected:
+        std::stack<uint64_t> mScopeStack;
+        uint64_t mTempScopeId;
     };
 
+    struct parse_ctx_t {
+        ast::cSymTab& mSyms;
+        cScoper& mScopes;
+    };
+
+    namespace x3 = boost::spirit::x3;
+
+    class cReaderSymTab : public ast::cSymTab {
+    public:
+        cReaderSymTab() {
+        }
+
+        ast::symbol getSymbolRef(std::string const& _name) {
+            auto id = getIdOrRegister(_name.c_str());
+            return { id };
+        }
+    };
 
     class cReader {
     public:
@@ -51,7 +60,8 @@ namespace glisp {
                 , mErrors(mText.begin(), mText.end(), std::cerr) {
             }
 
-            reader_reslult_t() : reader_reslult_t("") {
+            reader_reslult_t()
+                : reader_reslult_t("") {
             }
 
             ast::val mAst;
@@ -70,7 +80,7 @@ namespace glisp {
             }
         };
 
-        cReader(cReaderSymTab & symTab);
+        cReader(cReaderSymTab& symTab);
 
         reader_reslult_t read(std::string const& _str);
 
@@ -104,8 +114,7 @@ namespace glisp {
 
         std::stack<reader_reslult_t> mResults;
 
-
-        cReaderSymTab  & mSymTab;
+        cReaderSymTab& mSymTab;
     };
 }
 

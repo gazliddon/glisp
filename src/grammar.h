@@ -2,6 +2,7 @@
 #define GRAMMAR_H_SLEB5MGA
 
 #include "ast_adapted.h"
+#include "reader.h"
 #include "symtab.h"
 
 /* #include "grammar_atoms.h" */
@@ -16,6 +17,22 @@
 namespace grammar {
     namespace x3 = boost::spirit::x3;
     struct position_cache_tag { };
+
+    auto constexpr getParseCtx = [](auto & _ctx) -> glisp::parse_ctx_t & {
+        auto& parseCtx = x3::get<glisp::parse_ctx_t>(_ctx).get();
+        return parseCtx;
+    };
+    auto constexpr pushScope = [](auto &_ctx, std::string const & _scopeBaseName) {
+        auto& parseCtx = getParseCtx(_ctx);
+        auto & scoper = parseCtx.mScopes;
+        auto id = scoper.genScope(_scopeBaseName);
+        scoper.push(id);
+    };
+
+    auto constexpr popScope = [](auto & _ctx) {
+        glisp::parse_ctx_t & parseCtx = getParseCtx(_ctx);
+        parseCtx.mScopes.pop();
+    };
 
     struct annotate_position {
         template <typename T, typename Iterator, typename Context>
@@ -56,7 +73,6 @@ namespace grammar {
             return x3::error_handler_result::fail;
         }
     };
-
 
     auto ctx_info = [](auto& _ctx) {
         auto& attr = _attr(_ctx);
@@ -124,7 +140,6 @@ namespace grammar {
     rule<is_false_class, bool> const is_false("false");
     auto const is_false_def = lit("false")[set_bool_false];
     BOOST_SPIRIT_DEFINE(is_false);
-
 
     // --------------------------------------------------------------------------------
     // Symbol
@@ -218,13 +233,15 @@ namespace grammar {
     rule<args_class, ast::args> const args("args");
     rule<set_class, ast::set> const set("set");
     rule<val_class, ast::val> const val("value");
-    rule<lambda_class, ast::lambda> const lambda = "lambda";
+    rule<lambda_class, ast::lambda, true> const lambda = "lambda";
 
     struct program_class : error_handler { };
     rule<program_class, ast::program> const program = "program";
 
     // A Val
-    auto const lambda_def = '(' >> (lit("fn")) > -(str) > args > program > ')';
+    auto constexpr lambda_scope = [](auto & _ctx){ pushScope(_ctx, "LAMBDA"); };
+
+    auto const lambda_def = ('(' >> (lit("fn")[lambda_scope]) > -(str) > args > program > ')')[popScope];
     BOOST_SPIRIT_DEFINE(lambda);
 
     struct sexp_class : x3::annotate_on_success { };
@@ -338,26 +355,13 @@ namespace grammar {
     auto const bindings_def = '[' > *binding > ']';
     BOOST_SPIRIT_DEFINE(bindings);
 
+
     // A let
     auto constexpr let_bindings = [](auto& _ctx) { 
-#ifdef PLANNING
-
-        auto scope_id = syms.generateNewScope("LET");
-        syms.push_scope(scope_id);
-
-        // Add all fo the symbols from let bindin
-        for(auto & p : args) {
-            syms.addSym(p.first);
-        }
-
-        // now walk the body for syms
-        
-        // pop this scope
-        syms.pop_scope();
-#endif
+        pushScope(_ctx, "LET");
     };
 
-    auto const let_def = ('(' >> lit("let") > bindings > program > ')')[let_bindings];
+    auto const let_def = ('(' >> lit("let")[let_bindings] > bindings > program > ')')[popScope];
     BOOST_SPIRIT_DEFINE(let);
 
     // Args

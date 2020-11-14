@@ -62,6 +62,7 @@ flags = [
     "-I", "src",
     "-I", "bazel-glisp/external/immer",
     "-I", "bazel-glisp/external/boost",
+    "-I", "bazel-glisp/external/spdlog/include",
 
     "-I", "/usr/include",
     # "-I", "/usr/include/c++/5.3.0/x86_64-unknown-linux-gnu",
