@@ -55,9 +55,9 @@ namespace grammar {
         auto name = _attr(_ctx);
         auto parse_ctx = getParseCtx(_ctx);
         fmt::print("Trying to register {}\n", name);
-        auto id = parse_ctx.mScopes.registerSymbol(name);
-        parse_ctx.mScopes.dump();
-        return { id };
+
+        auto id = parse_ctx.mScopes.registerSymbol(name, true);
+        return { *id };
     };
 
     struct annotate_position {
@@ -88,6 +88,8 @@ namespace grammar {
     using x3::string;
     using x3::uint_;
 
+    auto const space_skip = +( lit(" ") | '\t' | '\r' | '\n');
+
     struct error_handler {
         template <typename Iterator, typename Exception, typename Context>
         x3::error_handler_result on_error(Iterator& first,
@@ -112,7 +114,6 @@ namespace grammar {
     rule<macro_class, ast::macro> const macro("macro");
 
     struct lambda_class : x3::annotate_on_success { };
-
     struct vector_class : x3::annotate_on_success { };
     struct map_entry_class : x3::annotate_on_success { };
     struct map_class : x3::annotate_on_success { };
@@ -147,9 +148,12 @@ namespace grammar {
     template <typename T>
     static inline constexpr as_type<T> as;
 
-    auto const echars = char_("?=_.!*+-/><$@");
+    static inline constexpr as_type<std::string> as_string;
+
+
+    auto const echars = char_("-?=_.!*+-/><$@");
     auto const get_symbol_string
-        = as<std::string>[lexeme[(alpha | echars) >> *(alnum | echars | '-')]];
+        = as_string[lexeme[(alpha | echars) > *(alnum | echars )]];
 
     auto constexpr set_bool_true = [](auto& _ctx) { _val(_ctx) = true; };
     struct is_true_class { };
@@ -166,9 +170,13 @@ namespace grammar {
     // --------------------------------------------------------------------------------
     // Symbol
 
+    auto constexpr sym_resolve = [](auto & _ctx) {
+        _val(_ctx) = resolveSymbol(_ctx);
+    };
+
     struct symbol_class : x3::annotate_on_success { };
     rule<symbol_class, ast::symbol> const symbol = "symbol";
-    auto const symbol_def = get_symbol_string[resolveSymbol];
+    auto const symbol_def = get_symbol_string[sym_resolve];
     BOOST_SPIRIT_DEFINE(symbol);
 
     // --------------------------------------------------------------------------------
@@ -279,15 +287,13 @@ namespace grammar {
         | vector
         | map;
 
-    auto const special_def = 
-          quote
-        | define
-        | let
-        | lambda;
 
     auto const val_def =
           quoted
-        | special_def
+        | quote
+        | define
+        | let
+        | lambda
         | base_def;
 
     // clang-format one
@@ -328,7 +334,6 @@ namespace grammar {
     auto const program_def = *val;
     BOOST_SPIRIT_DEFINE(program);
 
-    auto const space_skip = +( lit(" ") | '\t' | '\r' | '\n');
     // a define
     
     auto constexpr optional_to_unbound = [](auto& _ctx) {
@@ -344,7 +349,12 @@ namespace grammar {
         _val(_ctx).mSym = sym;
     };
 
-    auto const define_def = '(' >> (lexeme[lit("def") > space_skip] > get_symbol_string[define_symbol] > (-val)[optional_to_unbound]) > ')' ;
+    auto const def_symbol = ( get_symbol_string[define_symbol] );
+    auto const def_optional_val = (-val)[optional_to_unbound];
+    auto const ob = char_('(');
+    auto const cb = char_(')');
+
+    auto const define_def = ob >> lexeme[lit("def") >> space_skip] > def_symbol > def_optional_val >> cb ;
     BOOST_SPIRIT_DEFINE(define);
 
     // A vector

@@ -82,8 +82,9 @@ namespace ast {
         native_function x;
         x.mFunc      = std::move(_func);
         x.mNumOfArgs = _nargs;
-        auto sym  = ast::symbol{mAllSymbols.registerDefaultSymbol(_name)};
-        mEnvironment.addAndSetSymbol( sym , val(x));
+        auto sym
+            = ast::symbol { *mAllSymbols.registerDefaultSymbol(_name, true) };
+        mEnvironment.setSymbol(sym, val(x));
     }
 
     val Evaluator::eval(glisp::cReader::reader_reslult_t& ast) {
@@ -123,22 +124,21 @@ namespace ast {
         auto ret = _v.mVal;
 
         ret = eval(_v.mVal);
-        mEnvironment.addAndSetSymbol(_v.mSym, ret);
+        mEnvironment.setSymbol(_v.mSym, ret);
 
         return val(_v.mSym);
     }
 
     val Evaluator::operator()(ast::symbol const& _v) {
-        fmt::print("Sym to be evaled is {} {}\n", _v.mScope, _v.mId);
-        auto val_p = mEnvironment.getSymbol(_v);
 
-        if (!val_p) {
-            auto error = fmt::format(
-                "Unable to resolve symbol {}", symbolToName(_v));
-            throw glisp::cEvalError(error);
+        if (auto sym = mEnvironment.getSymbol(_v)) {
+            return *sym;
         }
 
-        return *val_p;
+        auto error
+            = fmt::format("Unable to resolve symbol {} : ({} {})", symbolToName(_v), _v.mScope, _v.mId);
+    
+        throw glisp::cEvalError(error);
     }
 
     val Evaluator::operator()(ast::vector const& _vector) {
@@ -199,7 +199,7 @@ namespace ast {
     }
 
     template <typename T>
-    boost::optional<T const &> as(boost::optional<val const &> ptr) {
+    boost::optional<T const&> as(boost::optional<val const&> ptr) {
         if (ptr) {
             return ptr->get<T>();
         } else {
@@ -235,7 +235,8 @@ namespace ast {
                 = fmt::format("Unable to call {}", to_string(val(_first)));
             error += "\n" + to_string(val(_first));
 
-            error += fmt::format("\n callable {}", std::is_base_of<val::callable_t, native_function>::value);
+            error += fmt::format("\n callable {}",
+                std::is_base_of<val::callable_t, native_function>::value);
             error += fmt::format("\n var type {}", _first.var.which());
             error += fmt::format("\n var type name {}", _first.get_name());
 
@@ -254,10 +255,10 @@ namespace ast {
 
             mCallDepth++;
 
-            while(auto sym_p = syms_it->next()) {
+            while (auto sym_p = syms_it->next()) {
                 auto sym = sym_p->get<symbol>();
                 assert(sym);
-                mEnvironment.addAndSetSymbol(*sym, *_rest.next());
+                mEnvironment.setSymbol(*sym, *_rest.next());
             }
 
             // Now evaluate the body
@@ -353,15 +354,14 @@ namespace ast {
         assert(false);
     }
 
-    ast::val const & Evaluator::currentNode() const {
+    ast::val const& Evaluator::currentNode() const {
         assert(false);
     }
 
     void Evaluator::enumerateBindings(
         std::function<void(ast::symbol const&, ast::val const&)> _func) const {
-        mEnvironment.enumerate([_func](uint64_t id, ast::val const& _val) {
-            ast::symbol sym { 0, id };
-            _func(sym, _val);
+        mEnvironment.enumerate([_func](auto _sym, ast::val const& _val) {
+            _func(_sym, _val);
         });
     }
 
@@ -403,8 +403,9 @@ namespace ast {
     }
 
     std::string Evaluator::symbolToName(ast::symbol const& _sym) const {
-        auto ret = mAllSymbols.getSymbolName({ _sym.mScope,_sym.mId });
-        if(!ret) {
+        auto ret = mAllSymbols.getSymbolName({ _sym.mScope, _sym.mId });
+
+        if (!ret) {
             fmt::print("Cannot find sym name {}:{}\n", _sym.mScope, _sym.mId);
             mAllSymbols.dump();
         }
@@ -415,17 +416,22 @@ namespace ast {
 
     Evaluator::Evaluator()
         : mCallDepth(0)
-          , mAllSymbols("glisp")
+        , mAllSymbols("glisp")
         , mReader(mAllSymbols) {
 
-        mSf_if      = mAllSymbols.registerSymbol("if");
-        mSf_and     = mAllSymbols.registerSymbol("and");
-        mSf_or      = mAllSymbols.registerSymbol("or");
-        mSf_quote   = mAllSymbols.registerSymbol("quote");
-        mSf_do      = mAllSymbols.registerSymbol("do");
-        mSf_comment = mAllSymbols.registerSymbol("comment");
+        mSf_if      = *mAllSymbols.registerSymbol("if");
+        mSf_and     = *mAllSymbols.registerSymbol("and");
+        mSf_or      = *mAllSymbols.registerSymbol("or");
+        mSf_quote   = *mAllSymbols.registerSymbol("quote");
+        mSf_do      = *mAllSymbols.registerSymbol("do");
+        mSf_comment = *mAllSymbols.registerSymbol("comment");
 
         glisp::add_natives(*this);
+    }
+
+    void Evaluator::setCurrentNamespace(std::string const & _name) {
+        auto id = mAllSymbols.getOrRegisterScope(_name);
+        mAllSymbols.push(id);
     }
 
 }

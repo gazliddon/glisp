@@ -27,29 +27,35 @@ namespace ast {
         cEnv() {
         }
 
-        symbol addAndSetSymbol(symbol const& _sym, val const& _v) {
-            setSymbol(_sym, _v);
-            return _sym;
-        }
-
         void setSymbol(symbol _sym, val const& _val) {
-            mSymToVal[_sym] = _val;
+            mImmerMap = mImmerMap.insert({ _sym, _val });
         }
 
         boost::optional<val const&> getSymbol(symbol _sym) const {
-            auto it = mSymToVal.find(_sym);
-            if (it == mSymToVal.end()) {
-                return {};
-            } else {
-                return { it->second };
-            }
+            auto it = mImmerMap.find(_sym);
+            return as_opt(it);
         }
 
-        void enumerate(std::function<void(uint64_t, val const&)> _func) const {
+        void enumerate(
+            std::function<void(ast::symbol, val const&)> _func)
+            const {
+            immer::for_each(mImmerMap,
+                [_func](std::pair<symbol, val> const& p) { 
+                _func(p.first, p.second); 
+                });
         }
 
     protected:
-        std::unordered_map<ast::symbol, ast::val> mSymToVal;
+        static auto constexpr as_opt
+            = [](val const* _val) -> boost::optional<val const&> {
+            if (_val) {
+                return *_val;
+            } else {
+                return {};
+            }
+        };
+
+        immer::map<ast::symbol, ast::val> mImmerMap;
     };
 
     // Visitor to evaluate this expression
@@ -145,6 +151,8 @@ namespace ast {
         val apply(val const& _val, iterator_base_t& _it) {
             return apply(_val, _it, mEnvironment);
         }
+
+        void setCurrentNamespace(std::string const & _name);
 
     protected:
         unsigned mCallDepth;

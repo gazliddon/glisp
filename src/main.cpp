@@ -135,9 +135,11 @@ namespace glisp {
 
         commands.addCommand("^q$", [&quit]() { quit = true; });
 
+        evaluator.setCurrentNamespace("user");
+
         while (!quit) {
             try {
-                _out << "=> ";
+                _out << "user => ";
 
                 auto str = get_input(_in);
 

@@ -81,27 +81,37 @@ namespace glisp {
         return scope.getScopeName();
     }
 
-    std::pair<uint64_t, uint64_t> cScoper::registerSymbol(
-        std::string const& _string) {
+    boost::optional<cScoper::sym_t> cScoper::registerSymbol(
+        uint64_t _scopeId,
+        std::string const& _name,
+        bool _allowAlreadyExisting) {
+        if (auto scope = getScope(_scopeId)) {
+            if (_allowAlreadyExisting) {
+                auto id = scope->getIdOrRegister(_name);
+                return mksym(_scopeId, id);
+            } else {
+                if (auto id = scope->registerSymbol(_name)) {
+                    return mksym(_scopeId, *id);
+                }
+            }
 
-        auto& scope = getCurrentScope();
-
-        auto id = scope.registerSymbol(_string);
-
-        if (!id) {
-            fmt::print("Can't register symbol {} to scope {}\n",
-                _string,
-                scope.getScopeName());
-            scope.dump();
+        } else {
+            fmt::print("Can't find scope {} when trying to register {}",
+                _scopeId,
+                _name);
+            assert(false);
         }
 
-        assert(id);
-
-        return { getCurrentScopeId(), *id };
+        return {};
     }
 
-    std::pair<uint64_t, uint64_t> cScoper::registerDefaultSymbol(
-        std::string const& _string) {
+    boost::optional<cScoper::sym_t> cScoper::registerSymbol(
+        std::string const& _string, bool _allowAlreadyExisting) {
+        return registerSymbol(getCurrentScopeId(), _string, _allowAlreadyExisting);
+    }
+
+    boost::optional<cScoper::sym_t> cScoper::registerDefaultSymbol(
+        std::string const& _string, bool _allowAlreadyExisting) {
 
         auto& def = getDefaultScope();
 
@@ -122,11 +132,10 @@ namespace glisp {
 
             assert(id);
         }
-
-        return { mDefaultScopeId, *id };
+        return mksym(mDefaultScopeId, *id);
     }
 
-    std::optional<std::pair<uint64_t, uint64_t>> cScoper::resolveSymbol(
+    boost::optional<cScoper::sym_t> cScoper::resolveSymbol(
         std::string const& _str) {
 
         for (auto scopeId : mScopeStack) {
@@ -142,7 +151,7 @@ namespace glisp {
         return {};
     }
 
-    ast::cSymTab& cScoper::getScope(uint64_t _scopeId) {
+    boost::optional<ast::cSymTab&> cScoper::getScope(uint64_t _scopeId) {
         auto it = mAllSymbols.find(_scopeId);
 
         if (it == mAllSymbols.end()) {
@@ -154,20 +163,28 @@ namespace glisp {
         return it->second;
     }
 
-    ast::cSymTab const& cScoper::getScope(uint64_t _scopeId) const {
+    boost::optional<ast::cSymTab const&> cScoper::getScope(
+        uint64_t _scopeId) const {
         auto it = mAllSymbols.find(_scopeId);
 
-        if (it == mAllSymbols.end()) {
-            fmt::print(
-                "Could not find default scope with id {}\n", mDefaultScopeId);
-            assert(false);
+        if (it != mAllSymbols.end()) {
+            return it->second;
         }
 
-        return it->second;
+        fmt::print("Could not find scope with id {}\n", mDefaultScopeId);
+        return {};
+    }
+
+    ast::cSymTab const & cScoper::getDefaultScope() const {
+        auto scope = getScope(mDefaultScopeId);
+        assert(scope);
+        return *scope;
     }
 
     ast::cSymTab& cScoper::getDefaultScope() {
-        return getScope(mDefaultScopeId);
+        auto scope = getScope(mDefaultScopeId);
+        assert(scope);
+        return *scope;
     }
 
     void cScoper::pushGenScope(std::string const& _scopeBaseName) {
@@ -176,12 +193,12 @@ namespace glisp {
     }
 
     boost::optional<std::string> cScoper::getSymbolName(
-        std::pair<uint64_t, uint64_t> _sym) const {
-        auto [scopeId, symId] = _sym;
-        auto& scope           = getScope(scopeId);
+        sym_t _sym) const {
 
-        if (scopeId) {
-            return scope.getName(symId);
+        auto [scopeId, symId] = _sym;
+
+        if (auto scope = getScope(scopeId)) {
+            return scope->getScopedName(symId);
         }
 
         return {};

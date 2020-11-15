@@ -11,7 +11,9 @@ namespace ast {
         auto const i = _env.begin();
         auto  const e = _env.end();
 
-        immer::for_each(_env, [](auto const & x){});
+        immer::for_each(_env, [](auto const & x){
+
+                });
 
         /* for(auto it = i; i != e; it++) { */
             /* _out << p.first << " = " << glisp::to_string(p.second, true); */
