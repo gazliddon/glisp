@@ -145,7 +145,7 @@ namespace glisp {
 
                 if (!wasProcessed) {
                     using namespace glisp;
-                    auto ast    = evaluator.read(str);
+                    /* auto ast    = evaluator.read(str); */
                     auto result = evaluator.readAndEval(str);
                     auto str    = evaluator.to_string(result);
                     _out << str << "\n";
@@ -166,15 +166,6 @@ int main(int argc, char* argv[]) {
     using namespace std;
     using namespace ast;
     using namespace glisp;
-
-    cHierachicalSymTab syms("user");
-
-    auto k = syms.getIdOrRegister("gaz");
-
-    auto v = syms.getName(k);
-
-    cout << "v is " << *v << endl;
-
 
 
     if (false) {

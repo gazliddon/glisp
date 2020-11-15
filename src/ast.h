@@ -9,15 +9,13 @@
 #include "demangle.h"
 #include "except.h"
 #include "seq.h"
+#include "variant.h"
 #include <boost/mp11/mpl.hpp>
-#include <boost/mpl/copy.hpp>
 #include <boost/spirit/home/x3.hpp>
 #include <boost/spirit/home/x3/support/ast/position_tagged.hpp>
-#include <boost/spirit/home/x3/support/ast/variant.hpp>
 #include <immer/map.hpp>
 #include <iostream>
 #include <spdlog/spdlog.h>
-#include "variant.h"
 
 namespace ast {
 
@@ -43,9 +41,21 @@ namespace ast {
     struct symbol : position_tagged {
         symbol() = default;
 
-        symbol(uint64_t _v, uint64_t _scope = 0)
-            : mId(_v)
-            , mScope(_scope) {
+        symbol(symbol const &_sym ) {
+            mId = _sym.mId;
+            mScope = _sym.mScope;
+        }
+
+        symbol(std::pair<uint64_t, uint64_t>&& _sym) {
+            mScope = _sym.first;
+            mId    = _sym.second;
+        }
+
+        symbol(std::pair<uint64_t, uint64_t> const & _sym) : symbol(_sym.first, _sym.second) { 
+        }
+
+        symbol(uint64_t _scope, uint64_t _id)
+            : symbol(std::make_pair(_scope, _id)) {
         }
 
         friend bool operator==(symbol const& _lhs, symbol const& _rhs) {
@@ -67,8 +77,7 @@ namespace ast {
         symbol mSym;
     };
 
-    struct unbound : dummy_compare<unbound> {
-    };
+    struct unbound : dummy_compare<unbound> { };
 
     // clang-format off
     using atoms

@@ -82,12 +82,8 @@ namespace ast {
         native_function x;
         x.mFunc      = std::move(_func);
         x.mNumOfArgs = _nargs;
-
-        auto id = mSymTab.getIdOrRegister(_name);
-
-        ast::symbol sym(id);
-
-        mEnvironment.addAndSetSymbol(sym, val(x));
+        auto sym  = ast::symbol{mAllSymbols.registerDefaultSymbol(_name)};
+        mEnvironment.addAndSetSymbol( sym , val(x));
     }
 
     val Evaluator::eval(glisp::cReader::reader_reslult_t& ast) {
@@ -133,6 +129,7 @@ namespace ast {
     }
 
     val Evaluator::operator()(ast::symbol const& _v) {
+        fmt::print("Sym to be evaled is {} {}\n", _v.mScope, _v.mId);
         auto val_p = mEnvironment.getSymbol(_v);
 
         if (!val_p) {
@@ -341,12 +338,6 @@ namespace ast {
 
                 return ret;
             }
-
-            if (sym == mSf_apply) {
-                // Skip the APPLY symbol
-                // and drop through to the genric apply
-                sexp_it->next();
-            }
         }
 
         // Okay!
@@ -369,7 +360,7 @@ namespace ast {
     void Evaluator::enumerateBindings(
         std::function<void(ast::symbol const&, ast::val const&)> _func) const {
         mEnvironment.enumerate([_func](uint64_t id, ast::val const& _val) {
-            ast::symbol sym { id };
+            ast::symbol sym { 0, id };
             _func(sym, _val);
         });
     }
@@ -412,22 +403,27 @@ namespace ast {
     }
 
     std::string Evaluator::symbolToName(ast::symbol const& _sym) const {
-        auto ret = mSymTab.getName(_sym.mId);
+        auto ret = mAllSymbols.getSymbolName({ _sym.mScope,_sym.mId });
+        if(!ret) {
+            fmt::print("Cannot find sym name {}:{}\n", _sym.mScope, _sym.mId);
+            mAllSymbols.dump();
+        }
+
         assert(ret);
         return *ret;
     }
 
     Evaluator::Evaluator()
         : mCallDepth(0)
-        , mReader(mSymTab) {
+          , mAllSymbols("glisp")
+        , mReader(mAllSymbols) {
 
-        mSf_if      = mSymTab.getIdOrRegister("if");
-        mSf_and     = mSymTab.getIdOrRegister("and");
-        mSf_or      = mSymTab.getIdOrRegister("or");
-        mSf_apply   = mSymTab.getIdOrRegister("apply");
-        mSf_quote   = mSymTab.getIdOrRegister("quote");
-        mSf_do      = mSymTab.getIdOrRegister("do");
-        mSf_comment = mSymTab.getIdOrRegister("comment");
+        mSf_if      = mAllSymbols.registerSymbol("if");
+        mSf_and     = mAllSymbols.registerSymbol("and");
+        mSf_or      = mAllSymbols.registerSymbol("or");
+        mSf_quote   = mAllSymbols.registerSymbol("quote");
+        mSf_do      = mAllSymbols.registerSymbol("do");
+        mSf_comment = mAllSymbols.registerSymbol("comment");
 
         glisp::add_natives(*this);
     }

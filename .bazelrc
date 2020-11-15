@@ -1,4 +1,4 @@
-build --spawn_strategy=standalone
+build --spawn_strategy=local
 build --cxxopt "-Werror"
 build --cxxopt "-Wno-unused-variable" 
 build --cxxopt "-Wno-macro-redefined" 

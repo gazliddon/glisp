@@ -7,42 +7,21 @@
 #include <immer/algorithm.hpp>
 #include <immer/map_transient.hpp>
 #include <stack>
+#include <string_view>
 
-namespace ast {
+namespace std {
 
-    struct c_env_t {
-        uint64_t mNext;
-        immer::map<uint64_t, val> mMap;
-        immer::map<uint64_t, std::string> mRefToSym;
-        immer::map<std::string, uint64_t> mStringToId;
-
-        uint64_t symbolToId(std::string const& _sym) {
-            if (auto p = mStringToId.find(_sym)) {
-                return *p;
-            } else {
-                auto ret  = mNext;
-                mRefToSym = mRefToSym.insert({ mNext++, _sym });
-                return ret;
-            }
-        }
-
-        void setSymbol(uint64_t _id, val const& _val) {
-            mMap = mMap.insert({ _id, _val });
-        }
-
-        val const* getSymbolValue(uint64_t _sym) const {
-            return mMap.find(_sym);
-        }
-
-        uint64_t getSymbolId(std::string const& _name) {
-            if (auto p = mStringToId.find(_name)) {
-                return *p;
-            } else {
-                return symbolToId(_name);
-            }
+    template <>
+    struct hash<ast::symbol> {
+        std::size_t operator()(ast::symbol const& s) const noexcept {
+            auto ptr = (char8_t const*) (&s);
+            std::u8string_view x(ptr, sizeof(s));
+            return std::hash<std::u8string_view> {}(x);
         }
     };
+}
 
+namespace ast {
     struct cEnv {
     public:
         cEnv() {
@@ -53,26 +32,24 @@ namespace ast {
             return _sym;
         }
 
-        void setArgs(args const& _args) {
-        }
-
         void setSymbol(symbol _sym, val const& _val) {
-            mEnv.setSymbol(_sym.mId, _val);
+            mSymToVal[_sym] = _val;
         }
 
-        val const* getSymbol(symbol _sym) const {
-            return mEnv.getSymbolValue(_sym.mId);
+        boost::optional<val const&> getSymbol(symbol _sym) const {
+            auto it = mSymToVal.find(_sym);
+            if (it == mSymToVal.end()) {
+                return {};
+            } else {
+                return { it->second };
+            }
         }
 
         void enumerate(std::function<void(uint64_t, val const&)> _func) const {
-            immer::for_each(mEnv.mMap, [&_func](auto const& p) {
-                _func(p.first, p.second);
-            });
         }
 
     protected:
-        c_env_t mEnv;
-        std::stack<c_env_t> mEnvs;
+        std::unordered_map<ast::symbol, ast::val> mSymToVal;
     };
 
     // Visitor to evaluate this expression
@@ -176,9 +153,10 @@ namespace ast {
         val apply(iterator_base_t& _exp, cEnv localEnv);
 
         std::stack<ast::val> mCallStack;
+        glisp::cScoper mAllSymbols;
         glisp::cReader mReader;
         cEnv mEnvironment;
-        glisp::cReaderSymTab mSymTab;
+        ast::cSymTab mSymTab;
 
         ast::symbol mSf_if;
         ast::symbol mSf_and;

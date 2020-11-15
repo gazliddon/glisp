@@ -3,25 +3,34 @@
 
 #include "ast_adapted.h"
 #include "reader.h"
-#include "symtab.h"
 
-/* #include "grammar_atoms.h" */
-#include <boost/spirit/home/x3/support/utility/annotate_on_success.hpp>
 
 #pragma GCC diagnostic ignored "-Wparentheses"
+
 #include "demangle.h"
 #include <iostream>
 
 #include <boost/spirit/home/x3/string/detail/string_parse.hpp>
+/* #include <boost/spirit/home/x3/support/utility/annotate_on_success.hpp> */
 
 namespace grammar {
     namespace x3 = boost::spirit::x3;
     struct position_cache_tag { };
+    auto ctx_info = [](auto& _ctx) {
+        auto& attr = _attr(_ctx);
+        auto& val  = _val(_ctx);
+
+        using namespace std;
+        cout << "attr type: " << demangle(attr) << endl;
+        cout << "val type: " << demangle(val) << endl;
+    };
+
 
     auto constexpr getParseCtx = [](auto & _ctx) -> glisp::parse_ctx_t & {
         auto& parseCtx = x3::get<glisp::parse_ctx_t>(_ctx).get();
         return parseCtx;
     };
+
     auto constexpr pushScope = [](auto &_ctx, std::string const & _scopeBaseName) {
         auto& parseCtx = getParseCtx(_ctx);
         auto & scoper = parseCtx.mScopes;
@@ -34,6 +43,23 @@ namespace grammar {
         parseCtx.mScopes.pop();
     };
 
+    auto resolveSymbol = [](auto& _ctx) -> ast::symbol {
+        auto name = _attr(_ctx);
+        auto parse_ctx = getParseCtx(_ctx);
+        auto id = parse_ctx.mScopes.resolveSymbol(name);
+        assert(id);
+        return ast::symbol(*id);
+    };
+
+    auto constexpr registerSymbol = [](auto & _ctx) -> ast::symbol {
+        auto name = _attr(_ctx);
+        auto parse_ctx = getParseCtx(_ctx);
+        fmt::print("Trying to register {}\n", name);
+        auto id = parse_ctx.mScopes.registerSymbol(name);
+        parse_ctx.mScopes.dump();
+        return { id };
+    };
+
     struct annotate_position {
         template <typename T, typename Iterator, typename Context>
         inline void on_success(Iterator const& first,
@@ -44,6 +70,7 @@ namespace grammar {
             position_cache.annotate(ast, first, last);
         }
     };
+
 
     using x3::alnum;
     using x3::alpha;
@@ -72,15 +99,6 @@ namespace grammar {
             error_handler(x.where(), message);
             return x3::error_handler_result::fail;
         }
-    };
-
-    auto ctx_info = [](auto& _ctx) {
-        auto& attr = _attr(_ctx);
-        auto& val  = _val(_ctx);
-
-        using namespace std;
-        cout << "attr type: " << demangle(attr) << endl;
-        cout << "val type: " << demangle(val) << endl;
     };
 
     /* using x3::space; */
@@ -129,6 +147,10 @@ namespace grammar {
     template <typename T>
     static inline constexpr as_type<T> as;
 
+    auto const echars = char_("?=_.!*+-/><$@");
+    auto const get_symbol_string
+        = as<std::string>[lexeme[(alpha | echars) >> *(alnum | echars | '-')]];
+
     auto constexpr set_bool_true = [](auto& _ctx) { _val(_ctx) = true; };
     struct is_true_class { };
     rule<is_true_class, bool> const is_true("true");
@@ -146,22 +168,7 @@ namespace grammar {
 
     struct symbol_class : x3::annotate_on_success { };
     rule<symbol_class, ast::symbol> const symbol = "symbol";
-
-    auto get_symbol = [](auto& ctx, std::string const& _name) -> ast::symbol {
-        auto& symtab = x3::get<ast::cSymTab>(ctx).get();
-        auto id      = symtab.getIdOrRegister(_name);
-        /* std::cout << "Added symbol " << _name << " " << id<< std::endl; */
-        return { id };
-    };
-
-    auto process_symbol
-        = [](auto& ctx) { _val(ctx) = get_symbol(ctx, _attr(ctx)); };
-
-    auto const echars = char_("?=_.!*+-/><$@");
-    auto const get_def
-        = as<std::string>[lexeme[(alpha | echars) >> *(alnum | echars | '-')]];
-    auto const symbol_def = get_def[process_symbol];
-
+    auto const symbol_def = get_symbol_string[resolveSymbol];
     BOOST_SPIRIT_DEFINE(symbol);
 
     // --------------------------------------------------------------------------------
@@ -293,15 +300,17 @@ namespace grammar {
     BOOST_SPIRIT_DEFINE(quote);
 
     auto constexpr quoted_fn =  [](auto & _ctx) {
-
-        auto& symtab = x3::get<ast::cSymTab>(_ctx).get();
+        auto & pctx = getParseCtx(_ctx);
 
         ast::val & val = _attr(_ctx);
         ast::sexp & ret = _val(_ctx);
 
-        auto sym = ast::symbol(symtab.getIdOrRegister("quote"));
+        auto sym = pctx.mScopes.resolveSymbol("quote");
 
-        ret.mForms.push_back(ast::val(sym));
+        assert(sym);
+        auto symbolAsVal = ast::val(ast::symbol(*sym));
+
+        ret.mForms.push_back(symbolAsVal);
         ret.mForms.push_back(val);
         ret.id_first = val.id_first;
         ret.id_last = val.id_last;
@@ -323,16 +332,19 @@ namespace grammar {
     // a define
     
     auto constexpr optional_to_unbound = [](auto& _ctx) {
-        auto & sym = boost::fusion::at_c<0>(_attr(_ctx));
-        auto & val = boost::fusion::at_c<1>(_attr(_ctx));
+        auto & val = _attr(_ctx);
         auto & dest = _val(_ctx);
-
-        dest.mSym = sym;
-        dest.mVal = val ? *val : ast::unbound();
-
+        ast::val theValue = val? *val : ast::unbound();
+        dest.mVal = theValue;
     };
 
-    auto const define_def = '(' >> (lexeme[lit("def") > space_skip > symbol ] > (-val))[optional_to_unbound] > ')' ;
+    auto constexpr define_symbol =[](auto & _ctx) {
+        auto sym = registerSymbol(_ctx);
+        fmt::print("Registered define as {} {}\n", sym.mScope, sym.mId);
+        _val(_ctx).mSym = sym;
+    };
+
+    auto const define_def = '(' >> (lexeme[lit("def") > space_skip] > get_symbol_string[define_symbol] > (-val)[optional_to_unbound]) > ')' ;
     BOOST_SPIRIT_DEFINE(define);
 
     // A vector
@@ -340,16 +352,17 @@ namespace grammar {
     BOOST_SPIRIT_DEFINE(vector);
 
     // A pair
+
     struct pair_class : x3::annotate_on_success { };
     rule<pair_class, ast::pair> const pair("pair");
-    auto const pair_def = val >> val;
+    auto const pair_def = val  >> val;
     BOOST_SPIRIT_DEFINE(pair);
 
     // A binding pair
-    rule<pair_class, ast::pair> const binding("binding");
-    auto const binding_def = as<ast::pair>[as<ast::val>[symbol] >> val];
 
-    // Bindings
+    rule<pair_class, ast::pair> const binding("binding");
+    auto const binding_def = as<ast::pair>[as<ast::val>[get_symbol_string[registerSymbol]] >> val];
+
     struct bindings_class : x3::annotate_on_success { };
     rule<bindings_class, ast::bindings> const bindings("bindings");
     auto const bindings_def = '[' > *binding > ']';

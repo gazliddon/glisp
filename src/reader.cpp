@@ -1,83 +1,13 @@
 #include "reader.h"
-#include "demangle.h"
-
 #include "grammar.h"
-#include "symtab.h"
-
-#include <boost/spirit/home/x3/support/ast/position_tagged.hpp>
-#include <spdlog/spdlog.h>
 
 namespace glisp {
-    using namespace boost::spirit;
-
-    template <class Result, class Func>
-    struct forwarding_visitor : boost::static_visitor<Result> {
-        Func func;
-        forwarding_visitor(const Func& f)
-            : func(f) {
-        }
-        forwarding_visitor(Func&& f)
-            : func(std::move(f)) {
-        }
-        template <class Arg>
-        Result operator()(Arg&& arg) const {
-            return func(std::forward<Arg>(arg));
-        }
-    };
-
-    template <class Result, class Func>
-    forwarding_visitor<Result, std::decay_t<Func>> make_forwarding_visitor(
-        Func&& func) {
-        return { std::forward<Func>(func) };
-    }
-
-    template <typename T>
-    std::string v(T& _val) {
-        using namespace std;
-
-        if constexpr (std::is_convertible<T*, x3::position_tagged*>()) {
-            std::cout << fmt::format(
-                "{} ({} {})", demangle(_val), _val.id_first, _val.id_last)
-                      << std::endl;
-        }
-
-        if constexpr (std::is_convertible<T*, ast::seq_t*>()) {
-            auto it = _val.iterator();
-
-            cout << fmt::format("seq of size {}", it->size()) << endl;
-            ;
-
-            while (auto p = it->next()) {
-                ast::val& x = *p;
-                v(x);
-            }
-        }
-
-        return "";
-    }
-
-    template <typename T>
-    std::string v(x3::forward_ast<T>& _val) {
-        return v(_val.get());
-    }
-
-    void cReader::dump() {
-        /* auto f = [](auto & _val) { return v(_val); }; */
-        /* std::cout << boost::apply_visitor(f, mAst) << std::endl; */
-        /* std::cout << std::endl; */
-    }
-
-    struct dummy_pos {
-        template <typename T, typename Iterator, typename Context>
-        inline void on_success(Iterator const& first,
-            Iterator const& last,
-            T& ast,
-            Context const& context) {
-            std::cout << "ANNOTATING" << std::endl;
-        }
-    };
+    using cReaderSymTab = ast::cSymTab;
 
     cReader::reader_reslult_t cReader::read(std::string const& _str) {
+
+        using namespace boost::spirit;
+
         reader_reslult_t ret(_str);
 
         ret.mText = _str;
@@ -87,23 +17,15 @@ namespace glisp {
         auto iter = _str.begin(), end = _str.end();
 
         using x3::with;
-        dummy_pos pos;
-
-        cScoper scopes(0);
 
         parse_ctx_t context {
-            .mSyms   = mSymTab,
-            .mScopes = scopes,
+            .mScopes = mScopes,
         };
 
         auto const parser = //
-            with<grammar::position_cache_tag>(ref(pos))[with<ast::cSymTab>(
-                ref(mSymTab))[with<x3::error_handler_tag>(
-                ref(ret.mErrors))[grammar::program]]];
+            with<x3::error_handler_tag>(ref(ret.mErrors))[grammar::program];
 
-        auto const parser2 = with<parse_ctx_t>(ref(context))[
-            parser
-        ];
+        auto const parser2 = with<parse_ctx_t>(ref(context))[parser];
 
         bool r = phrase_parse(
             iter, end, parser2, x3::ascii::space_type(), ret.mAst);
@@ -125,26 +47,29 @@ namespace glisp {
         return ret;
     }
 
-    cReader::cReader(cReaderSymTab& _symTab)
-        : mSymTab(_symTab) {
+    ////////////////////////////////////////////////////////////////////////////////
+
+    cReader::cReader(cScoper& _scopes)
+        : mScopes(_scopes) {
     }
 
-    uint64_t cScoper::pop() {
-        mScopeStack.pop();
-        return mScopeStack.top();
+    cReader::reader_reslult_t::reader_reslult_t(std::string const& _text)
+        : mText(_text)
+        , mErrors(mText.begin(), mText.end(), std::cerr) {
     }
 
-    cScoper::cScoper(uint64_t _initScopeId) : mTempScopeId(0) {
-        push(_initScopeId);
+    cReader::reader_reslult_t::reader_reslult_t()
+        : reader_reslult_t("") {
     }
 
-    void cScoper::push(uint64_t _scopeId) {
-        mScopeStack.push(_scopeId);
-    }
-
-    uint64_t cScoper::genScope(std::string const & _base ) {
-        auto name = fmt::format("{}_{}", _base, mTempScopeId);
-        std::cout << "GENERATED SCOPE " << name << std::endl;
-        return mTempScopeId++;
+    std::string cReader::reader_reslult_t::getText(
+        x3::position_tagged const& _tag) {
+        if (_tag.id_first >= 0 && _tag.id_last >= 0) {
+            auto x = mErrors.position_of(_tag);
+            std::string ret(x.begin(), x.end());
+            return ret;
+        } else {
+            return "CAN'T FIND TEXT";
+        }
     }
 }
