@@ -43,14 +43,6 @@ namespace grammar {
         parseCtx.mScopes.pop();
     };
 
-    auto resolveSymbol = [](auto& _ctx) -> ast::symbol {
-        auto name = _attr(_ctx);
-        auto parse_ctx = getParseCtx(_ctx);
-        auto id = parse_ctx.mScopes.resolveSymbol(name);
-        assert(id);
-        return ast::symbol(*id);
-    };
-
     auto constexpr registerSymbol = [](auto & _ctx) -> ast::symbol {
         auto name = _attr(_ctx);
         auto parse_ctx = getParseCtx(_ctx);
@@ -59,6 +51,19 @@ namespace grammar {
         auto id = parse_ctx.mScopes.registerSymbol(name, true);
         return { *id };
     };
+
+    auto resolveSymbol = [](auto& _ctx) -> ast::symbol {
+        auto name = _attr(_ctx);
+        auto parse_ctx = getParseCtx(_ctx);
+        auto id = parse_ctx.mScopes.resolveSymbol(name);
+
+        if (!id) {
+            return registerSymbol(_ctx);
+        }
+
+        return {*id};
+    };
+
 
     struct annotate_position {
         template <typename T, typename Iterator, typename Context>

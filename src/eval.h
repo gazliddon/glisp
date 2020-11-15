@@ -9,19 +9,15 @@
 #include <stack>
 #include <string_view>
 
-namespace std {
-
-    template <>
-    struct hash<ast::symbol> {
+namespace ast {
+    struct symbol_hash {
         std::size_t operator()(ast::symbol const& s) const noexcept {
-            auto ptr = (char8_t const*) (&s);
-            std::u8string_view x(ptr, sizeof(s));
-            return std::hash<std::u8string_view> {}(x);
+            auto id = s.mId & 0x0000ffffffffffff;
+            auto scope = s.mScope << 48;
+            return id | scope;
         }
     };
-}
 
-namespace ast {
     struct cEnv {
     public:
         cEnv() {
@@ -37,11 +33,10 @@ namespace ast {
         }
 
         void enumerate(
-            std::function<void(ast::symbol, val const&)> _func)
-            const {
-            immer::for_each(mImmerMap,
-                [_func](std::pair<symbol, val> const& p) { 
-                _func(p.first, p.second); 
+            std::function<void(ast::symbol, val const&)> _func) const {
+            immer::for_each(
+                mImmerMap, [_func](std::pair<symbol, val> const& p) {
+                    _func(p.first, p.second);
                 });
         }
 
@@ -55,7 +50,7 @@ namespace ast {
             }
         };
 
-        immer::map<ast::symbol, ast::val> mImmerMap;
+        immer::map<ast::symbol, ast::val, symbol_hash> mImmerMap;
     };
 
     // Visitor to evaluate this expression
@@ -152,7 +147,7 @@ namespace ast {
             return apply(_val, _it, mEnvironment);
         }
 
-        void setCurrentNamespace(std::string const & _name);
+        void setCurrentNamespace(std::string const& _name);
 
     protected:
         unsigned mCallDepth;
