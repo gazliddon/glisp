@@ -52,6 +52,15 @@ namespace grammar {
         return { *id };
     };
 
+    auto constexpr forceRegisterSymbol = [](auto & _ctx) -> ast::symbol {
+        auto name = _attr(_ctx);
+        auto parse_ctx = getParseCtx(_ctx);
+        fmt::print("Trying to register {}\n", name);
+
+        auto id = parse_ctx.mScopes.registerSymbol(name);
+        return { *id };
+    };
+
     auto resolveSymbol = [](auto& _ctx) -> ast::symbol {
         auto name = _attr(_ctx);
         auto parse_ctx = getParseCtx(_ctx);
@@ -376,7 +385,7 @@ namespace grammar {
     // A binding pair
 
     rule<pair_class, ast::pair> const binding("binding");
-    auto const binding_def = as<ast::pair>[as<ast::val>[get_symbol_string[registerSymbol]] >> val];
+    auto const binding_def = as<ast::pair>[as<ast::val>[get_symbol_string[forceRegisterSymbol]] >> val];
 
     struct bindings_class : x3::annotate_on_success { };
     rule<bindings_class, ast::bindings> const bindings("bindings");

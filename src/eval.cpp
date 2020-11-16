@@ -110,7 +110,10 @@ namespace ast {
         auto ret = val();
 
         for (auto& binding : _let.mBindings.mBindings) {
-            /* set(arg.mSymbol.mName, eval(arg.mVal)); */
+            auto p = binding.get<pair>();
+            assert(p);
+            auto sym = p->mFirst.get<symbol>();
+            mEnvironment.setSymbol(*sym, p->mSecond);
         }
 
         ret = eval_seq(*this, _let.mBody);

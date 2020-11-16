@@ -148,7 +148,12 @@ namespace glisp {
                 if (!wasProcessed) {
                     using namespace glisp;
                     /* auto ast    = evaluator.read(str); */
-                    auto result = evaluator.readAndEval(str);
+                    auto read = evaluator.read(str);
+
+                    _out << evaluator.to_string(read.mAst) << endl;
+
+                    auto result = evaluator.eval(read);
+                    
                     auto str    = evaluator.to_string(result);
                     _out << str << "\n";
 
