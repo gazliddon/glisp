@@ -20,6 +20,7 @@
 #include "compile.h"
 #include "except.h"
 #include "reader.h"
+#include "native.h"
 
 static char const* banner = R"delim(
    _____ _ _
@@ -68,6 +69,13 @@ protected:
     It mIt;
 };
 
+template<typename... A>
+ast::val callNative(ast::Evaluator & _e, std::function<ast::val(ast::Evaluator & _e, ast::iterator_base_t &)> _f, A... a) {
+    std::vector<ast::val> fff {a...};
+    ast::vector_iterator it(fff.begin(), fff.end());
+    return _f(_e, it);
+}
+
 namespace glisp {
 
     class cGlispReplCommands : public cCommand {
@@ -79,13 +87,14 @@ namespace glisp {
             using std::cout;
             using std::endl;
 
-            addCommand("^read\\s+(.+)$",
-                [](std::vector<std::string> const& _matches) {
-                    auto& fileName = _matches[1];
-                    assert(false);
-                    /* auto text = glisp::slurp(mEval, { ast::val(fileName) }); */
-                    /* auto ast  = glisp::read_fn(mEval, { text }); */
-                    /* cout << mEval.to_string(ast) << endl; */
+            addCommand("^p$",
+                [this](std::vector<std::string> const& _matches) {
+                    auto text =callNative(mEval, glisp::slurp, std::string("t.gl"));
+                    cout << mEval.to_string(text);
+
+                    auto ast =callNative(mEval, glisp::read_fn, *text.get<std::string>());
+
+                    cout << mEval.to_string(ast) << endl;
                 });
 
             addCommand("^v$",
@@ -97,6 +106,8 @@ namespace glisp {
                     [this](std::string const& _str, ast::val const& _v) {
                         cout << _str << " : " << mEval.to_string(_v) << endl;
                     });
+
+                mEval.getAllSymbols().dump();
             });
         }
 
@@ -152,10 +163,10 @@ namespace glisp {
 
                     _out << evaluator.to_string(read.mAst) << endl;
 
-                    auto result = evaluator.eval(read);
+                    /* auto result = evaluator.eval(read); */
                     
-                    auto str    = evaluator.to_string(result);
-                    _out << str << "\n";
+                    /* auto str    = evaluator.to_string(result); */
+                    /* _out << str << "\n"; */
 
                     /* evaluator.set("*1", result); */
                 }

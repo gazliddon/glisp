@@ -149,6 +149,10 @@ namespace ast {
 
         void setCurrentNamespace(std::string const& _name);
 
+        glisp::cScoper const & getAllSymbols() const {
+            return mAllSymbols;
+        }
+
     protected:
         unsigned mCallDepth;
 

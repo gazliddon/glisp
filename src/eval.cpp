@@ -83,7 +83,7 @@ namespace ast {
         x.mFunc      = std::move(_func);
         x.mNumOfArgs = _nargs;
         auto sym
-            = ast::symbol { *mAllSymbols.registerDefaultSymbol(_name, true) };
+            = ast::symbol { *mAllSymbols.registerSymbol(_name, true) };
         mEnvironment.setSymbol(sym, val(x));
     }
 
@@ -138,9 +138,11 @@ namespace ast {
             return *sym;
         }
 
-        auto error
-            = fmt::format("Unable to resolve symbol {} : ({} {})", symbolToName(_v), _v.mScope, _v.mId);
-    
+        auto error = fmt::format("Unable to resolve symbol {} : ({} {})",
+            symbolToName(_v),
+            _v.mScope,
+            _v.mId);
+
         throw glisp::cEvalError(error);
     }
 
@@ -363,9 +365,8 @@ namespace ast {
 
     void Evaluator::enumerateBindings(
         std::function<void(ast::symbol const&, ast::val const&)> _func) const {
-        mEnvironment.enumerate([_func](auto _sym, ast::val const& _val) {
-            _func(_sym, _val);
-        });
+        mEnvironment.enumerate(
+            [_func](auto _sym, ast::val const& _val) { _func(_sym, _val); });
     }
 
     void Evaluator::enumerateBindings(
@@ -417,10 +418,19 @@ namespace ast {
         return *ret;
     }
 
+    void registerSymbols(
+        glisp::cScoper& _scopes, std::initializer_list<char const*> _vars) {
+        for (auto& e : _vars) {
+            _scopes.registerSymbol(e);
+        }
+    }
+
     Evaluator::Evaluator()
         : mCallDepth(0)
-        , mAllSymbols("glisp")
+        , mAllSymbols("special")
         , mReader(mAllSymbols) {
+
+        registerSymbols(mAllSymbols, { "let", "loop", "recur", "def", "fn", "throw" });
 
         mSf_if      = *mAllSymbols.registerSymbol("if");
         mSf_and     = *mAllSymbols.registerSymbol("and");
@@ -429,10 +439,12 @@ namespace ast {
         mSf_do      = *mAllSymbols.registerSymbol("do");
         mSf_comment = *mAllSymbols.registerSymbol("comment");
 
+        mAllSymbols.push("native");
+
         glisp::add_natives(*this);
     }
 
-    void Evaluator::setCurrentNamespace(std::string const & _name) {
+    void Evaluator::setCurrentNamespace(std::string const& _name) {
         auto id = mAllSymbols.getOrRegisterScope(_name);
         mAllSymbols.push(id);
     }

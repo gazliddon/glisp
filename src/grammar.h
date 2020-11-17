@@ -305,9 +305,9 @@ namespace grammar {
     auto const val_def =
           quoted
         | quote
-        | define
-        | let
-        | lambda
+        /* | define */
+        /* | let */
+        /* | lambda */
         | base_def;
 
     // clang-format one

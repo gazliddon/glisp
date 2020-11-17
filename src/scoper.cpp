@@ -35,11 +35,9 @@ namespace glisp {
         auto ret = mScopes.getId(_scopeName);
 
         if (!ret) {
-
-            fmt::print("Registering new scope {}\n", _scopeName);
             auto id = *mScopes.registerSymbol(_scopeName);
             mAllSymbols.insert({ id, ast::cSymTab(_scopeName) });
-            fmt::print("Registered {}\n", mAllSymbols[id].getScopeName());
+            fmt::print("Registered {}:{}\n", mAllSymbols[id].getScopeName(), id);
             return id;
 
         } else {
@@ -138,15 +136,21 @@ namespace glisp {
     boost::optional<cScoper::sym_t> cScoper::resolveSymbol(
         std::string const& _str) {
 
+        /* fmt::print("Searching for {}", _str); */
+
         for (auto scopeId : mScopeStack) {
             auto it = mAllSymbols.find(scopeId);
 
             if (it != mAllSymbols.end()) {
-                if (auto symId = it->second.getId(_str)) {
+                auto & syms = it->second;
+                if (auto symId = syms.getId(_str)) {
+                    /* fmt::print("!found in {}", syms.getScopeName()); */
                     return { { scopeId, *symId } };
                 }
+            /* fmt::print("Not found in {}", syms.getScopeName()); */
             }
         }
+
 
         return {};
     }
@@ -205,11 +209,7 @@ namespace glisp {
     }
 
     void cScoper::push(std::string const& _scopeName) {
-        auto id = mScopes.getId(_scopeName);
-
-        if (!id) {
-            id = mScopes.registerSymbol(_scopeName);
-        }
-        push(*id);
+        auto id = getOrRegisterScope(_scopeName);
+        push(id);
     }
 }

@@ -49,6 +49,8 @@ namespace glisp {
 
     ////////////////////////////////////////////////////////////////////////////////
 
+
+
     cReader::cReader(cScoper& _scopes)
         : mScopes(_scopes) {
     }
