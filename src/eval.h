@@ -163,7 +163,7 @@ namespace ast {
         glisp::cScoper mAllSymbols;
         glisp::cReader mReader;
         cEnv mEnvironment;
-        ast::cSymTab mSymTab;
+        ast::cSymRegistry mSymTab;
 
         ast::symbol mSf_if;
         ast::symbol mSf_and;

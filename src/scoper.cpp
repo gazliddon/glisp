@@ -31,12 +31,16 @@ namespace glisp {
         mScopeStack.push_front(_scopeId);
     }
 
+    boost::optional<uint64_t> cScoper::getScopeId(std::string const & _scopeName) const {
+        return mScopes.getId(_scopeName);
+    }
+
     uint64_t cScoper::getOrRegisterScope(std::string const& _scopeName) {
-        auto ret = mScopes.getId(_scopeName);
+        auto ret = getScopeId(_scopeName);
 
         if (!ret) {
             auto id = *mScopes.registerSymbol(_scopeName);
-            mAllSymbols.insert({ id, ast::cSymTab(_scopeName) });
+            mAllSymbols.insert({ id, ast::cSymRegistry(_scopeName) });
             fmt::print("Registered {}:{}\n", mAllSymbols[id].getScopeName(), id);
             return id;
 
@@ -49,7 +53,7 @@ namespace glisp {
         auto name = fmt::format("{}_{}", _base, mTempScopeId++);
         auto ret  = mScopes.registerSymbol(name);
         assert(ret);
-        mAllSymbols[*ret] = ast::cSymTab(name);
+        mAllSymbols[*ret] = ast::cSymRegistry(name);
         return *ret;
     }
 
@@ -58,7 +62,7 @@ namespace glisp {
         return mScopeStack.front();
     }
 
-    ast::cSymTab const& cScoper::getCurrentScope() const {
+    ast::cSymRegistry const& cScoper::getCurrentScope() const {
         assert(!mScopeStack.empty());
         auto scopeId = getCurrentScopeId();
         auto it      = mAllSymbols.find(scopeId);
@@ -66,7 +70,7 @@ namespace glisp {
         return it->second;
     }
 
-    ast::cSymTab& cScoper::getCurrentScope() {
+    ast::cSymRegistry& cScoper::getCurrentScope() {
         assert(!mScopeStack.empty());
         auto scopeId = getCurrentScopeId();
         auto it      = mAllSymbols.find(scopeId);
@@ -83,7 +87,7 @@ namespace glisp {
         uint64_t _scopeId,
         std::string const& _name,
         bool _allowAlreadyExisting) {
-        if (auto scope = getScope(_scopeId)) {
+        if (auto scope = getScopeObject(_scopeId)) {
             if (_allowAlreadyExisting) {
                 auto id = scope->getIdOrRegister(_name);
                 return mksym(_scopeId, id);
@@ -155,7 +159,7 @@ namespace glisp {
         return {};
     }
 
-    boost::optional<ast::cSymTab&> cScoper::getScope(uint64_t _scopeId) {
+    boost::optional<ast::cSymRegistry&> cScoper::getScopeObject(uint64_t _scopeId) {
         auto it = mAllSymbols.find(_scopeId);
 
         if (it == mAllSymbols.end()) {
@@ -167,7 +171,7 @@ namespace glisp {
         return it->second;
     }
 
-    boost::optional<ast::cSymTab const&> cScoper::getScope(
+    boost::optional<ast::cSymRegistry const&> cScoper::getScope(
         uint64_t _scopeId) const {
         auto it = mAllSymbols.find(_scopeId);
 
@@ -179,14 +183,14 @@ namespace glisp {
         return {};
     }
 
-    ast::cSymTab const & cScoper::getDefaultScope() const {
+    ast::cSymRegistry const & cScoper::getDefaultScope() const {
         auto scope = getScope(mDefaultScopeId);
         assert(scope);
         return *scope;
     }
 
-    ast::cSymTab& cScoper::getDefaultScope() {
-        auto scope = getScope(mDefaultScopeId);
+    ast::cSymRegistry& cScoper::getDefaultScope() {
+        auto scope = getScopeObject(mDefaultScopeId);
         assert(scope);
         return *scope;
     }

@@ -2,7 +2,7 @@
 #include "grammar.h"
 
 namespace glisp {
-    using cReaderSymTab = ast::cSymTab;
+    using cReaderSymTab = ast::cSymRegistry;
 
     cReader::reader_reslult_t cReader::read(std::string const& _str) {
 

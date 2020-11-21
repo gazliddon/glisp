@@ -13,6 +13,6 @@ cc_binary(
 
     # link_opts = ['-framework cocoa', '-framework OpenGl'],
 
-    srcs     = glob([ "*.cpp", "**/*.h"]),
+    srcs     = glob([ "**/*.cpp", "**/*.h"]),
 )
 

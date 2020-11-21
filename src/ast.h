@@ -194,12 +194,16 @@ namespace ast {
         val get(ast::val const& _key) const;
         void add(val const& _key, val const& _val);
 
+
         friend bool operator==(map const& _lhs, map const& _rhs);
     };
 
-    struct set : position_tagged, dummy_compare<set> {
+    struct set : position_tagged, dummy_compare<set>, seq_t {
         std::vector<val> mForms;
         friend bool operator==(set const& _lhs, set const& _rhs);
+        virtual std::unique_ptr<iterator_base_t> iterator() const {
+            return std::make_unique<vector_iterator>(mForms);
+        }
     };
 
     struct vector : position_tagged, seq_t {

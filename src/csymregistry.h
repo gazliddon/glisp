@@ -16,10 +16,9 @@ namespace ast {
     // This does no contain symbol bindings
 
     template <typename K, typename V = std::string>
-    class cSymTabBase {
+    class cSymRegistryBase {
     public:
-        virtual ~cSymTabBase() {
-        }
+        virtual ~cSymRegistryBase() = default;
 
         virtual boost::optional<K> registerSymbol(V const& _str) = 0;
 
@@ -48,14 +47,14 @@ namespace ast {
         }
     }
 
-    class cSymTab : public cSymTabBase<uint64_t> {
+    class cSymRegistry : public cSymRegistryBase<uint64_t> {
     public:
-        cSymTab(std::string const& _scope)
+        cSymRegistry(std::string const& _scope)
             : mScopeName(_scope) {
         }
 
-        cSymTab()
-            : cSymTab("") {
+        cSymRegistry()
+            : cSymRegistry("") {
         }
 
         virtual boost::optional<uint64_t> registerSymbol(

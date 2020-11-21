@@ -5,7 +5,7 @@
 #include <boost/spirit/home/x3/support/utility/annotate_on_success.hpp>
 
 #include "ast.h"
-#include "symtab.h"
+#include "csymregistry.h"
 #include "scoper.h"
 
 namespace glisp {

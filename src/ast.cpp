@@ -105,7 +105,6 @@ namespace ast {
         vector::vector(std::vector<val> const& _init)
             : mForms(_init) {
         }
-
         
         std::unique_ptr<iterator_base_t> sexp::iterator() const {
             return std::make_unique<vector_iterator>(mForms);

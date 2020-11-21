@@ -57,7 +57,6 @@ namespace ast {
             void into(T & col) {
                 assert(false);
             }
-
     };
 
     template <typename A, typename B>
