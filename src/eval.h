@@ -11,7 +11,7 @@
 
 namespace ast {
     struct symbol_hash {
-        std::size_t operator()(ast::symbol const& s) const noexcept {
+        std::size_t operator()(ast::symbol_t const& s) const noexcept {
             auto id = s.mId & 0x0000ffffffffffff;
             auto scope = s.mScope << 48;
             return id | scope;
@@ -23,19 +23,19 @@ namespace ast {
         cEnv() {
         }
 
-        void setSymbol(symbol _sym, val const& _val) {
+        void setSymbol(symbol_t _sym, val const& _val) {
             mImmerMap = mImmerMap.insert({ _sym, _val });
         }
 
-        boost::optional<val const&> getSymbol(symbol _sym) const {
+        boost::optional<val const&> getSymbol(symbol_t _sym) const {
             auto it = mImmerMap.find(_sym);
             return as_opt(it);
         }
 
         void enumerate(
-            std::function<void(ast::symbol, val const&)> _func) const {
+            std::function<void(symbol_t, val const&)> _func) const {
             immer::for_each(
-                mImmerMap, [_func](std::pair<symbol, val> const& p) {
+                mImmerMap, [_func](std::pair<symbol_t, val> const& p) {
                     _func(p.first, p.second);
                 });
         }
@@ -50,7 +50,7 @@ namespace ast {
             }
         };
 
-        immer::map<ast::symbol, ast::val, symbol_hash> mImmerMap;
+        immer::map<symbol_t, ast::val, symbol_hash> mImmerMap;
     };
 
     // Visitor to evaluate this expression
@@ -82,16 +82,16 @@ namespace ast {
         }
 
         /* val eval(ast::program& _prog); */
-        val operator()(ast::symbol const& _v);
-        val operator()(ast::define const& _v);
-        val operator()(ast::set const& _set);
-        val operator()(ast::vector const& _vector);
-        val operator()(ast::map const& _map);
-        val operator()(ast::meta const& _value);
-        val operator()(ast::sexp const& _sexp);
-        val operator()(ast::program const& _program);
-        val operator()(ast::macro const& _macro);
-        val operator()(ast::let const& _let);
+        val operator()(symbol_t const& _v);
+        val operator()(define const& _v);
+        val operator()(set const& _set);
+        val operator()(vector const& _vector);
+        val operator()(map const& _map);
+        val operator()(meta const& _value);
+        val operator()(sexp const& _sexp);
+        val operator()(program const& _program);
+        val operator()(macro const& _macro);
+        val operator()(let const& _let);
 
         void testEval();
 
@@ -119,7 +119,7 @@ namespace ast {
             add_native_function(_name, func, 2);
         }
 
-        std::string symbolToName(ast::symbol const& _sym) const;
+        std::string symbolToName(symbol_t const& _sym) const;
 
         Evaluator();
 
@@ -136,7 +136,7 @@ namespace ast {
             const;
 
         void enumerateBindings(
-            std::function<void(ast::symbol const&, ast::val const&)> _func)
+            std::function<void(symbol_t const&, ast::val const&)> _func)
             const;
 
         val apply(iterator_base_t& _exp) {
@@ -165,13 +165,13 @@ namespace ast {
         cEnv mEnvironment;
         ast::cSymRegistry mSymTab;
 
-        ast::symbol mSf_if;
-        ast::symbol mSf_and;
-        ast::symbol mSf_or;
-        ast::symbol mSf_apply;
-        ast::symbol mSf_quote;
-        ast::symbol mSf_do;
-        ast::symbol mSf_comment;
+        symbol_t mSf_if;
+        symbol_t mSf_and;
+        symbol_t mSf_or;
+        symbol_t mSf_apply;
+        symbol_t mSf_quote;
+        symbol_t mSf_do;
+        symbol_t mSf_comment;
     };
 }
 

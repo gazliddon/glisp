@@ -60,7 +60,7 @@ namespace glisp {
             return "args";
         }
 
-        std::string operator()(ast::symbol const& _v) const {
+        std::string operator()(ast::symbol_t const& _v) const {
             return "symbol";
         }
 
@@ -190,7 +190,7 @@ namespace glisp {
             return format(_val, val_str);
         }
 
-        std::string operator()(ast::symbol const& _v) const {
+        std::string operator()(ast::symbol_t const& _v) const {
             return format(_v, mEval.symbolToName(_v ));
         }
 

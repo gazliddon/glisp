@@ -83,17 +83,17 @@ namespace glisp {
         return scope.getScopeName();
     }
 
-    boost::optional<cScoper::sym_t> cScoper::registerSymbol(
+    boost::optional<ast::symbol_t> cScoper::registerSymbol(
         uint64_t _scopeId,
         std::string const& _name,
         bool _allowAlreadyExisting) {
         if (auto scope = getScopeObject(_scopeId)) {
             if (_allowAlreadyExisting) {
                 auto id = scope->getIdOrRegister(_name);
-                return mksym(_scopeId, id);
+                return ast::symbol_t( _scopeId, id );
             } else {
                 if (auto id = scope->registerSymbol(_name)) {
-                    return mksym(_scopeId, *id);
+                    return ast::symbol_t(_scopeId, *id);
                 }
             }
 
@@ -107,12 +107,12 @@ namespace glisp {
         return {};
     }
 
-    boost::optional<cScoper::sym_t> cScoper::registerSymbol(
+    boost::optional<ast::symbol_t> cScoper::registerSymbol(
         std::string const& _string, bool _allowAlreadyExisting) {
         return registerSymbol(getCurrentScopeId(), _string, _allowAlreadyExisting);
     }
 
-    boost::optional<cScoper::sym_t> cScoper::registerDefaultSymbol(
+    boost::optional<ast::symbol_t> cScoper::registerDefaultSymbol(
         std::string const& _string, bool _allowAlreadyExisting) {
 
         auto& def = getDefaultScope();
@@ -134,10 +134,10 @@ namespace glisp {
 
             assert(id);
         }
-        return mksym(mDefaultScopeId, *id);
+        return ast::symbol_t(mDefaultScopeId, *id);
     }
 
-    boost::optional<cScoper::sym_t> cScoper::resolveSymbol(
+    boost::optional<ast::symbol_t> cScoper::resolveSymbol(
         std::string const& _str) {
 
         /* fmt::print("Searching for {}", _str); */
@@ -201,12 +201,10 @@ namespace glisp {
     }
 
     boost::optional<std::string> cScoper::getSymbolName(
-        sym_t _sym) const {
+        ast::symbol_t _sym) const {
 
-        auto [scopeId, symId] = _sym;
-
-        if (auto scope = getScope(scopeId)) {
-            return scope->getScopedName(symId);
+        if (auto scope = getScope(_sym.mScope)) {
+            return scope->getScopedName(_sym.mId);
         }
 
         return {};

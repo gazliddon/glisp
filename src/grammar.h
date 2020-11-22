@@ -43,7 +43,7 @@ namespace grammar {
         parseCtx.mScopes.pop();
     };
 
-    auto constexpr registerSymbol = [](auto & _ctx) -> ast::symbol {
+    auto constexpr registerSymbol = [](auto & _ctx) -> ast::symbol_t {
         auto name = _attr(_ctx);
         auto parse_ctx = getParseCtx(_ctx);
         fmt::print("Trying to register {}\n", name);
@@ -52,7 +52,7 @@ namespace grammar {
         return { *id };
     };
 
-    auto constexpr forceRegisterSymbol = [](auto & _ctx) -> ast::symbol {
+    auto constexpr forceRegisterSymbol = [](auto & _ctx) -> ast::symbol_t {
         auto name = _attr(_ctx);
         auto parse_ctx = getParseCtx(_ctx);
         fmt::print("Trying to register {}\n", name);
@@ -61,7 +61,7 @@ namespace grammar {
         return { *id };
     };
 
-    auto resolveSymbol = [](auto& _ctx) -> ast::symbol {
+    auto resolveSymbol = [](auto& _ctx) -> ast::symbol_t {
         auto name = _attr(_ctx);
         auto parse_ctx = getParseCtx(_ctx);
         auto id = parse_ctx.mScopes.resolveSymbol(name);
@@ -188,10 +188,10 @@ namespace grammar {
         _val(_ctx) = resolveSymbol(_ctx);
     };
 
-    struct symbol_class : x3::annotate_on_success { };
-    rule<symbol_class, ast::symbol> const symbol = "symbol";
-    auto const symbol_def = get_symbol_string[sym_resolve];
-    BOOST_SPIRIT_DEFINE(symbol);
+    struct symbol_t_class : x3::annotate_on_success { };
+    rule<symbol_t_class, ast::symbol_t> const symbol_t = "symbol";
+    auto const symbol_t_def = get_symbol_string[sym_resolve];
+    BOOST_SPIRIT_DEFINE(symbol_t);
 
     // --------------------------------------------------------------------------------
     // nil
@@ -245,7 +245,7 @@ namespace grammar {
     // keyord
     struct keyword_class : x3::annotate_on_success { };
     rule<keyword_class, ast::keyword> const keyword("keyword");
-    auto const keyword_def = lexeme[':' > symbol];
+    auto const keyword_def = lexeme[':' > symbol_t];
     BOOST_SPIRIT_DEFINE(keyword);
 
     // keyord
@@ -253,7 +253,7 @@ namespace grammar {
     // Type hint
     struct hint_class : x3::annotate_on_success { };
     rule<hint_class, ast::hint> const hint("hint");
-    auto const hint_def = lexeme['^' > symbol];
+    auto const hint_def = lexeme['^' > symbol_t];
     BOOST_SPIRIT_DEFINE(hint);
 
     rule<vector_class, ast::vector> const vector("vector");
@@ -291,7 +291,7 @@ namespace grammar {
     auto const base_def = 
           is_true
         | is_false
-        | symbol 
+        | symbol_t
         | nil
         | keyword
         | str
@@ -328,7 +328,7 @@ namespace grammar {
         auto sym = pctx.mScopes.resolveSymbol("quote");
 
         assert(sym);
-        auto symbolAsVal = ast::val(ast::symbol(*sym));
+        auto symbolAsVal = ast::val(ast::symbol_t(*sym));
 
         ret.mForms.push_back(symbolAsVal);
         ret.mForms.push_back(val);
@@ -402,7 +402,7 @@ namespace grammar {
     BOOST_SPIRIT_DEFINE(let);
 
     // Args
-    auto const args_def = '[' >> *as<ast::val>[symbol] > -('&' > symbol) > ']';
+    auto const args_def = '[' >> *as<ast::val>[symbol_t] > -('&' > symbol_t) > ']';
     BOOST_SPIRIT_DEFINE(args);
 
     // A set
@@ -423,7 +423,7 @@ namespace grammar {
     BOOST_SPIRIT_DEFINE(meta);
     
     // macro
-    auto const macro_def = '(' >> lit("defmacro") > symbol > args > base > ')';
+    auto const macro_def = '(' >> lit("defmacro") > symbol_t > args > base > ')';
     BOOST_SPIRIT_DEFINE(macro);
 
     /* auto constexpr to_typed_arg_string = [](auto & _ctx) { */

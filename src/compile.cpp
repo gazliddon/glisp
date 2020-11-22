@@ -32,7 +32,7 @@ namespace glisp {
             compile(_val.mVal);
         }
 
-        void operator()(ast::symbol & _val) {
+        void operator()(ast::symbol_t & _val) {
             /* if(hasSymbol(_val)) { */
             /* } else { */
             /*     mUndefinedSyms[_val.mName] = &_val; */
@@ -80,19 +80,19 @@ namespace glisp {
             return *mValStack.top();
         }
 
-        bool hasSymbol(ast::symbol & _sym) const {
+        bool hasSymbol(ast::symbol_t & _sym) const {
             /* auto it = mInternalSyms.find(_sym.mName); */
             /* return it != mInternalSyms.end(); */
             return false;
         }
 
-        void addSymbol(ast::symbol & _sym) {
+        void addSymbol(ast::symbol_t & _sym) {
             /* mInternalSyms[_sym.mName]=&_sym; */
         }
 
         std::stack<ast::val *> mValStack;
-        std::map<std::string, ast::symbol *> mInternalSyms;
-        std::map<std::string, ast::symbol *> mUndefinedSyms;
+        std::map<std::string, ast::symbol_t *> mInternalSyms;
+        std::map<std::string, ast::symbol_t *> mUndefinedSyms;
     };
 
     cCompiler::cCompiler() {

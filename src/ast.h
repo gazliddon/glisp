@@ -12,20 +12,18 @@
 #include "variant.h"
 #include <boost/mp11/mpl.hpp>
 #include <boost/spirit/home/x3.hpp>
-#include <boost/spirit/home/x3/support/ast/position_tagged.hpp>
 #include <immer/map.hpp>
 #include <iostream>
 #include <spdlog/spdlog.h>
+
+#include "position_tag_t.h"
+#include "symbol_t.h"
 
 namespace ast {
 
     namespace x3 = boost::spirit::x3;
     using namespace boost::mp11;
     using x3::forward_ast;
-
-    struct position_tagged : public x3::position_tagged {
-        uint64_t mResultId;
-    };
 
     template <typename T>
     struct dummy_compare {
@@ -38,43 +36,15 @@ namespace ast {
 
     struct nil : dummy_compare<nil> { };
 
-    struct symbol : position_tagged {
-        symbol() = default;
-
-        symbol(symbol const &_sym ) {
-            mId = _sym.mId;
-            mScope = _sym.mScope;
-        }
-
-        symbol(std::pair<uint64_t, uint64_t>&& _sym) {
-            mScope = _sym.first;
-            mId    = _sym.second;
-        }
-
-        symbol(std::pair<uint64_t, uint64_t> const & _sym) : symbol(_sym.first, _sym.second) { 
-        }
-
-        symbol(uint64_t _scope, uint64_t _id)
-            : symbol(std::make_pair(_scope, _id)) {
-        }
-
-        friend bool operator==(symbol const& _lhs, symbol const& _rhs) {
-            return _lhs.mId == _rhs.mId && _lhs.mScope == _rhs.mScope;
-        }
-
-        uint64_t mId;
-        uint64_t mScope;
-    };
-
-    struct keyword : position_tagged {
-        symbol mSym;
+    struct keyword : position_tagged_t {
+        symbol_t mSym;
         friend bool operator==(keyword const& _lhs, keyword const& _rhs) {
             return _lhs.mSym == _rhs.mSym;
         }
     };
 
-    struct hint : position_tagged, dummy_compare<hint> {
-        symbol mSym;
+    struct hint : position_tagged_t, dummy_compare<hint> {
+        symbol_t mSym;
     };
 
     struct unbound : dummy_compare<unbound> { };
@@ -120,7 +90,7 @@ namespace ast {
         , vector
         , map
         , define
-        , symbol
+        , symbol_t
         , native_function
         , sexp
         , program
@@ -136,7 +106,7 @@ namespace ast {
 
     using val_base_t = mp_rename<all_types, variant_base_t>;
 
-    struct val : val_base_t, position_tagged {
+    struct val : val_base_t, position_tagged_t {
 
         template <typename T>
         val(T&& rhs)
@@ -183,13 +153,13 @@ namespace ast {
 }
 
 namespace ast {
-    struct map_entry : position_tagged {
+    struct map_entry : position_tagged_t {
         val mKey;
         val mValue;
         friend bool operator==(map_entry const& _lhs, map_entry const& _rhs);
     };
 
-    struct map : position_tagged {
+    struct map : position_tagged_t {
         std::list<map_entry> mHashMap;
         val get(ast::val const& _key) const;
         void add(val const& _key, val const& _val);
@@ -198,7 +168,7 @@ namespace ast {
         friend bool operator==(map const& _lhs, map const& _rhs);
     };
 
-    struct set : position_tagged, dummy_compare<set>, seq_t {
+    struct set : position_tagged_t, dummy_compare<set>, seq_t {
         std::vector<val> mForms;
         friend bool operator==(set const& _lhs, set const& _rhs);
         virtual std::unique_ptr<iterator_base_t> iterator() const {
@@ -206,7 +176,7 @@ namespace ast {
         }
     };
 
-    struct vector : position_tagged, seq_t {
+    struct vector : position_tagged_t, seq_t {
         vector() = default;
         virtual std::unique_ptr<iterator_base_t> iterator() const;
         vector(std::vector<val> const& _init);
@@ -215,7 +185,7 @@ namespace ast {
         friend bool operator==(vector const& _lhs, vector const& _rhs);
     };
 
-    struct sexp : position_tagged, dummy_compare<sexp>, seq_t {
+    struct sexp : position_tagged_t, dummy_compare<sexp>, seq_t {
         sexp() = default;
 
         sexp(std::vector<val> const& _init);
@@ -233,7 +203,7 @@ namespace ast {
         std::vector<val> mForms;
     };
 
-    struct program : position_tagged, seq_t, dummy_compare<program> {
+    struct program : position_tagged_t, seq_t, dummy_compare<program> {
         std::vector<val> mForms;
         virtual std::unique_ptr<iterator_base_t> iterator() const;
     };
@@ -241,41 +211,41 @@ namespace ast {
 
 namespace ast {
 
-    struct meta : position_tagged {
+    struct meta : position_tagged_t {
         std::list<map_entry> mHashMap;
         friend bool operator==(meta const& _lhs, meta const& _rhs);
     };
 
-    struct args : position_tagged, dummy_compare<args> {
+    struct args : position_tagged_t, dummy_compare<args> {
         vector mArgs;
-        std::optional<symbol> mExtra;
+        std::optional<symbol_t> mExtra;
     };
 
-    struct define : position_tagged, dummy_compare<define> {
+    struct define : position_tagged_t, dummy_compare<define> {
         define() = default;
         define(sexp const& exp);
 
-        symbol mSym;
+        symbol_t mSym;
         val mVal;
     };
 
-    struct pair : position_tagged, dummy_compare<pair> {
+    struct pair : position_tagged_t, dummy_compare<pair> {
         val mFirst;
         val mSecond;
     };
 
-    struct bindings : position_tagged, seq_t, dummy_compare<bindings> {
+    struct bindings : position_tagged_t, seq_t, dummy_compare<bindings> {
         virtual std::unique_ptr<iterator_base_t> iterator() const;
         std::vector<val> mBindings;
     };
 
-    struct let : position_tagged, dummy_compare<let> {
+    struct let : position_tagged_t, dummy_compare<let> {
         bindings mBindings;
         program mBody;
     };
 
-    struct macro : position_tagged, dummy_compare<macro> {
-        symbol mSym;
+    struct macro : position_tagged_t, dummy_compare<macro> {
+        symbol_t mSym;
         args mArgs;
         val mVal;
     };
@@ -286,7 +256,7 @@ namespace ast {
         return out;
     }
 
-    struct lambda : position_tagged, dummy_compare<lambda>, val::callable_t {
+    struct lambda : position_tagged_t, dummy_compare<lambda>, val::callable_t {
         args mArgs;
         boost::optional<std::string> mDocString;
         program mBody;

@@ -50,7 +50,7 @@ namespace glisp {
     ast::val get_symbols(Evaluator& _e, iterator_base_t& _args) {
         ast::map ret;
 
-        _e.enumerateBindings([&ret](ast::symbol const& _sym, val const& _val) {
+        _e.enumerateBindings([&ret](ast::symbol_t const& _sym, val const& _val) {
             map_entry me;
             me.mKey   = _sym;
             me.mValue = _val;

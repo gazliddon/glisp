@@ -83,7 +83,7 @@ namespace ast {
         x.mFunc      = std::move(_func);
         x.mNumOfArgs = _nargs;
         auto sym
-            = ast::symbol { *mAllSymbols.registerSymbol(_name, true) };
+            = ast::symbol_t { *mAllSymbols.registerSymbol(_name, true) };
         mEnvironment.setSymbol(sym, val(x));
     }
 
@@ -112,7 +112,7 @@ namespace ast {
         for (auto& binding : _let.mBindings.mBindings) {
             auto p = binding.get<pair>();
             assert(p);
-            auto sym = p->mFirst.get<symbol>();
+            auto sym = p->mFirst.get<symbol_t>();
             mEnvironment.setSymbol(*sym, p->mSecond);
         }
 
@@ -132,7 +132,7 @@ namespace ast {
         return val(_v.mSym);
     }
 
-    val Evaluator::operator()(ast::symbol const& _v) {
+    val Evaluator::operator()(ast::symbol_t const& _v) {
 
         if (auto sym = mEnvironment.getSymbol(_v)) {
             return *sym;
@@ -261,7 +261,7 @@ namespace ast {
             mCallDepth++;
 
             while (auto sym_p = syms_it->next()) {
-                auto sym = sym_p->get<symbol>();
+                auto sym = sym_p->get<symbol_t>();
                 assert(sym);
                 mEnvironment.setSymbol(*sym, *_rest.next());
             }
@@ -305,7 +305,7 @@ namespace ast {
         auto sexp_it = _func.iterator();
         auto seq     = _func.iterator();
 
-        if (auto symptr = as<symbol>(seq->next())) {
+        if (auto symptr = as<symbol_t>(seq->next())) {
             auto sym = *symptr;
 
             if (sym == mSf_quote) {
@@ -364,7 +364,7 @@ namespace ast {
     }
 
     void Evaluator::enumerateBindings(
-        std::function<void(ast::symbol const&, ast::val const&)> _func) const {
+        std::function<void(ast::symbol_t const&, ast::val const&)> _func) const {
         mEnvironment.enumerate(
             [_func](auto _sym, ast::val const& _val) { _func(_sym, _val); });
     }
@@ -373,7 +373,7 @@ namespace ast {
         std::function<void(std::string const&, ast::val const&)> _func) const {
 
         enumerateBindings(
-            [this, &_func](ast::symbol const& sym, ast::val const& _val) {
+            [this, &_func](ast::symbol_t const& sym, ast::val const& _val) {
                 _func(symbolToName(sym), _val);
             });
     }
@@ -383,7 +383,7 @@ namespace ast {
 
         val ret;
 
-        if (_v.is<symbol>())
+        if (_v.is<symbol_t>())
             return boost::apply_visitor(*this, _v);
 
         if (_v.is_atom() || _v.is<lambda>())
@@ -406,7 +406,7 @@ namespace ast {
         return glisp::to_string(*this, _it, intersperse, _add_types);
     }
 
-    std::string Evaluator::symbolToName(ast::symbol const& _sym) const {
+    std::string Evaluator::symbolToName(ast::symbol_t const& _sym) const {
         auto ret = mAllSymbols.getSymbolName({ _sym.mScope, _sym.mId });
 
         if (!ret) {

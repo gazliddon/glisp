@@ -5,9 +5,9 @@ namespace analysis {
 
         glisp::cScoper & mScopes;
 
-        ast::symbol mSymLambda;
-        ast::symbol mSymDefine;
-        ast::symbol mSymQuote;
+        ast::symbol_t mSymLambda;
+        ast::symbol_t mSymDefine;
+        ast::symbol_t mSymQuote;
         uint64_t mUserId;
 
         scope_analyzer_t(glisp::cScoper & _scopes) : mScopes(_scopes) {
@@ -17,7 +17,7 @@ namespace analysis {
             mUserId = *mScopes.getScopeId("user");
         }
 
-        void operator()(ast::symbol & _v)  {
+        void operator()(ast::symbol_t & _v)  {
         }
 
         void operator()(ast::keyword & _keyword)  {
@@ -51,7 +51,7 @@ namespace analysis {
             auto it = _func.iterator();
 
             if (auto p = it->next()) {
-                if (auto sym = p->get<ast::symbol>() ) {
+                if (auto sym = p->get<ast::symbol_t>() ) {
                     if(*sym == mSymDefine) {
                         onDefine(*it);
                         return;

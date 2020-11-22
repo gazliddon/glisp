@@ -5,7 +5,7 @@
 
 #include <boost/fusion/include/adapt_struct.hpp>
 
-BOOST_FUSION_ADAPT_STRUCT( ast::symbol, mScope, mId)
+BOOST_FUSION_ADAPT_STRUCT( ast::symbol_t, mScope, mId)
 BOOST_FUSION_ADAPT_STRUCT( ast::keyword, mSym )
 BOOST_FUSION_ADAPT_STRUCT( ast::hint, mSym )
 BOOST_FUSION_ADAPT_STRUCT( ast::program, mForms )
