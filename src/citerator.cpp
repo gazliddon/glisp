@@ -10,6 +10,10 @@ namespace ast {
     cIterator::cIterator(set const& _vec) : cIterator(mkStlIt(_vec.mForms)) {
     }
 
+
+    cIterator::cIterator(std::vector<ast::val> const & _valVec) :cIterator(mkStlIt(_valVec)){
+    }
+
     cIterator::cIterator(program const& _vec) : cIterator(mkStlIt(_vec.mForms)) {
     }
 

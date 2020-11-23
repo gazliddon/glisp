@@ -1,6 +1,7 @@
 #ifndef EVAL_H_I8ZWFS1M
 #define EVAL_H_I8ZWFS1M
 
+#include "citerator.h"
 #include "demangle.h"
 #include "env.h"
 #include "reader.h"
@@ -12,7 +13,7 @@
 namespace ast {
     struct symbol_hash {
         std::size_t operator()(ast::symbol_t const& s) const noexcept {
-            auto id = s.mId & 0x0000ffffffffffff;
+            auto id    = s.mId & 0x0000ffffffffffff;
             auto scope = s.mScope << 48;
             return id | scope;
         }
@@ -32,8 +33,7 @@ namespace ast {
             return as_opt(it);
         }
 
-        void enumerate(
-            std::function<void(symbol_t, val const&)> _func) const {
+        void enumerate(std::function<void(symbol_t, val const&)> _func) const {
             immer::for_each(
                 mImmerMap, [_func](std::pair<symbol_t, val> const& p) {
                     _func(p.first, p.second);
@@ -98,7 +98,7 @@ namespace ast {
         void set(std::string const& _name, ast::val const& _v);
 
         void add_native_function(std::string const& _name,
-            std::function<val(Evaluator& e, iterator_base_t&)>&& _func,
+            std::function<val(Evaluator& e, ast::cIterator&)>&& _func,
             int _nargs);
 
         template <typename T, typename R = T>
@@ -106,7 +106,7 @@ namespace ast {
             std::function<R(T const&, T const&)>&& _func) {
             auto f = std::move(_func);
 
-            auto func = [f](Evaluator&, iterator_base_t& _args) {
+            auto func = [f](Evaluator&, cIterator& _args) {
                 if (_args.size() != 2) {
                     std::cout << "args size is " << _args.size() << std::endl;
                 }
@@ -127,7 +127,7 @@ namespace ast {
             ast::val const& _val, bool add_types = false) const;
         std::string to_type_string(ast::val const& _val) const;
 
-        std::string to_string(iterator_base_t& _it,
+        std::string to_string(ast::cIterator& _it,
             char const* intersperse = " ",
             bool add_types          = false) const;
 
@@ -136,28 +136,27 @@ namespace ast {
             const;
 
         void enumerateBindings(
-            std::function<void(symbol_t const&, ast::val const&)> _func)
-            const;
+            std::function<void(symbol_t const&, ast::val const&)> _func) const;
 
-        val apply(iterator_base_t& _exp) {
+        val apply(ast::cIterator& _exp) {
             return apply(_exp, mEnvironment);
         }
 
-        val apply(val const& _val, iterator_base_t& _it) {
+        val apply(val const& _val, ast::cIterator& _it) {
             return apply(_val, _it, mEnvironment);
         }
 
         void setCurrentNamespace(std::string const& _name);
 
-        glisp::cScoper const & getAllSymbols() const {
+        glisp::cScoper const& getAllSymbols() const {
             return mAllSymbols;
         }
 
     protected:
         unsigned mCallDepth;
 
-        val apply(val const& _val, iterator_base_t& _it, cEnv localEnv);
-        val apply(iterator_base_t& _exp, cEnv localEnv);
+        val apply(val const& _val, ast::cIterator& _it, cEnv localEnv);
+        val apply(ast::cIterator& _exp, cEnv localEnv);
 
         std::stack<ast::val> mCallStack;
         glisp::cScoper mAllSymbols;

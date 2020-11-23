@@ -47,7 +47,7 @@ namespace glisp {
         return 1.0;
     }
 
-    ast::val get_symbols(Evaluator& _e, iterator_base_t& _args) {
+    ast::val get_symbols(Evaluator& _e, cIterator & _args) {
         ast::map ret;
 
         _e.enumerateBindings([&ret](ast::symbol_t const& _sym, val const& _val) {
@@ -61,7 +61,7 @@ namespace glisp {
     }
 
     template <typename T>
-    boost::optional<T const &> get_next(iterator_base_t& _t) {
+    boost::optional<T const &> get_next(cIterator & _t) {
         auto p = _t.next();
         if (p) {
             return p->get<T>();
@@ -69,7 +69,7 @@ namespace glisp {
         return {};
     }
 
-    val get(Evaluator& _e, iterator_base_t& _args) {
+    val get(Evaluator& _e, cIterator & _args) {
         if (auto p = get_next<map>(_args)) {
             return p->get(*_args.next());
         } else {
@@ -78,12 +78,12 @@ namespace glisp {
         return val();
     }
 
-    ast::val get_type(Evaluator& _e, iterator_base_t& _args) {
+    ast::val get_type(Evaluator& _e, cIterator & _args) {
         auto t = _e.to_type_string(*_args.first());
         return val(t);
     }
 
-    ast::val set(Evaluator& _e, iterator_base_t& _args) {
+    ast::val set(Evaluator& _e, cIterator & _args) {
         if (auto p = get_next<map>(_args)) {
             return p->get(*_args.first());
         } else {
@@ -93,7 +93,7 @@ namespace glisp {
         return ast::val();
     }
 
-    ast::val str(Evaluator& _e, iterator_base_t& _args) {
+    ast::val str(Evaluator& _e, cIterator & _args) {
         std::string ret = "";
 
         while(auto p = _args.next()) {
@@ -109,7 +109,7 @@ namespace glisp {
         return ast::val(ret);
     }
 
-    ast::val first(Evaluator& _e, iterator_base_t& _args) {
+    ast::val first(Evaluator& _e, cIterator & _args) {
 
         auto& arg = *_args.first();
 
@@ -134,7 +134,7 @@ namespace glisp {
         return val();
     }
 
-    ast::val rest(Evaluator& _e, iterator_base_t& _args) {
+    ast::val rest(Evaluator& _e, cIterator & _args) {
 
         auto& arg = *_args.first();
 
@@ -167,7 +167,7 @@ namespace glisp {
         return val();
     }
 
-    val get_meta(Evaluator& _e, iterator_base_t& _args) {
+    val get_meta(Evaluator& _e, cIterator & _args) {
         auto p = _args.next();
 
         if (auto l = p->get<lambda>()) {
@@ -182,7 +182,7 @@ namespace glisp {
         return val();
     }
 
-    val slurp(Evaluator& _e, iterator_base_t& _args) {
+    val slurp(Evaluator& _e, cIterator & _args) {
         if (auto file_name = get_next<std::string>(_args)) {
             std::ifstream inFile;
             inFile.open(file_name->c_str()); // open the input file
@@ -196,41 +196,41 @@ namespace glisp {
         }
     }
 
-    val conj(Evaluator& _e, iterator_base_t& _args) {
+    val conj(Evaluator& _e, cIterator & _args) {
         assert(false);
         /* return concat(_e, _args, 1, 0); */
     }
-    ast::val cons(Evaluator& _e, iterator_base_t& _args) {
+    ast::val cons(Evaluator& _e, cIterator & _args) {
         assert(false);
         /* return concat(_e, _args, 0, 1); */
     }
 
-    ast::val puts(Evaluator& _e, iterator_base_t& _args) {
+    ast::val puts(Evaluator& _e, cIterator & _args) {
         std::cout << _e.to_string(*_args.first());
         return ast::val();
     }
 
-    ast::val apply(Evaluator& _e, iterator_base_t& _args) {
+    ast::val apply(Evaluator& _e, cIterator & _args) {
         return _e.apply(_args);
     }
 
-    ast::val equal(Evaluator& _e, iterator_base_t& _args) {
+    ast::val equal(Evaluator& _e, cIterator & _args) {
         auto const& a = *_args.next();
         auto const& b = *_args.next();
         return ast::val(a.var == b.var);
     }
 
-    ast::val read_fn(Evaluator& _e, iterator_base_t& _args) {
+    ast::val read_fn(Evaluator& _e, cIterator & _args) {
         auto text   = get_next<std::string>(_args);
         auto ret = _e.read(*text);
         return ast::val(ret.mAst);
     }
 
-    auto eval_fn = [](Evaluator& _e, iterator_base_t& _args) -> val {
+    auto eval_fn = [](Evaluator& _e, cIterator & _args) -> val {
         assert(false);
     };
 
-    ast::val include_fn(Evaluator& _e, iterator_base_t& _args) {
+    ast::val include_fn(Evaluator& _e, cIterator & _args) {
 
         if (auto pfn = _args.first()->get<std::string>()) {
             auto text = slurp(_e,_args );

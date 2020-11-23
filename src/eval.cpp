@@ -2,6 +2,7 @@
 #include "except.h"
 #include "native.h"
 #include "tostring.h"
+#include "citerator.h"
 
 #include <iostream>
 #include <spdlog/spdlog.h>
@@ -23,7 +24,7 @@ namespace ast {
     }
 
     static std::vector<val> eval_seq_to_vec(
-        Evaluator& _e, iterator_base_t& _it) {
+        Evaluator& _e, ast::cIterator & _it) {
         std::vector<val> ret;
         ret.reserve(_it.remaining());
         while (auto v = _it.next()) {
@@ -32,16 +33,16 @@ namespace ast {
         return ret;
     }
 
-    static sexp eval_to_exp(Evaluator& _e, iterator_base_t& _ptr) {
+    static sexp eval_to_exp(Evaluator& _e, ast::cIterator& _ptr) {
         sexp ret;
         ret.mForms = eval_seq_to_vec(_e, _ptr);
         return ret;
     }
 
-    static val eval_seq(Evaluator& _e, std::unique_ptr<iterator_base_t>& _it) {
+    static val eval_seq(Evaluator& _e, ast::cIterator & _it) {
         val ret;
 
-        while (auto v = _it->next()) {
+        while (auto v = _it.next()) {
             ret = _e.eval(*v);
         }
         return ret;
@@ -49,20 +50,22 @@ namespace ast {
 
     template <typename T>
     static val eval_seq(Evaluator& _e, T& _seq) {
-        auto it = _seq.iterator();
+        auto it = ast::cIterator(_seq);
         return eval_seq(_e, it);
     }
     template <typename T>
     static val eval_rest(Evaluator& _e, T& _seq) {
-        auto it = _seq.iterator();
-        return eval_seq(_e, it->rest());
+        auto it = ast::cIterator(_seq);
+        auto rest = it.rest();
+        return eval_seq(_e, rest);
     }
 
     template <typename T>
     void eval_seq_inplace(Evaluator& _e, T& _seq) {
-        auto it = _seq.iterator();
-        while (auto v = it->next()) {
-            *v = _e.eval(*v);
+        auto it = ast::cIterator(_seq);
+        while (auto v = it.next()) {
+            assert(false);
+            /* *v = _e.eval(*v); */
         }
     }
 
@@ -76,7 +79,7 @@ namespace ast {
     }
 
     void Evaluator::add_native_function(std::string const& _name,
-        std::function<val(Evaluator& e, iterator_base_t&)>&& _func,
+        std::function<val(Evaluator& e, cIterator&)>&& _func,
         int _nargs) {
 
         native_function x;
@@ -228,31 +231,36 @@ namespace ast {
         }
     }
 
-    val Evaluator::apply(iterator_base_t& _exp, cEnv localEnv) {
-        return apply(*_exp.first(), *_exp.rest().get(), localEnv);
+    val Evaluator::apply(ast::cIterator & _exp, cEnv localEnv) {
+        auto rest = _exp.rest();
+        auto first = _exp.first();
+        return apply(*first, rest, localEnv);
     }
 
     val Evaluator::apply(
-        val const& _first, iterator_base_t& _rest, cEnv localEnv) {
+        val const& _first, cIterator & _rest, cEnv localEnv) {
 
-        if (!_first.is_callable()) {
-            auto error
-                = fmt::format("Unable to call {}", to_string(val(_first)));
-            error += "\n" + to_string(val(_first));
+        // TBD FIXIT!
 
-            error += fmt::format("\n callable {}",
-                std::is_base_of<val::callable_t, native_function>::value);
-            error += fmt::format("\n var type {}", _first.var.which());
-            error += fmt::format("\n var type name {}", _first.get_name());
+        /* if (!_first.is_callable()) { */
+        /*     auto error */
+        /*         = fmt::format("Unable to call {}", to_string(val(_first))); */
+        /*     error += "\n" + to_string(val(_first)); */
 
-            throw glisp::cEvalError(error);
-        }
+        /*     error += fmt::format("\n callable {}", */
+        /*         std::is_base_of<val::callable_t, native_function>::value); */
+        /*     error += fmt::format("\n var type {}", _first.var.which()); */
+        /*     error += fmt::format("\n var type name {}", _first.get_name()); */
+
+        /*     throw glisp::cEvalError(error); */
+        /* } */
 
         if (auto l = _first.get<lambda>()) {
-            auto syms_it = l->mArgs.mArgs.iterator();
+
+            auto syms_it = ast::cIterator(l->mArgs.mArgs);
 
             auto args_passed = _rest.size();
-            auto args_needed = syms_it->size();
+            auto args_needed = syms_it.size();
 
             assert(args_passed >= args_needed);
 
@@ -260,7 +268,7 @@ namespace ast {
 
             mCallDepth++;
 
-            while (auto sym_p = syms_it->next()) {
+            while (auto sym_p = syms_it.next()) {
                 auto sym = sym_p->get<symbol_t>();
                 assert(sym);
                 mEnvironment.setSymbol(*sym, *_rest.next());
@@ -280,11 +288,11 @@ namespace ast {
 
         if (auto l = _first.get<native_function>()) {
             auto args    = eval_to_exp(*this, _rest);
-            auto args_it = args.iterator();
+            auto args_it = ast::cIterator(args);
 
             mCallDepth++;
 
-            auto ret = l->call(*this, *args_it.get());
+            auto ret = l->call(*this, args_it);
 
             mCallDepth--;
 
@@ -302,10 +310,10 @@ namespace ast {
             return val();
         }
 
-        auto sexp_it = _func.iterator();
-        auto seq     = _func.iterator();
+        auto sexp_it = ast::cIterator(_func);
+        auto seq     = sexp_it.clone();
 
-        if (auto symptr = as<symbol_t>(seq->next())) {
+        if (auto symptr = as<symbol_t>(seq.next())) {
             auto sym = *symptr;
 
             if (sym == mSf_quote) {
@@ -315,7 +323,7 @@ namespace ast {
             if (sym == mSf_do) {
                 val ret;
 
-                while (auto v = seq->next()) {
+                while (auto v = seq.next()) {
                     ret = eval(*v);
                 }
                 return ret;
@@ -326,11 +334,11 @@ namespace ast {
             }
 
             if (sym == mSf_if) {
-                assert(seq->remaining() >= 2);
+                assert(seq.remaining() >= 2);
                 val ret;
-                auto pred     = seq->next();
-                auto is_true  = seq->next();
-                auto is_false = seq->next();
+                auto pred     = seq.next();
+                auto is_true  = seq.next();
+                auto is_false = seq.next();
 
                 assert(pred && is_true);
 
@@ -349,10 +357,9 @@ namespace ast {
         // Okay!
         // It's not a special form if we're here so lets eval!
 
-        auto evaled = eval_to_exp(*this, *sexp_it.get());
-        auto it     = evaled.iterator();
-
-        return apply(*it, mEnvironment);
+        auto evaled = eval_to_exp(*this, sexp_it);
+        auto it     = cIterator(evaled);
+        return apply(it, mEnvironment);
     }
 
     void Evaluator::replaceNode(ast::val const& _val) {
@@ -402,7 +409,7 @@ namespace ast {
     }
 
     std::string Evaluator::to_string(
-        iterator_base_t& _it, char const* intersperse, bool _add_types) const {
+        ast::cIterator& _it, char const* intersperse, bool _add_types) const {
         return glisp::to_string(*this, _it, intersperse, _add_types);
     }
 

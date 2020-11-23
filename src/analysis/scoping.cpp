@@ -24,16 +24,15 @@ namespace analysis {
         }
 
         void operator()(ast::set & _set)  {
-            visitSeq(_set);
+            visitSeq(ast::cIterator(_set));
         }
 
         void operator()(ast::vector & _func)  {
             visitSeq(_func);
         }
 
-        void visitSeq(ast::seq_t & _seq) {
-            auto it = _seq.iterator();
-            while(auto p = it->next()) {
+        void visitSeq(ast::cIterator && _it) {
+            while(auto p = _it.next()) {
                 (*this)(*p);
             }
         }
@@ -48,40 +47,40 @@ namespace analysis {
         }
 
         void operator()(ast::sexp & _func)  {
-            auto it = _func.iterator();
+            auto it = ast::cIterator(_func);
 
-            if (auto p = it->next()) {
+            if (auto p = it.next()) {
                 if (auto sym = p->get<ast::symbol_t>() ) {
                     if(*sym == mSymDefine) {
-                        onDefine(*it);
+                        onDefine(it);
                         return;
                     }
 
                     if (*sym == mSymLambda) {
-                        onLambda(*it);
+                        onLambda(it);
                         return;
                     }
 
                     if (*sym == mSymLambda) {
-                        onLambda(*it);
+                        onLambda(it);
                         return;
                     }
                 }
             }
         }
 
-        void onQuote(ast::iterator_base_t & _it) {
+        void onQuote(ast::cIterator & _it) {
         }
 
-        void onLet(ast::iterator_base_t & _it) {
+        void onLet(ast::cIterator & _it) {
             mScopes.pushGenScope("fn");
             mScopes.pop();
         }
 
-        void onDefine(ast::iterator_base_t & _it) {
+        void onDefine(ast::cIterator & _it) {
         }
 
-        void onLambda(ast::iterator_base_t & _it) {
+        void onLambda(ast::cIterator & _it) {
             mScopes.pushGenScope("fn");
             mScopes.pop();
         }

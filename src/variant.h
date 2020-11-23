@@ -1,7 +1,6 @@
 #ifndef VARIANT_H_TAH2LRID
 #define VARIANT_H_TAH2LRID
 
-#include "seq.h"
 #include <boost/mp11/mpl.hpp>
 #include <boost/mpl/copy.hpp>
 #include <boost/optional.hpp>
@@ -12,11 +11,13 @@
 #include <iostream>
 #include <spdlog/spdlog.h>
 
+
 namespace ast {
     namespace x3 = boost::spirit::x3;
     using namespace boost::mp11;
 
     struct Evaluator;
+    class cIterator;
 
     template <typename B, typename... A>
     struct is_base_of_array {
@@ -39,21 +40,8 @@ namespace ast {
         using type      = variant_base_t<A...>;
         using raw_types = mp_list<A...>;
 
-        struct callable_t {
-            virtual val call(Evaluator& _e, iterator_base_t&) const = 0;
-            virtual ~callable_t() {
-            }
-        };
 
         using base_type_t = x3::variant<A...>;
-
-        static constexpr is_base_of_array<seq_t,
-            typename remove_forward<A>::type...>
-            mIsSeq;
-
-        static constexpr is_base_of_array<callable_t,
-            typename remove_forward<A>::type...>
-            mIsCallable;
 
         static std::array<std::string, sizeof...(A)> mTypeNames;
 
@@ -73,11 +61,7 @@ namespace ast {
         }
 
         bool is_seq() const {
-            return mIsSeq.mBools[base_type_t::var.which()];
-        }
-
-        bool is_callable() const {
-            return mIsCallable.mBools[base_type_t::var.which()];
+            assert(false);
         }
 
         template <typename T>

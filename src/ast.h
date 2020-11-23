@@ -8,7 +8,6 @@
 
 #include "demangle.h"
 #include "except.h"
-#include "seq.h"
 #include "variant.h"
 #include <boost/mp11/mpl.hpp>
 #include <boost/spirit/home/x3.hpp>
@@ -108,6 +107,12 @@ namespace ast {
 
     struct val : val_base_t, position_tagged_t {
 
+        struct callable_t {
+            virtual val call(Evaluator& _e, cIterator &) const = 0;
+            virtual ~callable_t() {
+            }
+        };
+
         template <typename T>
         val(T&& rhs)
             : val_base_t(std::forward<T>(rhs)) {
@@ -130,11 +135,12 @@ namespace ast {
         bool is_atom() const;
     };
 
+    class cIterator;
 
     struct native_function : val::callable_t {
 
         using native_f_t
-            = std::function<val(Evaluator&, iterator_base_t& _args)>;
+            = std::function<val(Evaluator&, cIterator & _args)>;
 
         native_f_t mFunc;
 
@@ -143,7 +149,7 @@ namespace ast {
         friend bool operator==(
             native_function const& _lhs, native_function const& _rhs);
 
-        val call(Evaluator& _e, iterator_base_t& _args) const;
+        val call(Evaluator& _e, cIterator & _args) const;
     };
 
     struct recur : dummy_compare<recur> {
@@ -168,44 +174,33 @@ namespace ast {
         friend bool operator==(map const& _lhs, map const& _rhs);
     };
 
-    struct set : position_tagged_t, dummy_compare<set>, seq_t {
+    struct set : position_tagged_t, dummy_compare<set> {
         std::vector<val> mForms;
         friend bool operator==(set const& _lhs, set const& _rhs);
-        virtual std::unique_ptr<iterator_base_t> iterator() const {
-            return std::make_unique<vector_iterator>(mForms);
-        }
     };
 
-    struct vector : position_tagged_t, seq_t {
+    struct vector : position_tagged_t {
         vector() = default;
-        virtual std::unique_ptr<iterator_base_t> iterator() const;
         vector(std::vector<val> const& _init);
 
         std::vector<val> mForms;
         friend bool operator==(vector const& _lhs, vector const& _rhs);
     };
 
-    struct sexp : position_tagged_t, dummy_compare<sexp>, seq_t {
+    struct sexp : position_tagged_t, dummy_compare<sexp> {
         sexp() = default;
 
         sexp(std::vector<val> const& _init);
+        sexp(cIterator & _ptr);
 
-        sexp(std::unique_ptr<iterator_base_t>& _ptr) {
-            while (auto e = _ptr->next()) {
-                mForms.push_back(*e);
-            }
-        }
-
-        virtual std::unique_ptr<iterator_base_t> iterator() const;
         void conj(ast::val const& _val);
         bool is(char const* _symName);
 
         std::vector<val> mForms;
     };
 
-    struct program : position_tagged_t, seq_t, dummy_compare<program> {
+    struct program : position_tagged_t, dummy_compare<program> {
         std::vector<val> mForms;
-        virtual std::unique_ptr<iterator_base_t> iterator() const;
     };
 }
 
@@ -234,8 +229,7 @@ namespace ast {
         val mSecond;
     };
 
-    struct bindings : position_tagged_t, seq_t, dummy_compare<bindings> {
-        virtual std::unique_ptr<iterator_base_t> iterator() const;
+    struct bindings : position_tagged_t, dummy_compare<bindings> {
         std::vector<val> mBindings;
     };
 
@@ -262,7 +256,7 @@ namespace ast {
         program mBody;
         /* friend bool operator==(lambda const& _lhs, lambda const& _rhs); */
 
-        virtual val call(Evaluator& _e, iterator_base_t&) const {
+        virtual val call(Evaluator& _e, cIterator &) const {
             assert(false);
         }
     };

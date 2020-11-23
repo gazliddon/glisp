@@ -3,6 +3,7 @@
 
 #include "../ast.h"
 #include "../cscoper.h"
+#include "../citerator.h"
 
 // Traverse AST and lexically scope 
 // all symbols correctly

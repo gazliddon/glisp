@@ -16,7 +16,7 @@ namespace ast {
     }
 
     val native_function::call(Evaluator& _e,
-        iterator_base_t & _args) const {
+        cIterator & _args) const {
         if (_args.size() < unsigned(mNumOfArgs)) {
             auto x = fmt::format("Incorect aegs for native function "
                                  "\nExpected at least {}, got {}\n{}",
@@ -89,25 +89,9 @@ namespace ast {
             mHashMap.push_back(m);
         }
 
-        std::unique_ptr<iterator_base_t> bindings::iterator() const {
-
-            return std::make_unique<vector_iterator>(mBindings);
-        }
-
-        std::unique_ptr<iterator_base_t> program::iterator() const {
-            return std::make_unique<vector_iterator>(mForms);
-        }
-
-        std::unique_ptr<iterator_base_t> vector::iterator() const {
-            return std::make_unique<vector_iterator>(mForms);
-        }
 
         vector::vector(std::vector<val> const& _init)
             : mForms(_init) {
-        }
-        
-        std::unique_ptr<iterator_base_t> sexp::iterator() const {
-            return std::make_unique<vector_iterator>(mForms);
         }
 
         sexp::sexp(std::vector<val> const& _init)
@@ -120,6 +104,13 @@ namespace ast {
 
         bool sexp::is(char const* _symName) {
             return false;
+        }
+
+        
+        sexp::sexp(cIterator & _ptr) {
+            while (auto e = _ptr.next()) {
+                mForms.push_back(*e);
+            }
         }
 }
 

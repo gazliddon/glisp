@@ -34,45 +34,10 @@ static char const* banner = R"delim(
 
 )delim";
 
-class seq_it {
-
-public:
-    using Coll = std::vector<ast::val>;
-    using It   = Coll::iterator;
-
-    seq_it(std::vector<ast::val>& v)
-        : mBegin(v.begin())
-        , mEnd(v.end())
-        , mIt(mBegin) {
-    }
-
-    bool next() {
-        if (mIt == mEnd) {
-            return false;
-        } else {
-            mIt++;
-            return true;
-        }
-    }
-
-    ast::val& operator*() const {
-        return *mIt;
-    }
-
-    ast::val* operator->() const {
-        return &*mIt;
-    }
-
-protected:
-    It mBegin;
-    It mEnd;
-    It mIt;
-};
-
 template<typename... A>
-ast::val callNative(ast::Evaluator & _e, std::function<ast::val(ast::Evaluator & _e, ast::iterator_base_t &)> _f, A... a) {
+ast::val callNative(ast::Evaluator & _e, std::function<ast::val(ast::Evaluator & _e, ast::cIterator &)> _f, A... a) {
     std::vector<ast::val> fff {a...};
-    ast::vector_iterator it(fff.begin(), fff.end());
+    auto it = ast::cIterator(fff);
     return _f(_e, it);
 }
 

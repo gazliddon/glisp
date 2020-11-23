@@ -144,17 +144,6 @@ namespace ast {
             return ret;
         }
     };
-
-    using vector_iterator = stl_iterator<std::vector<val>>;
-    using list_iterator   = stl_iterator<std::list<val>>;
-
-    struct seq_t {
-        virtual std::unique_ptr<iterator_base_t> iterator() const = 0;
-        virtual ~seq_t()                                          = default;
-    };
-
-    template <typename T>
-    using is_seq_t = std::is_base_of<seq_t, T>;
 }
 
 #endif /* end of include guard: SEQ_H_OAAPT8MJ */

@@ -1,23 +1,25 @@
 #ifndef CITERATOR_H_XR1T2AIN
 #define CITERATOR_H_XR1T2AIN
-
+#include "seq.h"
 #include "ast.h"
+
 
 namespace ast {
 
     // Pre-declarations
-   struct iterator_base_t;
 
     class cIterator {
 
     public:
         cIterator() ;
+        ~cIterator() = default;
 
         cIterator(vector const& _vec);
         cIterator(sexp const& _vec);
         cIterator(set const& _vec);
         cIterator(program const& _vec);
         cIterator(bindings const & );
+        cIterator(std::vector<ast::val> const & _valVec);
 
         cIterator clone() const ;
 

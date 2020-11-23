@@ -374,7 +374,7 @@ namespace glisp {
     }
     
     std::string to_string(ast::Evaluator const & _eval,
-            ast::iterator_base_t& _it, char const* intersperse, bool _withTypes) {
+            ast::cIterator & _it, char const* intersperse, bool _withTypes) {
 
         std::strstream x;
 
