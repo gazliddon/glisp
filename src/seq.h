@@ -2,10 +2,10 @@
 #define SEQ_H_OAAPT8MJ
 
 #include <algorithm>
+#include <boost/optional.hpp>
 #include <list>
 #include <stddef.h>
 #include <vector>
-#include <boost/optional.hpp>
 
 // TBD: Rafactor
 // change raw ptrs to std::optional<ast::val&>
@@ -31,68 +31,60 @@ namespace ast {
     struct val;
 
     using val_cref_opt = boost::optional<val const&>;
+    using val_ref_opt  = boost::optional<val const>;
 
     struct iterator_base_t {
-        virtual size_t size()      = 0;
-        virtual val_cref_opt first() = 0;
-        virtual val_cref_opt next()  = 0;
-        virtual ~iterator_base_t() { }
+
+        // iterate
+        virtual val_cref_opt first() const = 0;
+        virtual val_cref_opt next() = 0;
+
+        // creation
+        virtual std::unique_ptr<iterator_base_t> rest() const;
         virtual std::unique_ptr<iterator_base_t> clone() const = 0;
-        virtual size_t remaining()                             = 0;
-        virtual std::unique_ptr<iterator_base_t> rest() const {
-            auto ret = clone();
-            ret->drop();
-            return ret;
-        }
 
-        void drop() {
-            next();
-        }
+        // Query
+        virtual size_t size() const = 0;
+        virtual size_t remaining() const = 0;
 
-        virtual bool at_end() {
-            return remaining() != 0;
-        }
 
-        template<typename T>
-            void into(T & col) {
-                assert(false);
-            }
+
+        virtual bool at_end() const;
+        virtual ~iterator_base_t() = default;
+        virtual void drop();
+        template <typename T>
+        void into(T& col) {
+            assert(false);
+        }
     };
 
-    template <typename A, typename B>
-    struct twin_iterator {
-        A mA;
-        B mB;
-
-        twin_iterator(A&& a, B&& b)
-            : mA(std::move(a))
-            , mB(std::move(b)) {
+    struct empty_iterator_t : public iterator_base_t {
+        virtual val_cref_opt first() const {
+            return {};
         }
 
-        virtual size_t size() {
-            return std::min(mA.size(), mB.size());
+        virtual val_cref_opt next(){
+            return {};
         }
 
-        virtual val const* first() {
-            assert(false);
-        }
-
-        virtual val const* next() {
-            if (mA.at_end() || mB.at_end()) {
-                return nullptr;
-            } else {
-                // TBD
-            }
-            assert(false);
-        }
-
+        // creation
         virtual std::unique_ptr<iterator_base_t> rest() const {
-            assert(false);
+            return clone();
         }
 
         virtual std::unique_ptr<iterator_base_t> clone() const {
-            assert(false);
+            return std::make_unique<empty_iterator_t>();
         }
+
+        // Query
+        virtual size_t size() const {
+            return 0;
+        }
+
+        virtual size_t remaining() const {
+            return 0;
+        }
+
     };
 
     template <typename coll>
@@ -121,11 +113,11 @@ namespace ast {
             : stl_iterator(_vec.cbegin(), _vec.cend()) {
         }
 
-        virtual size_t size() {
+        virtual size_t size() const {
             return mEnd - mBegin;
         }
 
-        virtual val_cref_opt first() {
+        virtual val_cref_opt first() const {
             if (size() > 0) {
                 return { *mBegin };
             } else {
@@ -133,7 +125,7 @@ namespace ast {
             }
         }
 
-        virtual size_t remaining() {
+        virtual size_t remaining() const {
             return mEnd - mIt;
         }
 
@@ -141,7 +133,7 @@ namespace ast {
             if (mIt == mEnd) {
                 return {};
             } else {
-                auto & ret = *mIt;
+                auto& ret = *mIt;
                 mIt++;
                 return { ret };
             }
