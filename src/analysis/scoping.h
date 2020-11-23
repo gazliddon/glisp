@@ -2,7 +2,7 @@
 #define SCOPING_H_ES3E7MZK
 
 #include "../ast.h"
-#include "../scoper.h"
+#include "../cscoper.h"
 
 // Traverse AST and lexically scope 
 // all symbols correctly

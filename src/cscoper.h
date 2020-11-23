@@ -13,6 +13,9 @@ namespace glisp {
     public:
         cScoper(std::string _defaultScope);
 
+        using opt_symbol_t = boost::optional<ast::symbol_t>;
+        using opt_string   = boost::optional<std::string>;
+
         // Scope context functions
         void push(uint64_t _scopeId);
         void pushGenScope(std::string const& _scopeBaseName);
@@ -24,20 +27,21 @@ namespace glisp {
         uint64_t getOrRegisterScope(std::string const& _scopeName);
 
         // Symbol registration / queries
-        boost::optional<ast::symbol_t> registerDefaultSymbol(
+        opt_symbol_t registerDefaultSymbol(
             std::string const& _string, bool _allowAlreadyExisting = true);
-        boost::optional<ast::symbol_t> registerSymbol(
-            std::string const& _string, bool _allowAlreadyExisting = true);
-        boost::optional<ast::symbol_t> resolveSymbol(
-            std::string const& _str);
 
-        boost::optional<std::string> getSymbolName(
-            ast::symbol_t _sym) const;
+        opt_symbol_t registerSymbol(
+            std::string const& _string, bool _allowAlreadyExisting = true);
+
+        opt_symbol_t resolveSymbol(std::string const& _str);
+
+        opt_string getSymbolName(ast::symbol_t _sym) const;
 
         // Scope queries
         boost::optional<ast::cSymRegistry&> getScopeObject(uint64_t _scopeId);
-        boost::optional<ast::cSymRegistry const&> getScope(uint64_t _scopeId) const;
-        boost::optional<uint64_t> getScopeId(std::string const & _name) const;
+        boost::optional<ast::cSymRegistry const&> getScope(
+            uint64_t _scopeId) const;
+        boost::optional<uint64_t> getScopeId(std::string const& _name) const;
 
         // Current scope queries
         uint64_t getCurrentScopeId() const;
@@ -46,7 +50,7 @@ namespace glisp {
         ast::cSymRegistry& getCurrentScope();
 
         // Default scope queries
-        ast::cSymRegistry const & getDefaultScope() const;
+        ast::cSymRegistry const& getDefaultScope() const;
 
         // Debug
         void dump() const {
@@ -58,8 +62,9 @@ namespace glisp {
         }
 
     protected:
-
-        boost::optional<ast::symbol_t> registerSymbol(uint64_t _scopeId, std::string const & _name, bool _allowAlreadyExisting = true);
+        opt_symbol_t registerSymbol(uint64_t _scopeId,
+            std::string const& _name,
+            bool _allowAlreadyExisting = true);
 
         ast::cSymRegistry& getDefaultScope();
         std::list<uint64_t> mScopeStack;

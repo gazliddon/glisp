@@ -1,4 +1,4 @@
-#include "scoper.h"
+#include "cscoper.h"
 
 #include <iostream>
 #include <spdlog/spdlog.h>
@@ -31,7 +31,8 @@ namespace glisp {
         mScopeStack.push_front(_scopeId);
     }
 
-    boost::optional<uint64_t> cScoper::getScopeId(std::string const & _scopeName) const {
+    boost::optional<uint64_t> cScoper::getScopeId(
+        std::string const& _scopeName) const {
         return mScopes.getId(_scopeName);
     }
 
@@ -41,7 +42,8 @@ namespace glisp {
         if (!ret) {
             auto id = *mScopes.registerSymbol(_scopeName);
             mAllSymbols.insert({ id, ast::cSymRegistry(_scopeName) });
-            fmt::print("Registered {}:{}\n", mAllSymbols[id].getScopeName(), id);
+            fmt::print(
+                "Registered {}:{}\n", mAllSymbols[id].getScopeName(), id);
             return id;
 
         } else {
@@ -83,14 +85,13 @@ namespace glisp {
         return scope.getScopeName();
     }
 
-    boost::optional<ast::symbol_t> cScoper::registerSymbol(
-        uint64_t _scopeId,
+    cScoper::opt_symbol_t cScoper::registerSymbol(uint64_t _scopeId,
         std::string const& _name,
         bool _allowAlreadyExisting) {
         if (auto scope = getScopeObject(_scopeId)) {
             if (_allowAlreadyExisting) {
                 auto id = scope->getIdOrRegister(_name);
-                return ast::symbol_t( _scopeId, id );
+                return ast::symbol_t(_scopeId, id);
             } else {
                 if (auto id = scope->registerSymbol(_name)) {
                     return ast::symbol_t(_scopeId, *id);
@@ -107,12 +108,13 @@ namespace glisp {
         return {};
     }
 
-    boost::optional<ast::symbol_t> cScoper::registerSymbol(
+    cScoper::opt_symbol_t cScoper::registerSymbol(
         std::string const& _string, bool _allowAlreadyExisting) {
-        return registerSymbol(getCurrentScopeId(), _string, _allowAlreadyExisting);
+        return registerSymbol(
+            getCurrentScopeId(), _string, _allowAlreadyExisting);
     }
 
-    boost::optional<ast::symbol_t> cScoper::registerDefaultSymbol(
+    cScoper::opt_symbol_t cScoper::registerDefaultSymbol(
         std::string const& _string, bool _allowAlreadyExisting) {
 
         auto& def = getDefaultScope();
@@ -137,8 +139,7 @@ namespace glisp {
         return ast::symbol_t(mDefaultScopeId, *id);
     }
 
-    boost::optional<ast::symbol_t> cScoper::resolveSymbol(
-        std::string const& _str) {
+    cScoper::opt_symbol_t cScoper::resolveSymbol(std::string const& _str) {
 
         /* fmt::print("Searching for {}", _str); */
 
@@ -146,20 +147,20 @@ namespace glisp {
             auto it = mAllSymbols.find(scopeId);
 
             if (it != mAllSymbols.end()) {
-                auto & syms = it->second;
+                auto& syms = it->second;
                 if (auto symId = syms.getId(_str)) {
                     /* fmt::print("!found in {}", syms.getScopeName()); */
                     return { { scopeId, *symId } };
                 }
-            /* fmt::print("Not found in {}", syms.getScopeName()); */
+                /* fmt::print("Not found in {}", syms.getScopeName()); */
             }
         }
-
 
         return {};
     }
 
-    boost::optional<ast::cSymRegistry&> cScoper::getScopeObject(uint64_t _scopeId) {
+    boost::optional<ast::cSymRegistry&> cScoper::getScopeObject(
+        uint64_t _scopeId) {
         auto it = mAllSymbols.find(_scopeId);
 
         if (it == mAllSymbols.end()) {
@@ -183,7 +184,7 @@ namespace glisp {
         return {};
     }
 
-    ast::cSymRegistry const & cScoper::getDefaultScope() const {
+    ast::cSymRegistry const& cScoper::getDefaultScope() const {
         auto scope = getScope(mDefaultScopeId);
         assert(scope);
         return *scope;
@@ -200,8 +201,7 @@ namespace glisp {
         push(id);
     }
 
-    boost::optional<std::string> cScoper::getSymbolName(
-        ast::symbol_t _sym) const {
+    cScoper::opt_string cScoper::getSymbolName(ast::symbol_t _sym) const {
 
         if (auto scope = getScope(_sym.mScope)) {
             return scope->getScopedName(_sym.mId);

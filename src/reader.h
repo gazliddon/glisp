@@ -6,7 +6,7 @@
 
 #include "ast.h"
 #include "csymregistry.h"
-#include "scoper.h"
+#include "cscoper.h"
 
 namespace glisp {
 
