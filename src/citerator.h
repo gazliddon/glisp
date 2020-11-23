@@ -2,55 +2,35 @@
 #define CITERATOR_H_XR1T2AIN
 
 #include "ast.h"
-#include "seq.h"
 
 namespace ast {
+
+    // Pre-declarations
+   struct iterator_base_t;
 
     class cIterator {
 
     public:
-        cIterator() {
-            mpIt = std::make_unique<empty_iterator_t>();
-        }
+        cIterator() ;
 
-        cIterator(vector const& _vec) : cIterator(_vec.mForms){
-        }
+        cIterator(vector const& _vec);
+        cIterator(sexp const& _vec);
+        cIterator(set const& _vec);
+        cIterator(program const& _vec);
+        cIterator(bindings const & );
 
-        cIterator(sexp const& _vec) : cIterator(_vec.mForms){
-        }
+        cIterator clone() const ;
 
-        cIterator clone() const {
-            return cIterator(mpIt->clone());
-        }
+        cIterator rest() const ;
 
-        cIterator rest() const {
-            return cIterator(mpIt->rest());
-        }
+        size_t size() const ;
+        size_t remaining() const ;
 
-        size_t size() const {
-            return mpIt->size();
-        }
-
-        size_t remaining() const {
-            return mpIt->remaining();
-        }
-
-        val_cref_opt first() const {
-            return mpIt->first();
-        }
-
-        val_cref_opt next() const {
-            return mpIt->next();
-        }
+        boost::optional<val const &> first() const ;
+        boost::optional<val const &> next() const ;
 
     protected:
-        cIterator(std::unique_ptr<iterator_base_t> && _it) : mpIt(std::move(_it)) {
-        }
-
-        template<typename T>
-            cIterator(T const & coll) {
-            mpIt = std::make_unique<stl_iterator<T>>(coll.begin(), coll.end());
-            }
+        cIterator(std::unique_ptr<iterator_base_t> && _it);
         std::unique_ptr<iterator_base_t> mpIt;
     };
 }
