@@ -1,11 +1,13 @@
 #include "reader.h"
 #include "grammar.h"
-#include "analysis/scoping.h"
+#include "analysis/lexscope.h"
 
 namespace glisp {
     using cReaderSymTab = ast::cSymRegistry;
 
     cReader::reader_reslult_t cReader::read(std::string const& _str) {
+
+        fmt::print("starting to read\n");
 
         using namespace boost::spirit;
 
@@ -37,6 +39,7 @@ namespace glisp {
             }
         }
 
+        fmt::print("about to scope\n");
         mScopes = analysis::lexicallyScope(mScopes, ret.mAst);
 
 

@@ -60,6 +60,7 @@ namespace ast {
     }
 
     glisp::cReader::reader_reslult_t Evaluator::read(std::string const& _str) {
+        fmt::print("About to read from eval!\n");
         return mReader.read(_str);
     }
 

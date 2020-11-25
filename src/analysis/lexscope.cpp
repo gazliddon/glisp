@@ -1,4 +1,4 @@
-#include "scoping.h"
+#include "lexscope.h"
 
 namespace analysis {
     struct scope_analyzer_t : boost::static_visitor<void> {
@@ -51,6 +51,8 @@ namespace analysis {
         }
 
         void operator()(ast::sexp& _func) {
+            fmt::print("SEXP!\n");
+
             auto it = ast::cIterator(_func);
 
             if (auto p = it.next()) {
@@ -85,7 +87,7 @@ namespace analysis {
         }
 
         void onLambda(ast::cIterator& _it) {
-            fmt::format("LAMBDA!\n");
+            fmt::print("LAMBDA!\n");
             mScopes.pushGenScope("fn");
 
             if (auto vp = _it.next_of<ast::vector>()) {
@@ -103,20 +105,23 @@ namespace analysis {
         }
 
         void operator()(ast::program& _program) {
+            fmt::print("program!\n");
             visitSeq(_program);
         }
 
         template <typename X>
-        void operator()(ast::forward_ast<X> const& _val) const {
-            return (*this)(_val.get());
+        void operator()(
+            boost::spirit::x3::forward_ast<X> & _val) {
+            return operator()(_val.get());
+        }
+        template <typename X>
+        void operator()(X & _val) {
+            fmt::print("Uknown {}", demangle(_val));
         }
 
-        template <typename X>
-        void operator()(X& _val) {
-        }
 
         void operator()(ast::val& _val) {
-            fmt::format("VAL!\n");
+            fmt::print("VAL!\n");
             mpVal = &_val;
             boost::apply_visitor(*this, _val);
             mpVal = nullptr;
@@ -125,7 +130,7 @@ namespace analysis {
 
     glisp::cScoper lexicallyScope(
         glisp::cScoper const& _scoper, ast::val& _ast) {
-            fmt::format("Lexically scoping\n");
+        fmt::print("Lexically scoping\n");
 
         auto scoper = _scoper;
 
@@ -133,9 +138,8 @@ namespace analysis {
 
         analyzer(_ast);
 
-        fmt::format("Lexically scoping complete\n");
+        fmt::print("Lexically scoping complete\n");
 
         return scoper;
-
     }
 }

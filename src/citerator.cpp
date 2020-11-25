@@ -5,7 +5,8 @@ namespace ast {
 
     template <typename COLL>
     std::unique_ptr<seq::iterator_base_t> mkStlIt(COLL & _coll) {
-        assert(false);
+
+        return std::make_unique<seq::stl_iterator<COLL>>(_coll.begin(), _coll.end());
     }
 
 
