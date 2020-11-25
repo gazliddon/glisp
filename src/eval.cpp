@@ -1,8 +1,8 @@
 #include "eval.h"
+#include "citerator.h"
 #include "except.h"
 #include "native.h"
 #include "tostring.h"
-#include "citerator.h"
 
 #include <iostream>
 #include <spdlog/spdlog.h>
@@ -11,7 +11,7 @@ namespace ast {
     namespace x3 = boost::spirit::x3;
     using namespace std;
 
-    val eval_next(Evaluator& _e, iterator_base_t& _it) {
+    val eval_next(Evaluator& _e, cIterator& _it) {
         val ret;
 
         auto nx = _it.next();
@@ -24,12 +24,14 @@ namespace ast {
     }
 
     static std::vector<val> eval_seq_to_vec(
-        Evaluator& _e, ast::cIterator & _it) {
+        Evaluator& _e, ast::cIterator const& _it) {
+
         std::vector<val> ret;
+
         ret.reserve(_it.remaining());
-        while (auto v = _it.next()) {
-            ret.push_back(_e.eval(*v));
-        }
+
+        _it.iterate([&ret, &_e](auto const& v) { ret.push_back(_e.eval(v)); });
+
         return ret;
     }
 
@@ -39,34 +41,17 @@ namespace ast {
         return ret;
     }
 
-    static val eval_seq(Evaluator& _e, ast::cIterator & _it) {
+    static val eval_seq(Evaluator& _e, ast::cIterator const& _it) {
         val ret;
-
-        while (auto v = _it.next()) {
-            ret = _e.eval(*v);
-        }
+        _it.iterate([&ret, &_e](auto const& v) { ret = _e.eval(v); });
         return ret;
     }
 
     template <typename T>
-    static val eval_seq(Evaluator& _e, T& _seq) {
-        auto it = ast::cIterator(_seq);
-        return eval_seq(_e, it);
-    }
-    template <typename T>
     static val eval_rest(Evaluator& _e, T& _seq) {
-        auto it = ast::cIterator(_seq);
+        auto it   = ast::cIterator(_seq);
         auto rest = it.rest();
         return eval_seq(_e, rest);
-    }
-
-    template <typename T>
-    void eval_seq_inplace(Evaluator& _e, T& _seq) {
-        auto it = ast::cIterator(_seq);
-        while (auto v = it.next()) {
-            assert(false);
-            /* *v = _e.eval(*v); */
-        }
     }
 
     val Evaluator::readAndEval(std::string const& _str) {
@@ -85,8 +70,7 @@ namespace ast {
         native_function x;
         x.mFunc      = std::move(_func);
         x.mNumOfArgs = _nargs;
-        auto sym
-            = ast::symbol_t { *mAllSymbols.registerSymbol(_name, true) };
+        auto sym = ast::symbol_t { *mAllSymbols.registerSymbol(_name, true) };
         mEnvironment.setSymbol(sym, val(x));
     }
 
@@ -99,14 +83,14 @@ namespace ast {
         assert(false);
     }
 
-    val Evaluator::operator()(ast::macro const& _macro) {
+    val Evaluator::operator()(ast::macro & _macro) {
         assert(false);
         auto macro_val = ast::val(_macro);
         /* set(_macro.mSym.mName, macro_val); */
         return macro_val;
     }
 
-    val Evaluator::operator()(ast::let const& _let) {
+    val Evaluator::operator()(ast::let & _let) {
 
         auto oldEnv = mEnvironment;
 
@@ -126,7 +110,7 @@ namespace ast {
         return ret;
     }
 
-    val Evaluator::operator()(define const& _v) {
+    val Evaluator::operator()(define & _v) {
         auto ret = _v.mVal;
 
         ret = eval(_v.mVal);
@@ -135,7 +119,7 @@ namespace ast {
         return val(_v.mSym);
     }
 
-    val Evaluator::operator()(ast::symbol_t const& _v) {
+    val Evaluator::operator()(ast::symbol_t & _v) {
 
         if (auto sym = mEnvironment.getSymbol(_v)) {
             return *sym;
@@ -149,7 +133,7 @@ namespace ast {
         throw glisp::cEvalError(error);
     }
 
-    val Evaluator::operator()(ast::vector const& _vector) {
+    val Evaluator::operator()(ast::vector & _vector) {
         auto args = _vector;
 
         for (auto& v : args.mForms) {
@@ -161,7 +145,7 @@ namespace ast {
         return val(args);
     }
 
-    val Evaluator::operator()(ast::map const& _map) {
+    val Evaluator::operator()(ast::map & _map) {
         ast::map ret = _map;
 
         for (auto& p : ret.mHashMap) {
@@ -181,25 +165,8 @@ namespace ast {
         }
     }
 
-    template <class I>
-    std::vector<ast::val> get_rest(I _begin, I _end) {
-        std::vector<ast::val> ret;
-        if (_end - _begin > 1) {
-            _begin++;
-            while (_begin != _end) {
-                ret.push_back(*_begin);
-                _begin++;
-            }
-        }
-        return ret;
-    }
-
-    ast::val Evaluator::operator()(ast::program const& _program) {
+    ast::val Evaluator::operator()(ast::program & _program) {
         return eval_seq(*this, _program);
-    }
-
-    std::vector<ast::val> get_rest(std::vector<ast::val> const& _args) {
-        return get_rest(_args.begin(), _args.end());
     }
 
     ast::val get_first(std::vector<ast::val> const& _args) {
@@ -207,7 +174,7 @@ namespace ast {
     }
 
     template <typename T>
-    boost::optional<T const&> as(boost::optional<val const&> ptr) {
+    boost::optional<T &> as(boost::optional<val &> ptr) {
         if (ptr) {
             return ptr->get<T>();
         } else {
@@ -224,33 +191,33 @@ namespace ast {
         }
     }
 
-    void print(Evaluator& e, std::unique_ptr<iterator_base_t> const& _it) {
-        auto it = _it->clone();
-        while (auto p = it->next()) {
-            std::cout << e.to_string(*p, true) << std::endl;
-        }
+    void print(Evaluator& e, cIterator const& _it) {
+        _it.iterate([&e](auto const& v) {
+            std::cout << e.to_string(v, true) << std::endl;
+        });
     }
 
-    val Evaluator::apply(ast::cIterator & _exp, cEnv localEnv) {
-        auto rest = _exp.rest();
+    val Evaluator::apply(ast::cIterator& _exp, cEnv localEnv) {
+        auto rest  = _exp.rest();
         auto first = _exp.first();
         return apply(*first, rest, localEnv);
     }
 
-    val Evaluator::apply(
-        val const& _first, cIterator & _rest, cEnv localEnv) {
+    val Evaluator::apply(val & _first, cIterator& _rest, cEnv localEnv) {
 
         // TBD FIXIT!
 
         /* if (!_first.is_callable()) { */
         /*     auto error */
-        /*         = fmt::format("Unable to call {}", to_string(val(_first))); */
+        /*         = fmt::format("Unable to call {}", to_string(val(_first)));
+         */
         /*     error += "\n" + to_string(val(_first)); */
 
         /*     error += fmt::format("\n callable {}", */
         /*         std::is_base_of<val::callable_t, native_function>::value); */
         /*     error += fmt::format("\n var type {}", _first.var.which()); */
-        /*     error += fmt::format("\n var type name {}", _first.get_name()); */
+        /*     error += fmt::format("\n var type name {}", _first.get_name());
+         */
 
         /*     throw glisp::cEvalError(error); */
         /* } */
@@ -268,11 +235,10 @@ namespace ast {
 
             mCallDepth++;
 
-            while (auto sym_p = syms_it.next()) {
-                auto sym = sym_p->get<symbol_t>();
-                assert(sym);
+            syms_it.iterate([&_rest, this](auto const& val) {
+                auto sym = val.template get<symbol_t>();
                 mEnvironment.setSymbol(*sym, *_rest.next());
-            }
+            });
 
             // Now evaluate the body
             auto ret = (*this)(l->mBody);
@@ -303,7 +269,7 @@ namespace ast {
         assert(false);
     }
 
-    val Evaluator::operator()(ast::sexp const& _func) {
+    val Evaluator::operator()(ast::sexp & _func) {
 
         // Empty list evaluates to nil
         if (_func.mForms.empty()) {
@@ -321,12 +287,7 @@ namespace ast {
             }
 
             if (sym == mSf_do) {
-                val ret;
-
-                while (auto v = seq.next()) {
-                    ret = eval(*v);
-                }
-                return ret;
+                return eval_seq(*this, seq);
             }
 
             if (sym == mSf_comment) {
@@ -371,7 +332,8 @@ namespace ast {
     }
 
     void Evaluator::enumerateBindings(
-        std::function<void(ast::symbol_t const&, ast::val const&)> _func) const {
+        std::function<void(ast::symbol_t const&, ast::val const&)> _func)
+        const {
         mEnvironment.enumerate(
             [_func](auto _sym, ast::val const& _val) { _func(_sym, _val); });
     }
@@ -437,7 +399,8 @@ namespace ast {
         , mAllSymbols("special")
         , mReader(mAllSymbols) {
 
-        registerSymbols(mAllSymbols, { "let", "loop", "recur", "def", "fn", "throw" });
+        registerSymbols(
+            mAllSymbols, { "let", "loop", "recur", "def", "fn", "throw" });
 
         mSf_if      = *mAllSymbols.registerSymbol("if");
         mSf_and     = *mAllSymbols.registerSymbol("and");

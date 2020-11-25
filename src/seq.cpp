@@ -1,6 +1,6 @@
 #include "seq.h"
 
-namespace ast {
+namespace seq {
 
     std::unique_ptr<iterator_base_t> iterator_base_t::rest() const {
         auto ret = clone();

@@ -1,5 +1,6 @@
 #include "reader.h"
 #include "grammar.h"
+#include "analysis/scoping.h"
 
 namespace glisp {
     using cReaderSymTab = ast::cSymRegistry;
@@ -35,6 +36,9 @@ namespace glisp {
                 ret.mAst = p_ptr->mForms[0];
             }
         }
+
+        mScopes = analysis::lexicallyScope(mScopes, ret.mAst);
+
 
         if (r && iter == end) {
 

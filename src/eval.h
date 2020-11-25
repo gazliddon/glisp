@@ -71,27 +71,27 @@ namespace ast {
         std::stack<size_t> mLines;
 
         template <typename T>
-        val operator()(T const& _val) {
+        val operator()(T & _val) {
             std::cout << "Can't eval!" << demangle(_val) << std::endl;
             assert(false);
         }
 
         template <typename T>
-        val operator()(x3::forward_ast<T> const& _val) {
+        val operator()(x3::forward_ast<T> & _val) {
             return (*this)(_val.get());
         }
 
         /* val eval(ast::program& _prog); */
-        val operator()(symbol_t const& _v);
-        val operator()(define const& _v);
-        val operator()(set const& _set);
-        val operator()(vector const& _vector);
-        val operator()(map const& _map);
-        val operator()(meta const& _value);
-        val operator()(sexp const& _sexp);
-        val operator()(program const& _program);
-        val operator()(macro const& _macro);
-        val operator()(let const& _let);
+        val operator()(symbol_t & _v);
+        val operator()(define & _v);
+        val operator()(set & _set);
+        val operator()(vector & _vector);
+        val operator()(map & _map);
+        val operator()(meta & _value);
+        val operator()(sexp & _sexp);
+        val operator()(program & _program);
+        val operator()(macro & _macro);
+        val operator()(let & _let);
 
         void testEval();
 
@@ -142,7 +142,7 @@ namespace ast {
             return apply(_exp, mEnvironment);
         }
 
-        val apply(val const& _val, ast::cIterator& _it) {
+        val apply(val & _val, ast::cIterator& _it) {
             return apply(_val, _it, mEnvironment);
         }
 
@@ -155,7 +155,7 @@ namespace ast {
     protected:
         unsigned mCallDepth;
 
-        val apply(val const& _val, ast::cIterator& _it, cEnv localEnv);
+        val apply(val & _val, ast::cIterator& _it, cEnv localEnv);
         val apply(ast::cIterator& _exp, cEnv localEnv);
 
         std::stack<ast::val> mCallStack;

@@ -29,27 +29,33 @@
  */
 namespace ast {
     struct val;
+}
 
-    using val_cref_opt = boost::optional<val const&>;
-    using val_ref_opt  = boost::optional<val const>;
+namespace seq {
+
+    using val_cref_opt = boost::optional<ast::val const&>;
+    using val_ref_opt  = boost::optional<ast::val &>;
 
     struct iterator_base_t {
 
         // iterate
-        virtual val_cref_opt first() const = 0;
-        virtual val_cref_opt next() = 0;
+        // Peeks the value at the iterator
+        virtual val_ref_opt first() const = 0;
+        // Takes the next item in the sequence
+        virtual val_ref_opt next() = 0;
 
         // creation
+        // returns a new iterator dropping without the first item
         virtual std::unique_ptr<iterator_base_t> rest() const;
+
+        // Clone's current sequence
         virtual std::unique_ptr<iterator_base_t> clone() const = 0;
 
         // Query
         virtual size_t size() const = 0;
         virtual size_t remaining() const = 0;
-
-
-
         virtual bool at_end() const;
+
         virtual ~iterator_base_t() = default;
         virtual void drop();
         template <typename T>
@@ -59,11 +65,11 @@ namespace ast {
     };
 
     struct empty_iterator_t : public iterator_base_t {
-        virtual val_cref_opt first() const {
+        virtual val_ref_opt first() const {
             return {};
         }
 
-        virtual val_cref_opt next(){
+        virtual val_ref_opt next(){
             return {};
         }
 
@@ -90,8 +96,8 @@ namespace ast {
     template <typename coll>
     struct stl_iterator : public iterator_base_t {
 
-        using it   = typename coll::const_iterator;
-        using c_it = typename coll::const_iterator;
+        using it   = typename coll::iterator;
+        using c_it = typename coll::iterator;
 
         using this_t = stl_iterator<coll>;
 
@@ -110,18 +116,18 @@ namespace ast {
         }
 
         stl_iterator(coll const& _vec)
-            : stl_iterator(_vec.cbegin(), _vec.cend()) {
+            : stl_iterator(_vec.begin(), _vec.end()) {
         }
 
         virtual size_t size() const {
             return mEnd - mBegin;
         }
 
-        virtual val_cref_opt first() const {
-            if (size() > 0) {
-                return { *mBegin };
-            } else {
+        virtual val_ref_opt first() const {
+            if (at_end()) {
                 return {};
+            } else {
+                return { *mIt };
             }
         }
 
@@ -129,7 +135,7 @@ namespace ast {
             return mEnd - mIt;
         }
 
-        virtual val_cref_opt next() {
+        virtual val_ref_opt next() {
             if (mIt == mEnd) {
                 return {};
             } else {
@@ -140,7 +146,7 @@ namespace ast {
         }
 
         virtual std::unique_ptr<iterator_base_t> clone() const {
-            auto ret = std::make_unique<this_t>(mBegin, mEnd);
+            auto ret = std::make_unique<this_t>(mIt, mEnd);
             return ret;
         }
     };
