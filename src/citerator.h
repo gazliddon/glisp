@@ -6,14 +6,34 @@
 namespace ast {
 
     // Pre-declarations
+    //
+
+    /* class cIteratorBase { */
+    /* public: */
+    /*     ~cIteratorBase() = default; */
+
+    /*     virtual cIterator clone() const  = 0; */
+    /*     virtual cIterator rest() const   = 0; */
+    /*     virtual size_t size() const      = 0; */
+    /*     virtual size_t remaining() const = 0; */
+
+    /*     virtual boost::optional<val&> first() const = 0; */
+    /*     virtual boost::optional<val&> next() const  = 0; */
+
+    /* protected: */
+    /* }; */
 
     class cIterator {
 
     public:
+        // Construction
         cIterator();
+        cIterator(cIterator&& _it);
+        cIterator(cIterator const& _it);
 
         ~cIterator() = default;
 
+        // Ast construction
         cIterator(vector& _vec);
         cIterator(sexp& _vec);
         cIterator(set& _vec);
@@ -22,9 +42,7 @@ namespace ast {
         cIterator(std::vector<ast::val>& _valVec);
 
         cIterator clone() const;
-
         cIterator rest() const;
-
         size_t size() const;
         size_t remaining() const;
 
@@ -67,7 +85,6 @@ namespace ast {
         }
 
     protected:
-        bool mIsConst;
         cIterator(std::unique_ptr<seq::iterator_base_t>&& _it);
         std::unique_ptr<seq::iterator_base_t> mpIt;
     };

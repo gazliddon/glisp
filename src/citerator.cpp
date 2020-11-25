@@ -8,6 +8,14 @@ namespace ast {
         assert(false);
     }
 
+
+    cIterator::cIterator(cIterator&& _it) : cIterator(std::move(_it.mpIt)) {
+        }
+
+    cIterator::cIterator(cIterator const& _it)
+            : cIterator(_it.clone()) {
+        }
+
     cIterator::cIterator(set & _vec) : cIterator(mkStlIt(_vec.mForms)) {
     }
 
