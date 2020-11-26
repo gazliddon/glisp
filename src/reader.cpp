@@ -1,11 +1,12 @@
 #include "reader.h"
-#include "grammar.h"
 #include "analysis/lexscope.h"
+#include "grammar.h"
 
 namespace glisp {
     using cReaderSymTab = ast::cSymRegistry;
 
-    cReader::reader_reslult_t cReader::read(std::string const& _str) {
+    cReader::reader_reslult_t cReader::read(
+        std::string const& _str, std::string const& _fileName) {
 
         fmt::print("starting to read\n");
 
@@ -21,14 +22,10 @@ namespace glisp {
 
         using x3::with;
 
-        parse_ctx_t context {
-            .mScopes = mScopes,
-        };
-
         auto const parser = //
             with<x3::error_handler_tag>(ref(ret.mErrors))[grammar::program];
 
-        auto const parser2 = with<parse_ctx_t>(ref(context))[parser];
+        auto const parser2 = with<ast::cContext>(ref(mContext))[parser];
 
         bool r = phrase_parse(
             iter, end, parser2, x3::ascii::space_type(), ret.mAst);
@@ -40,8 +37,8 @@ namespace glisp {
         }
 
         fmt::print("about to scope\n");
-        mScopes = analysis::lexicallyScope(mScopes, ret.mAst);
 
+        analysis::lexicallyScope(mContext, ret.mAst);
 
         if (r && iter == end) {
 
@@ -56,10 +53,8 @@ namespace glisp {
 
     ////////////////////////////////////////////////////////////////////////////////
 
-
-
-    cReader::cReader(cScoper& _scopes)
-        : mScopes(_scopes) {
+    cReader::cReader(ast::cContext & _ctx)
+        : mContext(_ctx) {
     }
 
     cReader::reader_reslult_t::reader_reslult_t(std::string const& _text)

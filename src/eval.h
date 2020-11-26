@@ -148,9 +148,10 @@ namespace ast {
 
         void setCurrentNamespace(std::string const& _name);
 
-        glisp::cScoper const& getAllSymbols() const {
-            return mAllSymbols;
+        cContext & getAstContext() {
+            return mContext;
         }
+
 
     protected:
         unsigned mCallDepth;
@@ -159,7 +160,8 @@ namespace ast {
         val apply(ast::cIterator& _exp, cEnv localEnv);
 
         std::stack<ast::val> mCallStack;
-        glisp::cScoper mAllSymbols;
+        ast::cContext mContext;
+
         glisp::cReader mReader;
         cEnv mEnvironment;
         ast::cSymRegistry mSymTab;

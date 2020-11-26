@@ -3,7 +3,8 @@
 namespace analysis {
     struct scope_analyzer_t : boost::static_visitor<void> {
 
-        glisp::cScoper& mScopes;
+        ast::cContext & mContext;
+
 
         ast::symbol_t mSymLambda;
         ast::symbol_t mSymDefine;
@@ -12,16 +13,19 @@ namespace analysis {
 
         ast::val* mpVal;
 
-        scope_analyzer_t(glisp::cScoper& _scopes)
-            : mScopes(_scopes)
+        scope_analyzer_t(ast::cContext & _ctx)
+            : mContext(_ctx)
             , mpVal(nullptr) {
-            mSymLambda = *mScopes.resolveSymbol("fn");
-            mSymDefine = *mScopes.resolveSymbol("def");
-            mSymQuote  = *mScopes.resolveSymbol("quote");
-            mUserId    = *mScopes.getScopeId("user");
+                auto & scopes = mContext.getScoper();
+
+            mSymLambda = *scopes.resolveSymbol("fn");
+            mSymDefine = *scopes.resolveSymbol("def");
+            mSymQuote  = *scopes.resolveSymbol("quote");
+            mUserId    = *scopes.getScopeId("user");
         }
 
         void operator()(ast::symbol_t& _v) {
+
         }
 
         void operator()(ast::keyword& _keyword) {
@@ -51,27 +55,33 @@ namespace analysis {
         }
 
         void operator()(ast::sexp& _func) {
+            auto & scopes = mContext.getScoper();
+
             fmt::print("SEXP!\n");
 
             auto it = ast::cIterator(_func);
 
-            if (auto p = it.next()) {
-                if (auto sym = p->get<ast::symbol_t>()) {
-                    if (*sym == mSymDefine) {
-                        onDefine(it);
-                        return;
-                    }
+            if (auto sym = it.next_as<ast::symbol_t>()) {
 
-                    if (*sym == mSymLambda) {
-                        onLambda(it);
-                        return;
-                    }
+                fmt::print("Got a symbol of {}", *scopes.getSymbolName(*sym));
 
-                    if (*sym == mSymLambda) {
-                        onLambda(it);
-                        return;
-                    }
+                if (*sym == mSymDefine) {
+                    onDefine(it);
+                    return;
                 }
+
+                if (*sym == mSymLambda) {
+                    onLambda(it);
+                    return;
+                }
+
+                if (*sym == mSymLambda) {
+                    onLambda(it);
+                    return;
+                }
+            } else {
+
+                fmt::print("Not a symbol!");
             }
         }
 
@@ -79,29 +89,43 @@ namespace analysis {
         }
 
         void onLet(ast::cIterator& _it) {
-            mScopes.pushGenScope("let");
-            mScopes.pop();
+            auto & scopes = mContext.getScoper();
+            scopes.pushGenScope("let");
+            scopes.pop();
         }
 
         void onDefine(ast::cIterator& _it) {
         }
 
         void onLambda(ast::cIterator& _it) {
+            auto & scopes = mContext.getScoper();
             fmt::print("LAMBDA!\n");
-            mScopes.pushGenScope("fn");
 
-            if (auto vp = _it.next_of<ast::vector>()) {
+            scopes.pushGenScope("fn");
+
+            if (auto doc = _it.first_as<std::string>()) {
+                _it.drop();
+            }
+
+            if (auto vp = _it.next_as<ast::vector>()) {
+
+                fmt::print("Got a vector!\n");
 
                 ast::cIterator it(*vp);
 
-                it.iterate<ast::symbol_t>([this](ast::symbol_t const& _sym) {
-                    if (auto name = mScopes.getSymbolName(_sym)) {
-                        mScopes.registerSymbol(*name, true);
+                it.iterate<ast::symbol_t>([&scopes](ast::symbol_t& _sym) {
+                    fmt::print("Iterating symbol!\n");
+                    if (auto name = scopes.getSymbolName(_sym)) {
+                        fmt::print("Symbol name is {}!!!", *name);
+                        auto newSym = scopes.registerSymbol(*name, true);
+                        _sym        = *newSym;
                     }
                 });
+
+                _it.iterate([this](auto& _val) { (*this)(_val); });
             }
 
-            mScopes.pop();
+            scopes.pop();
         }
 
         void operator()(ast::program& _program) {
@@ -110,36 +134,37 @@ namespace analysis {
         }
 
         template <typename X>
-        void operator()(
-            boost::spirit::x3::forward_ast<X> & _val) {
+        void operator()(boost::spirit::x3::forward_ast<X>& _val) {
             return operator()(_val.get());
         }
         template <typename X>
-        void operator()(X & _val) {
+        void operator()(X& _val) {
             fmt::print("Uknown {}", demangle(_val));
         }
-
 
         void operator()(ast::val& _val) {
             fmt::print("VAL!\n");
             mpVal = &_val;
+            try {
+
             boost::apply_visitor(*this, _val);
+
+            } catch(...) {
+
+            };
+
             mpVal = nullptr;
         }
     };
 
-    glisp::cScoper lexicallyScope(
-        glisp::cScoper const& _scoper, ast::val& _ast) {
+    void lexicallyScope(
+        ast::cContext & _ctx, ast::val& _ast) {
         fmt::print("Lexically scoping\n");
 
-        auto scoper = _scoper;
-
-        scope_analyzer_t analyzer(scoper);
+        scope_analyzer_t analyzer(_ctx);
 
         analyzer(_ast);
 
         fmt::print("Lexically scoping complete\n");
-
-        return scoper;
     }
 }

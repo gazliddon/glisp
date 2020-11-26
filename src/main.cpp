@@ -72,7 +72,7 @@ namespace glisp {
                         cout << _str << " : " << mEval.to_string(_v) << endl;
                     });
 
-                mEval.getAllSymbols().dump();
+                mEval.getAstContext().getScoper().dump();
             });
         }
 

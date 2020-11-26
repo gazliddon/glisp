@@ -26,21 +26,21 @@ namespace grammar {
     };
 
 
-    auto constexpr getParseCtx = [](auto & _ctx) -> glisp::parse_ctx_t & {
-        auto& parseCtx = x3::get<glisp::parse_ctx_t>(_ctx).get();
+    auto constexpr getParseCtx = [](auto & _ctx) -> ast::cContext & {
+        auto& parseCtx = x3::get<ast::cContext>(_ctx).get();
         return parseCtx;
     };
 
     auto constexpr pushScope = [](auto &_ctx, std::string const & _scopeBaseName) {
         auto& parseCtx = getParseCtx(_ctx);
-        auto & scoper = parseCtx.mScopes;
+        auto & scoper = parseCtx.getScoper();
         auto id = scoper.genScope(_scopeBaseName);
         scoper.push(id);
     };
 
     auto constexpr popScope = [](auto & _ctx) {
-        glisp::parse_ctx_t & parseCtx = getParseCtx(_ctx);
-        parseCtx.mScopes.pop();
+        ast::cContext & parseCtx = getParseCtx(_ctx);
+        parseCtx.getScoper().pop();
     };
 
     auto constexpr registerSymbol = [](auto & _ctx) -> ast::symbol_t {
@@ -48,7 +48,7 @@ namespace grammar {
         auto parse_ctx = getParseCtx(_ctx);
         fmt::print("Trying to register {}\n", name);
 
-        auto id = parse_ctx.mScopes.registerSymbol(name, true);
+        auto id = parse_ctx.getScoper().registerSymbol(name, true);
         return { *id };
     };
 
@@ -57,14 +57,14 @@ namespace grammar {
         auto parse_ctx = getParseCtx(_ctx);
         fmt::print("Trying to register {}\n", name);
 
-        auto id = parse_ctx.mScopes.registerSymbol(name);
+        auto id = parse_ctx.getScoper().registerSymbol(name);
         return { *id };
     };
 
     auto resolveSymbol = [](auto& _ctx) -> ast::symbol_t {
         auto name = _attr(_ctx);
         auto parse_ctx = getParseCtx(_ctx);
-        auto id = parse_ctx.mScopes.resolveSymbol(name);
+        auto id = parse_ctx.getScoper().resolveSymbol(name);
 
         if (!id) {
             return registerSymbol(_ctx);
@@ -325,7 +325,7 @@ namespace grammar {
         ast::val & val = _attr(_ctx);
         ast::sexp & ret = _val(_ctx);
 
-        auto sym = pctx.mScopes.resolveSymbol("quote");
+        auto sym = pctx.getScoper().resolveSymbol("quote");
 
         assert(sym);
         auto symbolAsVal = ast::val(ast::symbol_t(*sym));

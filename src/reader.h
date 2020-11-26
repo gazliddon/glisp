@@ -6,16 +6,11 @@
 
 #include "ast.h"
 #include "csymregistry.h"
-#include "cscoper.h"
+#include "ctx.h"
 
 namespace glisp {
 
-    struct parse_ctx_t {
-        cScoper& mScopes;
-    };
-
     namespace x3 = boost::spirit::x3;
-
 
     class cReader {
     public:
@@ -33,10 +28,10 @@ namespace glisp {
             error_handler_type mErrors;
         };
 
-        cReader(cScoper & scoper);
-        reader_reslult_t read(std::string const& _str);
+        cReader(ast::cContext & _ctx);
+        reader_reslult_t read(std::string const& _str, std::string const & _file = "REPL");
 
-        cScoper& mScopes;
+        ast::cContext & mContext;
     };
 }
 

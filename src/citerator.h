@@ -64,6 +64,14 @@ namespace ast {
                 return {};
             }
         }
+        template <typename T>
+        boost::optional<T&> first_as() const {
+            if (auto v = first()) {
+                return v->get<T>();
+            } else {
+                return {};
+            }
+        }
 
         template <typename T>
         boost::optional<T&> next_of() const {
@@ -77,11 +85,15 @@ namespace ast {
         }
 
         template <typename T>
-        void iterate(std::function<void(T const&)> _func) const {
+        void iterate(std::function<void(T &)> _func) const {
             auto it = clone();
             while (auto p = next_of<T>()) {
                 _func(*p);
             }
+        }
+
+        void drop() const {
+            next();
         }
 
     protected:

@@ -67,11 +67,12 @@ namespace ast {
     void Evaluator::add_native_function(std::string const& _name,
         std::function<val(Evaluator& e, cIterator&)>&& _func,
         int _nargs) {
+        auto & scopes = getAstContext().getScoper(); 
 
         native_function x;
         x.mFunc      = std::move(_func);
         x.mNumOfArgs = _nargs;
-        auto sym = ast::symbol_t { *mAllSymbols.registerSymbol(_name, true) };
+        auto sym = ast::symbol_t { *scopes.registerSymbol(_name, true) };
         mEnvironment.setSymbol(sym, val(x));
     }
 
@@ -84,14 +85,14 @@ namespace ast {
         assert(false);
     }
 
-    val Evaluator::operator()(ast::macro & _macro) {
+    val Evaluator::operator()(ast::macro& _macro) {
         assert(false);
         auto macro_val = ast::val(_macro);
         /* set(_macro.mSym.mName, macro_val); */
         return macro_val;
     }
 
-    val Evaluator::operator()(ast::let & _let) {
+    val Evaluator::operator()(ast::let& _let) {
 
         auto oldEnv = mEnvironment;
 
@@ -111,7 +112,7 @@ namespace ast {
         return ret;
     }
 
-    val Evaluator::operator()(define & _v) {
+    val Evaluator::operator()(define& _v) {
         auto ret = _v.mVal;
 
         ret = eval(_v.mVal);
@@ -120,7 +121,7 @@ namespace ast {
         return val(_v.mSym);
     }
 
-    val Evaluator::operator()(ast::symbol_t & _v) {
+    val Evaluator::operator()(ast::symbol_t& _v) {
 
         if (auto sym = mEnvironment.getSymbol(_v)) {
             return *sym;
@@ -134,7 +135,7 @@ namespace ast {
         throw glisp::cEvalError(error);
     }
 
-    val Evaluator::operator()(ast::vector & _vector) {
+    val Evaluator::operator()(ast::vector& _vector) {
         auto args = _vector;
 
         for (auto& v : args.mForms) {
@@ -146,7 +147,7 @@ namespace ast {
         return val(args);
     }
 
-    val Evaluator::operator()(ast::map & _map) {
+    val Evaluator::operator()(ast::map& _map) {
         ast::map ret = _map;
 
         for (auto& p : ret.mHashMap) {
@@ -166,7 +167,7 @@ namespace ast {
         }
     }
 
-    ast::val Evaluator::operator()(ast::program & _program) {
+    ast::val Evaluator::operator()(ast::program& _program) {
         return eval_seq(*this, _program);
     }
 
@@ -175,7 +176,7 @@ namespace ast {
     }
 
     template <typename T>
-    boost::optional<T &> as(boost::optional<val &> ptr) {
+    boost::optional<T&> as(boost::optional<val&> ptr) {
         if (ptr) {
             return ptr->get<T>();
         } else {
@@ -204,7 +205,7 @@ namespace ast {
         return apply(*first, rest, localEnv);
     }
 
-    val Evaluator::apply(val & _first, cIterator& _rest, cEnv localEnv) {
+    val Evaluator::apply(val& _first, cIterator& _rest, cEnv localEnv) {
 
         // TBD FIXIT!
 
@@ -270,7 +271,7 @@ namespace ast {
         assert(false);
     }
 
-    val Evaluator::operator()(ast::sexp & _func) {
+    val Evaluator::operator()(ast::sexp& _func) {
 
         // Empty list evaluates to nil
         if (_func.mForms.empty()) {
@@ -377,11 +378,12 @@ namespace ast {
     }
 
     std::string Evaluator::symbolToName(ast::symbol_t const& _sym) const {
-        auto ret = mAllSymbols.getSymbolName({ _sym.mScope, _sym.mId });
+        auto& scopes = mContext.getScoper();
+        auto ret = scopes.getSymbolName({ _sym.mScope, _sym.mId });
 
         if (!ret) {
             fmt::print("Cannot find sym name {}:{}\n", _sym.mScope, _sym.mId);
-            mAllSymbols.dump();
+            scopes.dump();
         }
 
         assert(ret);
@@ -397,27 +399,29 @@ namespace ast {
 
     Evaluator::Evaluator()
         : mCallDepth(0)
-        , mAllSymbols("special")
-        , mReader(mAllSymbols) {
+        , mReader(mContext) {
+
+        auto& scopes = mContext.getScoper();
 
         registerSymbols(
-            mAllSymbols, { "let", "loop", "recur", "def", "fn", "throw" });
+            scopes, { "let", "loop", "recur", "def", "fn", "throw" });
 
-        mSf_if      = *mAllSymbols.registerSymbol("if");
-        mSf_and     = *mAllSymbols.registerSymbol("and");
-        mSf_or      = *mAllSymbols.registerSymbol("or");
-        mSf_quote   = *mAllSymbols.registerSymbol("quote");
-        mSf_do      = *mAllSymbols.registerSymbol("do");
-        mSf_comment = *mAllSymbols.registerSymbol("comment");
+        mSf_if      = *scopes.registerSymbol("if");
+        mSf_and     = *scopes.registerSymbol("and");
+        mSf_or      = *scopes.registerSymbol("or");
+        mSf_quote   = *scopes.registerSymbol("quote");
+        mSf_do      = *scopes.registerSymbol("do");
+        mSf_comment = *scopes.registerSymbol("comment");
 
-        mAllSymbols.push("native");
+        scopes.push("native");
 
         glisp::add_natives(*this);
     }
 
     void Evaluator::setCurrentNamespace(std::string const& _name) {
-        auto id = mAllSymbols.getOrRegisterScope(_name);
-        mAllSymbols.push(id);
+        auto& scopes = mContext.getScoper();
+        auto id      = scopes.getOrRegisterScope(_name);
+        scopes.push(id);
     }
 
 }
