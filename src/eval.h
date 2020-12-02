@@ -120,6 +120,7 @@ namespace ast {
         }
 
         std::string symbolToName(symbol_t const& _sym) const;
+    std::string symbolToUnscopedName(ast::symbol_t const& _sym) const;
 
         Evaluator();
 

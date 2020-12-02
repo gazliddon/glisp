@@ -4,11 +4,12 @@
 namespace utils {
     cStringBuilder::cStringBuilder(unsigned _indent)
         : mIndent(_indent)
+        , mIndentationSize(2)
         , mString("") {
     }
 
     std::string cStringBuilder::getIndentString() const {
-        auto indent = fmt::format("{:{}}", "", mIndent);
+        auto indent = fmt::format("{:{}}", "", mIndent * mIndentationSize);
         return indent;
     }
 

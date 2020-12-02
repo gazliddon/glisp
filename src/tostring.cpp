@@ -3,7 +3,8 @@
 #include <boost/mp11/mpl.hpp>
 #include <boost/spirit/home/x3/support/ast/variant.hpp>
 #include <spdlog/spdlog.h>
-#include <regex>
+
+#include "utils/cstringbuilder.h"
 
 namespace glisp {
     using namespace boost::mp11;
@@ -120,230 +121,221 @@ namespace glisp {
         }
     };
 
-    struct cToString : public boost::static_visitor<std::string> {
+    struct cToString : public boost::static_visitor<void> {
         ast::Evaluator const& mEval;
+
+        utils::cStringBuilder mOut;
+        bool mScopedSymbols;
+
         cToString(ast::Evaluator const& _eval, bool _withTypes = false)
-            : mEval(_eval)
-            , mWithTypes(_withTypes)
-            , mIndent(0) {
+            : mEval(_eval) {
+            mScopedSymbols = false;
         }
 
-        bool mWithTypes;
-        unsigned mIndent;
-
-        template <typename T>
-        std::string format(T const& _v, std::string const& _vstr) {
-            if (mWithTypes) {
-                type_getter_t t;
-                std::string _typeStr = t(_v);
-                return fmt::format("{}:{}", _vstr, _typeStr);
-
-            } else {
-                return _vstr;
-            }
+        std::string build(ast::val const& _val) {
+            render(_val);
+            return mOut.build();
         }
 
-        std::string getIndent() const {
-            return fmt::format("{:{}}", "", mIndent * 4);
-        }
-
-        std::string operator()(bool const& _val) {
+        void operator()(bool const& _val) {
             std::string val_str;
             if (_val) {
                 val_str = "true";
             } else {
                 val_str = "false";
             }
-            return format(_val, val_str);
+            mOut.print(val_str);
         }
 
-        std::string operator()(ast::symbol_t const& _v) {
-            return format(_v, mEval.symbolToName(_v));
+        void operator()(ast::symbol_t const& _v) {
+
+            if (mScopedSymbols)
+                mOut.print(mEval.symbolToName(_v));
+            else
+                mOut.print(mEval.symbolToUnscopedName(_v));
         }
 
-        std::string operator()(ast::keyword const& _v) {
-            auto str = fmt::format(":{}", render(_v.mSym));
-            return format(_v, str);
+        void operator()(ast::keyword const& _v) {
+            mOut.print(":");
+            render(_v.mSym);
         }
 
-        std::string operator()(std::string const& _v) {
-            return format(_v, _v);
+        void operator()(std::string const& _v) {
+            mOut.print(_v);
         }
 
-        std::string operator()(ast::hint const& _v) {
-            return format(_v, fmt::format("^{}", render(_v.mSym)));
+        void operator()(ast::hint const& _v) {
+            mOut.print("^");
+            render(_v.mSym);
         }
 
-        std::string operator()(ast::nil const& _v) {
-            return format(_v, "nil");
+        void operator()(ast::nil const& _v) {
+            mOut.print("nil");
+        }
+        void operator()(char const* _v) {
+            mOut.print(_v);
         }
 
-        std::string operator()(double _v) {
-            return format(_v, fmt::format("{}", _v));
+        void operator()(double _v) {
+            mOut.print("{}", _v);
         }
 
-        std::string operator()(char _v) {
-            return format(_v, fmt::format("{}", _v));
+        void operator()(char _v) {
+            mOut.print("{}", _v);
         }
 
-        std::string operator()(ast::set const& _v) {
-            return format(_v, fmt::format("#{}", renderBraced(_v.mForms)));
+        void operator()(ast::set const& _v) {
+            mOut.print(":");
+            renderBraced(_v.mForms);
         }
 
-        std::string operator()(ast::vector const& _val) {
-            return format(_val, renderVector(_val.mForms));
+        void operator()(ast::vector const& _val) {
+            renderVector(_val.mForms);
         }
 
-        std::string operator()(ast::map const& _val) {
-            return format(_val, renderBraced(_val.mHashMap));
+        void operator()(ast::map const& _val) {
+            renderBraced(_val.mHashMap);
         }
 
-        std::string operator()(ast::meta const& _val) {
-            return format(_val, "^{:meta \"TBD\"}");
+        void operator()(ast::meta const& _val) {
+            mOut.print("^{:meta \"TBD\"}");
         }
 
-        std::string operator()(ast::map_entry const& _val) {
-            return format(_val,
-                fmt::format("{} : {}", render(_val.mKey), render(_val.mValue)));
+        void operator()(ast::map_entry const& _val) {
+            render(_val.mKey);
+            render(" : ");
+            render(_val.mValue);
         }
 
-        std::string operator()(ast::args const& _val) {
-            std::string finalArg;
+        void operator()(ast::args const& _val) {
+
+            render("[");
+
+            renderCollection(_val.mArgs.mForms);
             if (_val.mExtra) {
-                finalArg = " & " + render(*_val.mExtra);
+                render(" & ");
+                render(*_val.mExtra);
             }
 
-            return format(_val,
-                fmt::format(
-                    "[{}{}]", renderCollection(_val.mArgs.mForms), finalArg));
+            render("]");
         }
 
-        std::string operator()(ast::lambda const& _val) {
-            auto line1
-                = format(_val, fmt::format("(fn {}\n", render(_val.mArgs)));
+        void operator()(ast::lambda const& _val) {
+            render("(fn ");
+            render(_val.mArgs);
+            mOut.indent().cr();
 
-            mIndent++;
+            if (_val.mDocString) {
+                render(*_val.mDocString);
+                mOut.cr();
+            }
 
-            auto line2 = getIndent()
-                + format(_val, fmt::format("{})", render(_val.mBody)));
-
-            mIndent--;
-
-            return line1 + line2;
+            render(_val.mBody);
+            mOut.deIndent();
+            render(")");
         }
 
-        std::string operator()(ast::native_function const& _val) {
-            return format(_val,
-                fmt::format("[fn {} :args {}]", 0xabcdef, _val.mNumOfArgs));
+        void operator()(ast::native_function const& _val) {
+            mOut.print("#[fn {} :args {}]", 0xabcdef, _val.mNumOfArgs);
         }
 
-        std::string operator()(ast::sexp const& _val) {
-            return format(_val, renderList(_val.mForms));
+        void operator()(ast::sexp const& _val) {
+            renderList(_val.mForms);
         }
 
-        std::string operator()(ast::program const& _val) {
-            auto pre         = getIndent();
-            auto intersperse = "\n";
-            return format(_val,
-                renderCollection(_val.mForms, pre.c_str(), "", intersperse));
+        void operator()(ast::program const& _val) {
+            renderCollection(_val.mForms, "", "", "\n");
         }
 
-        std::string operator()(ast::bindings const& _val) {
-            return renderVector(_val.mBindings);
+        void operator()(ast::bindings const& _val) {
+            renderVector(_val.mBindings);
         }
 
-        std::string operator()(ast::pair const& _val) {
-            return fmt::format(
-                "{} {}", render(_val.mFirst), render(_val.mSecond));
+        void operator()(ast::pair const& _val) {
+            render(_val.mFirst);
+            render(_val.mSecond);
         }
 
-        std::string operator()(ast::let const& _val) {
-
-            auto line1 = format(
-                _val, fmt::format("(let {}\n", render(_val.mBindings)));
-
-            mIndent++;
-
-            auto line2 = getIndent()
-                + format(_val, fmt::format("{})", render(_val.mBody)));
-
-            mIndent--;
-
-            return line1 + line2;
+        void operator()(ast::let const& _val) {
+            render("(let ");
+            render(_val.mBindings);
+            mOut.indent().cr();
+            render(_val.mBody);
+            mOut.deIndent();
         }
 
-        std::string operator()(ast::macro const& _val) {
-            return format(_val,
-                fmt::format("(defmacro {} {} {})",
-                    render(_val.mSym),
-                    render(_val.mArgs),
-                    render(_val.mVal)));
+        void operator()(ast::macro const& _val) {
+            render("(defmacro ");
+            render(_val.mSym);
+            render(_val.mArgs);
+            render(_val.mVal);
+            render(")");
         }
 
         template <typename T>
-        std::string render(T const& _val) {
+        void render(T const& _val) {
             return operator()(_val);
         }
 
-        std::string operator()(ast::define const& _val) {
-            return format(_val,
-                fmt::format(
-                    "(define {} {})", render(_val.mSym), render(_val.mVal)));
+        void operator()(ast::define const& _val) {
+            render("(def ");
+            render(_val.mSym), render(_val.mVal);
+            render(")");
         }
-        std::string operator()(ast::unbound const&) {
-            return "[UNBOUND]";
+        void operator()(ast::unbound const&) {
+            render("[UNBOUND]");
         }
 
         template <typename X>
-        std::string operator()(X const& _val) {
-            return demangle(_val) + "error!";
+        void operator()(X const& _val) {
+            render(demangle(_val) + "error!");
         }
 
-        std::string operator()(ast::val const& _val) {
-            return boost::apply_visitor(*this, _val);
+        void operator()(ast::val const& _val) {
+            boost::apply_visitor(*this, _val);
         }
 
         template <typename T>
-        std::string renderCollection(T const& _col,
+        void renderCollection(T const& _col,
             char const* _pre         = "",
             char const* _post        = "",
             char const* _intersperse = " ") {
 
-            std::string str;
+            mOut.print(_pre);
 
             auto b = _col.begin();
             auto e = _col.end();
             while (b != e) {
                 auto& elem = *b++;
-                str += render(elem);
+                render(elem);
                 if (b != e) {
-                    str += _intersperse;
+                    render(_intersperse);
                 }
             }
-            return fmt::format("{}{}{}", _pre, str, _post);
+            mOut.print(_post);
         }
 
         template <typename T>
-        std::string renderList(T const& _col) {
-            return renderCollection(_col, "(", ")");
+        void renderList(T const& _col) {
+            renderCollection(_col, "(", ")");
         }
 
         template <typename T>
-        std::string renderBraced(T const& _col) {
-            return renderCollection(_col, "{", "}");
+        void renderBraced(T const& _col) {
+            renderCollection(_col, "{", "}");
         }
 
         template <typename T>
-        std::string renderVector(T const& _col) {
-            return renderCollection(_col, "[", "]");
+        void renderVector(T const& _col) {
+            renderCollection(_col, "[", "]");
         }
 
         template <typename X>
-        std::string operator()(boost::spirit::x3::forward_ast<X> const& _val) {
-            return operator()(_val.get());
+        void operator()(boost::spirit::x3::forward_ast<X> const& _val) {
+            operator()(_val.get());
         }
 
-        std::string render(ast::val const& _v) {
+        void render(ast::val const& _v) {
             return (*this)(_v);
         }
     };
@@ -351,7 +343,7 @@ namespace glisp {
     std::string to_string(
         ast::Evaluator const& _eval, ast::val const& _val, bool _withTypes) {
         cToString to_str(_eval, _withTypes);
-        return to_str(_val);
+        return to_str.build(_val);
     }
 
     std::string to_type_string(ast::val const& _val) {

@@ -27,6 +27,7 @@ namespace utils {
 
     protected:
         unsigned mIndent;
+        unsigned mIndentationSize;
         std::string mString;
 
         std::string getIndentString() const;

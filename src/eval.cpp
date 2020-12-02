@@ -389,6 +389,20 @@ namespace ast {
         return *ret;
     }
 
+    std::string Evaluator::symbolToUnscopedName(ast::symbol_t const& _sym) const {
+        auto& scopes = mContext.getScoper();
+        auto ret = scopes.getSymbolName({ _sym.mScope, _sym.mId });
+
+        if (!ret) {
+            fmt::print("Cannot find sym name {}:{}\n", _sym.mScope, _sym.mId);
+            scopes.dump();
+        }
+
+        assert(ret);
+        return *ret;
+    }
+
+
     void registerSymbols(
         glisp::cScoper& _scopes, std::initializer_list<char const*> _vars) {
         for (auto& e : _vars) {
