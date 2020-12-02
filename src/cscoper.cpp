@@ -88,6 +88,7 @@ namespace glisp {
     cScoper::opt_symbol_t cScoper::registerSymbol(uint64_t _scopeId,
         std::string const& _name,
         bool _allowAlreadyExisting) {
+
         if (auto scope = getScopeObject(_scopeId)) {
             if (_allowAlreadyExisting) {
                 auto id = scope->getIdOrRegister(_name);
@@ -204,11 +205,20 @@ namespace glisp {
     cScoper::opt_string cScoper::getSymbolName(ast::symbol_t _sym) const {
 
         if (auto scope = getScope(_sym.mScope)) {
+            return scope->getName(_sym.mId);
+        }
+
+        return {};
+    }
+    cScoper::opt_string cScoper::getScopedSymbolName(ast::symbol_t _sym) const {
+
+        if (auto scope = getScope(_sym.mScope)) {
             return scope->getScopedName(_sym.mId);
         }
 
         return {};
     }
+
 
     void cScoper::push(std::string const& _scopeName) {
         auto id = getOrRegisterScope(_scopeName);

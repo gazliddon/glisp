@@ -1,5 +1,6 @@
 #include "ast.h"
 #include "eval.h"
+#include "tostring.h"
 
 namespace ast {
 
@@ -51,6 +52,9 @@ namespace ast {
     }
 
 
+    std::string val::typeName() const {
+        return glisp::to_type_string(*this);
+    }
 
     bool operator==(meta const& _lhs, meta const& _rhs) {
         assert(false);

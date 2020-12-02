@@ -13,7 +13,7 @@ namespace seq {
     }
 
     bool iterator_base_t::at_end() const {
-        return remaining() != 0;
+        return remaining() == 0;
     }
 
 }

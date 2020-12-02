@@ -45,7 +45,7 @@ namespace grammar {
 
     auto constexpr registerSymbol = [](auto & _ctx) -> ast::symbol_t {
         auto name = _attr(_ctx);
-        auto parse_ctx = getParseCtx(_ctx);
+        auto & parse_ctx = getParseCtx(_ctx);
         fmt::print("Trying to register {}\n", name);
 
         auto id = parse_ctx.getScoper().registerSymbol(name, true);
@@ -54,7 +54,7 @@ namespace grammar {
 
     auto constexpr forceRegisterSymbol = [](auto & _ctx) -> ast::symbol_t {
         auto name = _attr(_ctx);
-        auto parse_ctx = getParseCtx(_ctx);
+        auto & parse_ctx = getParseCtx(_ctx);
         fmt::print("Trying to register {}\n", name);
 
         auto id = parse_ctx.getScoper().registerSymbol(name);
@@ -63,7 +63,7 @@ namespace grammar {
 
     auto resolveSymbol = [](auto& _ctx) -> ast::symbol_t {
         auto name = _attr(_ctx);
-        auto parse_ctx = getParseCtx(_ctx);
+        auto & parse_ctx = getParseCtx(_ctx);
         auto id = parse_ctx.getScoper().resolveSymbol(name);
 
         if (!id) {

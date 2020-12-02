@@ -98,7 +98,7 @@ namespace ast {
 
         void dump() const { 
             for(auto & p : mSymToId) {
-                fmt::print("{} : {}\n", p.second, *getScopedName(p.second));
+                fmt::print("{}:{} : {}\n",p.first,  p.second, *getScopedName(p.second));
             }
         }
 

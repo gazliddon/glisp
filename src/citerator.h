@@ -46,6 +46,10 @@ namespace ast {
         size_t size() const;
         size_t remaining() const;
 
+        bool finished() const {
+            return remaining() == 0;
+        }
+
         boost::optional<val&> first() const;
         boost::optional<val&> next() const;
 
@@ -56,6 +60,21 @@ namespace ast {
             }
         }
 
+        bool all(std::function<bool(ast::val const&)> _func) {
+            bool ret = true;
+            iterate([&_func, &ret](ast::val& _val) {
+                if (ret) {
+                    ret = _func(_val);
+                }
+            });
+            return ret;
+        }
+
+        template <typename T>
+        bool allType() {
+            return all([](ast::val const& _v) { return _v.is<T>(); });
+        }
+
         template <typename T>
         boost::optional<T&> next_as() const {
             if (auto v = next()) {
@@ -64,6 +83,17 @@ namespace ast {
                 return {};
             }
         }
+
+        template <typename T>
+        boost::optional<T&> next_if() const {
+            if (auto ret = first_as<T>()) {
+                drop();
+                return ret;
+            } else {
+                return {};
+            }
+        }
+
         template <typename T>
         boost::optional<T&> first_as() const {
             if (auto v = first()) {
@@ -85,7 +115,7 @@ namespace ast {
         }
 
         template <typename T>
-        void iterate(std::function<void(T &)> _func) const {
+        void iterate(std::function<void(T&)> _func) const {
             auto it = clone();
             while (auto p = next_of<T>()) {
                 _func(*p);
@@ -96,7 +126,35 @@ namespace ast {
             next();
         }
 
+        std::vector<ast::val> into() {
+            std::vector<ast::val> _dest;
+            _dest.resize(size());
+            _dest.resize(0);
+            iterate([&_dest](ast::val& _val) {
+                _dest.push_back(_val);
+            });
+            return _dest;
+        }
+
+        template <unsigned N>
+        std::vector<boost::optional<ast::val&>> into() {
+            std::vector<boost::optional<ast::val&>> ret;
+            ret.resize(N);
+            into_lo(ret, std::make_index_sequence<N> {});
+            return ret;
+        }
+        template <typename... A>
+        std::tuple<boost::optional<A&...>> into() {
+            auto v = into<sizeof...(A)>();
+            return std::make_tuple<boost::optional<A&...>>(next_as<A>()...);
+        }
+
+
     protected:
+        template <typename C, typename T, T... ints>
+        void into_lo(C& ret, std::integer_sequence<T, ints...> int_seq) {
+            ((ret[ints] = next()), ...);
+        }
         cIterator(std::unique_ptr<seq::iterator_base_t>&& _it);
         std::unique_ptr<seq::iterator_base_t> mpIt;
     };

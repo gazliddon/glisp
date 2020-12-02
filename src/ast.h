@@ -133,6 +133,8 @@ namespace ast {
 
         bool to_bool() const;
         bool is_atom() const;
+
+        std::string typeName() const;
     };
 
     class cIterator;

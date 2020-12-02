@@ -60,7 +60,6 @@ namespace ast {
     }
 
     glisp::cReader::reader_reslult_t Evaluator::read(std::string const& _str) {
-        fmt::print("About to read from eval!\n");
         return mReader.read(_str);
     }
 
@@ -379,7 +378,7 @@ namespace ast {
 
     std::string Evaluator::symbolToName(ast::symbol_t const& _sym) const {
         auto& scopes = mContext.getScoper();
-        auto ret = scopes.getSymbolName({ _sym.mScope, _sym.mId });
+        auto ret = scopes.getScopedSymbolName({ _sym.mScope, _sym.mId });
 
         if (!ret) {
             fmt::print("Cannot find sym name {}:{}\n", _sym.mScope, _sym.mId);
@@ -402,6 +401,8 @@ namespace ast {
         , mReader(mContext) {
 
         auto& scopes = mContext.getScoper();
+
+        scopes.push("special");
 
         registerSymbols(
             scopes, { "let", "loop", "recur", "def", "fn", "throw" });

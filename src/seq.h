@@ -120,7 +120,7 @@ namespace seq {
         }
 
         virtual size_t size() const {
-            return mEnd - mBegin;
+            return mEnd - mIt;
         }
 
         virtual val_ref_opt first() const {

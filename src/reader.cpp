@@ -1,5 +1,6 @@
 #include "reader.h"
 #include "analysis/lexscope.h"
+#include "analysis/expand.h"
 #include "grammar.h"
 
 namespace glisp {
@@ -8,7 +9,7 @@ namespace glisp {
     cReader::reader_reslult_t cReader::read(
         std::string const& _str, std::string const& _fileName) {
 
-        fmt::print("starting to read\n");
+        auto sourceFragmentId = mContext.getSourceStore().addSourceText(_str, _fileName);
 
         using namespace boost::spirit;
 
@@ -36,8 +37,9 @@ namespace glisp {
             }
         }
 
-        fmt::print("about to scope\n");
+        /* analysis::lexicallyScope(mContext, ret.mAst); */
 
+        analysis::expandAst(mContext, ret.mAst);
         analysis::lexicallyScope(mContext, ret.mAst);
 
         if (r && iter == end) {

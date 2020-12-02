@@ -125,8 +125,6 @@ namespace glisp {
                     using namespace glisp;
                     /* auto ast    = evaluator.read(str); */
 
-                    fmt::print("About to readreadread\n");
-
                     auto read = evaluator.read(str);
 
                     _out << evaluator.to_string(read.mAst) << endl;

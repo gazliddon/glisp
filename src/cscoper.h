@@ -36,6 +36,7 @@ namespace glisp {
         opt_symbol_t resolveSymbol(std::string const& _str);
 
         opt_string getSymbolName(ast::symbol_t _sym) const;
+        opt_string getScopedSymbolName(ast::symbol_t _sym) const;
 
         // Scope queries
         boost::optional<ast::cSymRegistry&> getScopeObject(uint64_t _scopeId);
@@ -54,9 +55,9 @@ namespace glisp {
 
         // Debug
         void dump() const {
-            for (auto& s : mAllSymbols) {
-                fmt::print("SYMTAB {}\n", s.second.getScopeName());
-                s.second.dump();
+            for (auto& [id, scope] : mAllSymbols) {
+                fmt::print("SYMTAB {} {}\n", id,  scope.getScopeName());
+                scope.dump();
                 fmt::print("\n");
             }
         }
