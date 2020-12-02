@@ -11,10 +11,19 @@ namespace utils {
         cStringBuilder(unsigned _indent = 0);
 
         template <typename... Args>
-        void print(fmt::string_view format_str, const Args&... args) {
+        cStringBuilder& print(
+            fmt::string_view format_str, const Args&... args) {
             auto line = fmt::format(format_str, args...);
             mString += addIndents(line);
+            return *this;
         }
+
+        cStringBuilder& indent(unsigned x = 1);
+        cStringBuilder& deIndent(unsigned x = 1);
+
+        cStringBuilder& cr();
+
+        std::string build();
 
     protected:
         unsigned mIndent;

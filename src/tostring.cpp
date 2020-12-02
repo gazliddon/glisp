@@ -1,5 +1,4 @@
 #include "tostring.h"
-#include "utils.h"
 #include <array>
 #include <boost/mp11/mpl.hpp>
 #include <boost/spirit/home/x3/support/ast/variant.hpp>
@@ -9,45 +8,6 @@
 namespace glisp {
     using namespace boost::mp11;
     namespace x3 = boost::spirit::x3;
-
-    /* template <typename... A> */
-    /* class cChain : boost::static_visitor<std::string> { */
-    /* public: */
-    /*     using list_t                   = mp_list<A...>; */
-    /*     static size_t const mNumOfArgs = mp_size<list_t>(); */
-
-    /*     cChain(std::string _intersperse = "") */
-    /*         : mIntersperse(_intersperse) { */
-    /*     } */
-
-    /*     template <typename T> */
-    /*     std::string operator()(T const& _val) { */
-    /*         std::string ret; */
-    /*         return ret; */
-    /*     } */
-
-    /*     std::string render(ast::val const& _val) { */
-    /*         std::string ret; */
-
-    /*         auto f = [&](auto renderer, bool not_last) { */
-    /*             ret += renderer.render(_val); */
-    /*             if (not_last) { */
-    /*                 ret += mIntersperse; */
-    /*             } */
-    /*         }; */
-
-    /*         mp_for_each<list_t>([&](auto out) { */
-    /*             using idx_t = mp_find<list_t, decltype(out)>; */
-    /*             auto idx    = idx_t(); */
-    /*             f(out, idx != (mNumOfArgs - 1)); */
-    /*         }); */
-
-    /*         return ret; */
-    /*     } */
-
-    /* protected: */
-    /*     std::string mIntersperse; */
-    /* }; */
 
     struct type_getter_t : public boost::static_visitor<std::string> {
         type_getter_t() {
