@@ -40,6 +40,7 @@ namespace glisp {
         /* analysis::lexicallyScope(mContext, ret.mAst); */
 
         analysis::expandAst(mContext, ret.mAst);
+
         analysis::lexicallyScope(mContext, ret.mAst);
 
         if (r && iter == end) {
