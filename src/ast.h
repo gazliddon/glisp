@@ -33,6 +33,14 @@ namespace ast {
         }
     };
 
+    struct int64 : dummy_compare<int64> {
+        int64_t mVal;
+    };
+
+    struct float64 : dummy_compare<float64> {
+        double mVal;
+    };
+
     struct nil : dummy_compare<nil> { };
 
     struct keyword : position_tagged_t {
@@ -57,6 +65,8 @@ namespace ast {
                  , keyword
                  , nil
                  , unbound
+                 , int64
+                 , float64
                  >;
 
     // clang-format on

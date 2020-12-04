@@ -242,6 +242,18 @@ namespace grammar {
     auto const character_def = lexeme[lit('\\') >> +alnum][to_char];
     BOOST_SPIRIT_DEFINE(character);
 
+    // Int 64
+    struct int64_class : x3::annotate_on_success { };
+    rule<int64_class, ast::int64> const int64("int64");
+    auto const int64_def = int_;
+    BOOST_SPIRIT_DEFINE(int64);
+
+    // Float64
+    struct float64_class : x3::annotate_on_success { };
+    rule<float64_class, ast::float64> const float64("float64");
+    auto const float64_def = double_;
+    BOOST_SPIRIT_DEFINE(float64);
+
     // keyord
     struct keyword_class : x3::annotate_on_success { };
     rule<keyword_class, ast::keyword> const keyword("keyword");
