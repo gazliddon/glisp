@@ -33,13 +33,27 @@ namespace ast {
         }
     };
 
-    struct int64 : dummy_compare<int64> {
-        int64_t mVal;
-    };
+    // clang-format off
 
-    struct float64 : dummy_compare<float64> {
-        double mVal;
+    using number_types = mp_list<
+            double
+            , float
+            , int8_t
+            , uint8_t
+            , int16_t
+            , uint16_t
+            , int32_t
+            , uint32_t
+            , int64_t
+            , uint64_t
+        >;
+
+    using number_variant_t = mp_rename<number_types, x3::variant>;
+
+    struct typed_number_t :  dummy_compare<typed_number_t> {
+        number_variant_t mVal;
     };
+    // clang-format on
 
     struct nil : dummy_compare<nil> { };
 
@@ -57,19 +71,18 @@ namespace ast {
     struct unbound : dummy_compare<unbound> { };
 
     // clang-format off
-    using atoms
-        = mp_list< bool
-                 , std::string
-                 , double
+    using non_number_atoms = mp_list <
+                  std::string
                  , char
                  , keyword
                  , nil
                  , unbound
-                 , int64
-                 , float64
-                 >;
-
+                 , bool
+                 , typed_number_t
+        >;
     // clang-format on
+
+    using atoms = mp_append<number_types, non_number_atoms>;
 
     template <typename T>
     constexpr bool is_atom() {

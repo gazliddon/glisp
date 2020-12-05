@@ -15,6 +15,25 @@
 
 namespace grammar {
     namespace x3 = boost::spirit::x3;
+
+    using x3::alnum;
+    using x3::alpha;
+    using x3::bool_;
+    using x3::char_;
+    using x3::double_;
+    using x3::hex;
+    using x3::int_;
+    using x3::long_long;
+    using x3::lexeme;
+    using x3::lit;
+    using x3::no_skip;
+    using x3::repeat;
+    using x3::rule;
+    using x3::space;
+    using x3::string;
+    using x3::uint_;
+
+
     struct position_cache_tag { };
     auto ctx_info = [](auto& _ctx) {
         auto& attr = _attr(_ctx);
@@ -86,21 +105,6 @@ namespace grammar {
     };
 
 
-    using x3::alnum;
-    using x3::alpha;
-    using x3::bool_;
-    using x3::char_;
-    using x3::double_;
-    using x3::hex;
-    using x3::int_;
-    using x3::lexeme;
-    using x3::lit;
-    using x3::no_skip;
-    using x3::repeat;
-    using x3::rule;
-    using x3::space;
-    using x3::string;
-    using x3::uint_;
 
     auto const space_skip = +( lit(" ") | '\t' | '\r' | '\n');
 
@@ -136,9 +140,9 @@ namespace grammar {
     struct val_class : x3::annotate_on_success { };
     struct args_class : x3::annotate_on_success { };
 
-    auto const ws = no_skip[+lit(" ")];
+    auto const ws = lexeme[char_( " \t\n" )];
 
-    auto const term = no_skip[ws | '(' | ')'];
+    auto const term = no_skip[+ws | '(' | ')'];
 
     struct define_class { };
     rule<define_class, ast::define> const define = "define";
@@ -242,17 +246,16 @@ namespace grammar {
     auto const character_def = lexeme[lit('\\') >> +alnum][to_char];
     BOOST_SPIRIT_DEFINE(character);
 
-    // Int 64
-    struct int64_class : x3::annotate_on_success { };
-    rule<int64_class, ast::int64> const int64("int64");
-    auto const int64_def = int_;
-    BOOST_SPIRIT_DEFINE(int64);
+    // Typed number
+     x3::real_parser<double, x3::strict_real_policies<double> > const strict_double = {};
+     x3::real_parser<float, x3::strict_real_policies<float> > const strict_float = {};
 
-    // Float64
-    struct float64_class : x3::annotate_on_success { };
-    rule<float64_class, ast::float64> const float64("float64");
-    auto const float64_def = double_;
-    BOOST_SPIRIT_DEFINE(float64);
+    auto const type_qualifier = lexeme["::" >> +alnum];
+
+    struct typed_number_t_class : x3::annotate_on_success { };
+    rule<typed_number_t_class, ast::typed_number_t> const typed_number_t("typed_number_t");
+    auto const typed_number_t_def = lexeme[strict_double | long_long ];
+    BOOST_SPIRIT_DEFINE(typed_number_t);
 
     // keyord
     struct keyword_class : x3::annotate_on_success { };
@@ -308,7 +311,7 @@ namespace grammar {
         | keyword
         | str
         | character
-        | double_
+        | typed_number_t
         | sexp
         | vector
         | map;

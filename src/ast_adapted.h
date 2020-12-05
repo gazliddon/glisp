@@ -24,7 +24,7 @@ BOOST_FUSION_ADAPT_STRUCT( ast::let, mBindings, mBody)
 BOOST_FUSION_ADAPT_STRUCT( ast::pair, mFirst, mSecond )
 BOOST_FUSION_ADAPT_STRUCT( ast::bindings, mBindings)
 
-BOOST_FUSION_ADAPT_STRUCT( ast::int64, mVal)
-BOOST_FUSION_ADAPT_STRUCT( ast::float64, mVal)
+
+BOOST_FUSION_ADAPT_STRUCT( ast::typed_number_t, mVal)
 
 #endif /* end of include guard: AST_ADAPTED_H_KW9BM5GS */

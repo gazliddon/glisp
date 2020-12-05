@@ -127,7 +127,9 @@ namespace glisp {
 
                     auto read = evaluator.read(str);
 
-                    _out << evaluator.to_string(read.mAst) << endl;
+                    _out << evaluator.to_string(read.mAst) << ":" << evaluator.to_type_string(read.mAst) << endl;
+
+                
 
                     /* auto result = evaluator.eval(read); */
                     

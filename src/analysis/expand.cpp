@@ -19,6 +19,18 @@ namespace analysis {
             mSymLet    = *scopes.resolveSymbol("let");
         }
 
+        virtual void operator()(double _val) {
+            *mAstStack.top() = _val;
+        }
+
+        virtual void operator()(int32_t _val) {
+            *mAstStack.top() = _val;
+        }
+
+        virtual void operator()(int64_t _val) {
+            *mAstStack.top() = _val;
+        }
+
         void onDefine(ast::cIterator& _it) {
             fmt::print("Expanding define\n");
             ast::define d;
@@ -139,18 +151,8 @@ namespace analysis {
                     return;
                 }
 
-                analyzeSeq(it);
-
-            } else {
-                fmt::print("Not a symbol: ");
-                if (auto x = it.first()) {
-                    fmt::print("{}\n", x->typeName());
-                } else {
-                    fmt::print("No type? !!!!!!!!!!!!!!!\n");
-                    fmt::print("it size = {}\n", it.size());
-                    fmt::print("remaings = {}\n", it.remaining());
-                }
             }
+            analyzeSeq(it);
         }
     };
 

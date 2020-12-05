@@ -46,6 +46,42 @@ namespace glisp {
             return "double";
         }
 
+        std::string operator()( float  _val) {
+            return "float";
+        }
+
+        std::string operator() (int8_t _val) {
+            return "i8";
+
+        }
+        std::string operator() (uint8_t _val) {
+            return "u8";
+
+        }
+        std::string operator() (int16_t _val) {
+            return "i16";
+
+        }
+        std::string operator() (uint16_t _val) {
+            return "u16";
+        }
+
+        std::string operator() (int32_t _val) {
+            return "i32";
+        }
+
+        std::string operator() (uint32_t _val) {
+            return "u32";
+        }
+
+        std::string operator() (int64_t _val) {
+            return "i64";
+        }
+
+        std::string operator() (uint64_t _val) {
+            return "u64";
+        }
+
         std::string operator()(char _v) {
             return "char";
         }
@@ -137,6 +173,39 @@ namespace glisp {
             return mOut.build();
         }
 
+
+        void operator() (int8_t _val) {
+            mOut.print("{}", _val);
+
+        }
+        void operator() (uint8_t _val) {
+            mOut.print("{}", _val);
+
+        }
+        void operator() (int16_t _val) {
+            mOut.print("{}", _val);
+
+        }
+        void operator() (uint16_t _val) {
+            mOut.print("{}", _val);
+        }
+
+        void operator() (int32_t _val) {
+            mOut.print("{}", _val);
+        }
+
+        void operator() (uint32_t _val) {
+            mOut.print("{}", _val);
+        }
+
+        void operator() (int64_t _val) {
+            mOut.print("{}", _val);
+        }
+
+        void operator() (uint64_t _val) {
+            mOut.print("{}", _val);
+        }
+
         void operator()(bool const& _val) {
             std::string val_str;
             if (_val) {
@@ -145,6 +214,11 @@ namespace glisp {
                 val_str = "false";
             }
             mOut.print(val_str);
+        }
+
+
+        void operator()(double _v) {
+            mOut.print("{}", _v);
         }
 
         void operator()(ast::symbol_t const& _v) {
@@ -176,9 +250,6 @@ namespace glisp {
             mOut.print(_v);
         }
 
-        void operator()(double _v) {
-            mOut.print("{}", _v);
-        }
 
         void operator()(char _v) {
             mOut.print("{}", _v);

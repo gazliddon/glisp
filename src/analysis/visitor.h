@@ -7,7 +7,6 @@
 
 namespace analysis {
     struct anaylyzer_base_t : boost::static_visitor<void> {
-
         ast::cContext& mContext;
 
         anaylyzer_base_t(ast::cContext& _context)
@@ -30,6 +29,36 @@ namespace analysis {
 
         void analyzeSeq(ast::cIterator& _it) {
             (*this)(_it);
+        }
+
+        virtual void operator()(double _val) {
+        }
+
+        virtual void operator()( float  _val) {
+
+        }
+        virtual void operator() (int8_t _val) {
+
+        }
+        virtual void operator() (uint8_t _val) {
+
+        }
+        virtual void operator() (int16_t _val) {
+
+        }
+        virtual void operator() (uint16_t _val) {
+        }
+
+        virtual void operator() (int32_t _val) {
+        }
+
+        virtual void operator() (uint32_t _val) {
+        }
+
+        virtual void operator() (int64_t _val) {
+        }
+
+        virtual void operator() (uint64_t _val) {
         }
 
         virtual void operator()(ast::symbol_t& _sym) {
@@ -65,11 +94,14 @@ namespace analysis {
         virtual void operator()(ast::let& _val) {
         }
 
-
         virtual void operator()(ast::define& _val) {
         }
 
         virtual void operator()(ast::lambda& _val) {
+        }
+
+        virtual void operator()(ast::typed_number_t& _val) {
+            boost::apply_visitor(*this, _val.mVal);
         }
 
         void operator()(ast::cIterator& _it) {
