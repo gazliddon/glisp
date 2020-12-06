@@ -3,7 +3,7 @@
 
 #include "ast_adapted.h"
 #include "reader.h"
-
+#include "typed_number_t.h"
 
 #pragma GCC diagnostic ignored "-Wparentheses"
 
@@ -23,16 +23,15 @@ namespace grammar {
     using x3::double_;
     using x3::hex;
     using x3::int_;
-    using x3::long_long;
     using x3::lexeme;
     using x3::lit;
+    using x3::long_long;
     using x3::no_skip;
     using x3::repeat;
     using x3::rule;
     using x3::space;
     using x3::string;
     using x3::uint_;
-
 
     struct position_cache_tag { };
     auto ctx_info = [](auto& _ctx) {
@@ -44,36 +43,36 @@ namespace grammar {
         cout << "val type: " << demangle(val) << endl;
     };
 
-
-    auto constexpr getParseCtx = [](auto & _ctx) -> ast::cContext & {
+    auto constexpr getParseCtx = [](auto& _ctx) -> ast::cContext& {
         auto& parseCtx = x3::get<ast::cContext>(_ctx).get();
         return parseCtx;
     };
 
-    auto constexpr pushScope = [](auto &_ctx, std::string const & _scopeBaseName) {
-        auto& parseCtx = getParseCtx(_ctx);
-        auto & scoper = parseCtx.getScoper();
-        auto id = scoper.genScope(_scopeBaseName);
-        scoper.push(id);
-    };
+    auto constexpr pushScope
+        = [](auto& _ctx, std::string const& _scopeBaseName) {
+              auto& parseCtx = getParseCtx(_ctx);
+              auto& scoper   = parseCtx.getScoper();
+              auto id        = scoper.genScope(_scopeBaseName);
+              scoper.push(id);
+          };
 
-    auto constexpr popScope = [](auto & _ctx) {
-        ast::cContext & parseCtx = getParseCtx(_ctx);
+    auto constexpr popScope = [](auto& _ctx) {
+        ast::cContext& parseCtx = getParseCtx(_ctx);
         parseCtx.getScoper().pop();
     };
 
-    auto constexpr registerSymbol = [](auto & _ctx) -> ast::symbol_t {
-        auto name = _attr(_ctx);
-        auto & parse_ctx = getParseCtx(_ctx);
+    auto constexpr registerSymbol = [](auto& _ctx) -> ast::symbol_t {
+        auto name       = _attr(_ctx);
+        auto& parse_ctx = getParseCtx(_ctx);
         fmt::print("Trying to register {}\n", name);
 
         auto id = parse_ctx.getScoper().registerSymbol(name, true);
         return { *id };
     };
 
-    auto constexpr forceRegisterSymbol = [](auto & _ctx) -> ast::symbol_t {
-        auto name = _attr(_ctx);
-        auto & parse_ctx = getParseCtx(_ctx);
+    auto constexpr forceRegisterSymbol = [](auto& _ctx) -> ast::symbol_t {
+        auto name       = _attr(_ctx);
+        auto& parse_ctx = getParseCtx(_ctx);
         fmt::print("Trying to register {}\n", name);
 
         auto id = parse_ctx.getScoper().registerSymbol(name);
@@ -81,17 +80,16 @@ namespace grammar {
     };
 
     auto resolveSymbol = [](auto& _ctx) -> ast::symbol_t {
-        auto name = _attr(_ctx);
-        auto & parse_ctx = getParseCtx(_ctx);
-        auto id = parse_ctx.getScoper().resolveSymbol(name);
+        auto name       = _attr(_ctx);
+        auto& parse_ctx = getParseCtx(_ctx);
+        auto id         = parse_ctx.getScoper().resolveSymbol(name);
 
         if (!id) {
             return registerSymbol(_ctx);
         }
 
-        return {*id};
+        return { *id };
     };
-
 
     struct annotate_position {
         template <typename T, typename Iterator, typename Context>
@@ -104,9 +102,7 @@ namespace grammar {
         }
     };
 
-
-
-    auto const space_skip = +( lit(" ") | '\t' | '\r' | '\n');
+    auto const space_skip = +(lit(" ") | '\t' | '\r' | '\n');
 
     struct error_handler {
         template <typename Iterator, typename Exception, typename Context>
@@ -140,7 +136,7 @@ namespace grammar {
     struct val_class : x3::annotate_on_success { };
     struct args_class : x3::annotate_on_success { };
 
-    auto const ws = lexeme[char_( " \t\n" )];
+    auto const ws = lexeme[char_(" \t\n")];
 
     auto const term = no_skip[+ws | '(' | ')'];
 
@@ -168,10 +164,9 @@ namespace grammar {
 
     static inline constexpr as_type<std::string> as_string;
 
-
     auto const echars = char_("-?=_.!*+-/><$@");
     auto const get_symbol_string
-        = as_string[lexeme[(alpha | echars) > *(alnum | echars )]];
+        = as_string[lexeme[(alpha | echars) > *(alnum | echars)]];
 
     auto constexpr set_bool_true = [](auto& _ctx) { _val(_ctx) = true; };
     struct is_true_class { };
@@ -188,9 +183,8 @@ namespace grammar {
     // --------------------------------------------------------------------------------
     // Symbol
 
-    auto constexpr sym_resolve = [](auto & _ctx) {
-        _val(_ctx) = resolveSymbol(_ctx);
-    };
+    auto constexpr sym_resolve
+        = [](auto& _ctx) { _val(_ctx) = resolveSymbol(_ctx); };
 
     struct symbol_t_class : x3::annotate_on_success { };
     rule<symbol_t_class, ast::symbol_t> const symbol_t = "symbol";
@@ -247,14 +241,48 @@ namespace grammar {
     BOOST_SPIRIT_DEFINE(character);
 
     // Typed number
-     x3::real_parser<double, x3::strict_real_policies<double> > const strict_double = {};
-     x3::real_parser<float, x3::strict_real_policies<float> > const strict_float = {};
+    x3::real_parser<double, x3::strict_real_policies<double>> const
+        strict_double
+        = {};
+    x3::real_parser<float, x3::strict_real_policies<float>> const strict_float
+        = {};
 
-    auto const type_qualifier = lexeme["::" >> +alnum];
+    auto const number_with_type = (long_long >> "::" >> +alnum) | long_long;
+
+    auto number_stuff = [](auto& ctx) {
+        using boost::get;
+        using boost::fusion::deque;
+        using namespace std;
+
+        long long val = 0;
+        auto type_str = std::string("i64");
+
+        auto & attr = _attr(ctx);
+        ast::typed_number_t & value = _val(ctx);
+
+        if (auto i = get<long long>(&attr) ) {
+            val = *i;
+        }
+
+        if (auto i = get<deque<long long, std::string>>(&attr)) {
+            val = at_c<0>(*i);
+            type_str = at_c<1>(*i);
+        }
+
+        if (auto x = ast::makeTypedNumber(type_str, val)) {
+            value = *x;
+        } else {
+            throw glisp::cEvalError(fmt::format("Unkown type {}", type_str));
+        }
+    };
 
     struct typed_number_t_class : x3::annotate_on_success { };
-    rule<typed_number_t_class, ast::typed_number_t> const typed_number_t("typed_number_t");
-    auto const typed_number_t_def = lexeme[strict_double | long_long ];
+
+    rule<typed_number_t_class, ast::typed_number_t> const typed_number_t(
+        "typed_number_t");
+
+    auto const typed_number_t_def = number_with_type[number_stuff];
+
     BOOST_SPIRIT_DEFINE(typed_number_t);
 
     // keyord
@@ -283,9 +311,10 @@ namespace grammar {
     rule<program_class, ast::program> const program = "program";
 
     // A Val
-    auto constexpr lambda_scope = [](auto & _ctx){ pushScope(_ctx, "LAMBDA"); };
+    auto constexpr lambda_scope = [](auto& _ctx) { pushScope(_ctx, "LAMBDA"); };
 
-    auto const lambda_def = ('(' >> (lit("fn")[lambda_scope]) > -(str) > args > program > ')')[popScope];
+    auto const lambda_def = ('(' >> (lit("fn")[lambda_scope]) > -(str) > args
+        > program > ')')[popScope];
     BOOST_SPIRIT_DEFINE(lambda);
 
     struct sexp_class : x3::annotate_on_success { };

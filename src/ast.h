@@ -17,6 +17,7 @@
 
 #include "position_tag_t.h"
 #include "symbol_t.h"
+#include "typed_number_t.h"
 
 namespace ast {
 
@@ -33,27 +34,6 @@ namespace ast {
         }
     };
 
-    // clang-format off
-
-    using number_types = mp_list<
-            double
-            , float
-            , int8_t
-            , uint8_t
-            , int16_t
-            , uint16_t
-            , int32_t
-            , uint32_t
-            , int64_t
-            , uint64_t
-        >;
-
-    using number_variant_t = mp_rename<number_types, x3::variant>;
-
-    struct typed_number_t :  dummy_compare<typed_number_t> {
-        number_variant_t mVal;
-    };
-    // clang-format on
 
     struct nil : dummy_compare<nil> { };
 
@@ -128,7 +108,9 @@ namespace ast {
 
     using val_base_t = mp_rename<all_types, variant_base_t>;
 
-    struct val : val_base_t, position_tagged_t {
+    struct val : public val_base_t, position_tagged_t {
+        using base_type = val_base_t;
+        using base_type::getVar;
 
         struct callable_t {
             virtual val call(Evaluator& _e, cIterator &) const = 0;
@@ -141,16 +123,12 @@ namespace ast {
             : val_base_t(std::forward<T>(rhs)) {
         }
 
-        friend bool operator==(val const& _lhs, val const& _rhs) {
-            return _lhs.var == _rhs.var;
-        }
-
         val();
 
         val(val const& _v) = default;
 
         val& operator=(val const& _rhs) {
-            this->var = _rhs.var;
+            getVar() = _rhs.getVar();
             return *this;
         }
 
@@ -158,6 +136,10 @@ namespace ast {
         bool is_atom() const;
 
         std::string typeName() const;
+
+        friend bool operator==(val const& _lhs, val const& _rhs) {
+            return _lhs.getVar() == _rhs.getVar();
+        }
     };
 
     class cIterator;

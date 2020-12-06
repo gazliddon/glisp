@@ -18,16 +18,43 @@ namespace analysis {
             mSymQuote  = *scopes.resolveSymbol("quote");
             mSymLet    = *scopes.resolveSymbol("let");
         }
-
         virtual void operator()(double _val) {
             *mAstStack.top() = _val;
         }
 
-        virtual void operator()(int32_t _val) {
+        virtual void operator()( float  _val) {
+            *mAstStack.top() = _val;
+
+        }
+        virtual void operator() (int8_t _val) {
+            *mAstStack.top() = _val;
+
+        }
+        virtual void operator() (uint8_t _val) {
+            *mAstStack.top() = _val;
+
+        }
+        virtual void operator() (int16_t _val) {
+            *mAstStack.top() = _val;
+
+        }
+        virtual void operator() (uint16_t _val) {
             *mAstStack.top() = _val;
         }
 
-        virtual void operator()(int64_t _val) {
+        virtual void operator() (int32_t _val) {
+            *mAstStack.top() = _val;
+        }
+
+        virtual void operator() (uint32_t _val) {
+            *mAstStack.top() = _val;
+        }
+
+        virtual void operator() (int64_t _val) {
+            *mAstStack.top() = _val;
+        }
+
+        virtual void operator() (uint64_t _val) {
             *mAstStack.top() = _val;
         }
 

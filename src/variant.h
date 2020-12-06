@@ -11,7 +11,6 @@
 #include <iostream>
 #include <spdlog/spdlog.h>
 
-
 namespace ast {
     namespace x3 = boost::spirit::x3;
     using namespace boost::mp11;
@@ -40,13 +39,20 @@ namespace ast {
         using type      = variant_base_t<A...>;
         using raw_types = mp_list<A...>;
 
-
         using base_type_t = x3::variant<A...>;
 
         static std::array<std::string, sizeof...(A)> mTypeNames;
 
         using typename base_type_t::base_type;
         using base_type_t::operator=;
+
+        typename base_type::variant_type const& getVar() const {
+            return base_type::var;
+        }
+
+        typename base_type::variant_type& getVar() {
+            return base_type::var;
+        }
 
         variant_base_t() {
         }
@@ -123,9 +129,6 @@ namespace ast {
             } else
                 return {};
         }
-
-
-
 
     protected:
     };
